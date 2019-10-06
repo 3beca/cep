@@ -1,6 +1,7 @@
 import fastify from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
+import config from './config';
 
 export function buildServer() {
 	const app = fastify({
@@ -20,7 +21,7 @@ export function buildServer() {
 				url: packageInfo.homepage,
 				description: 'Find more info here'
 			},
-			host: 'localhost',
+			host: config.http.host + ':' + config.http.port,
 			schemes: ['http'],
 			consumes: ['application/json'],
 			produces: ['application/json']
