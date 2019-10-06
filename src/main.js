@@ -1,14 +1,11 @@
 import { buildServer } from './server';
 import config from './config';
+import 'make-promises-safe';
 
 async function main() {
     const { port, host } = config.http;
     const server = await buildServer().listen(port, host);
 
-    process.on('unhandledRejection', error => {
-        console.error(error);
-        process.exit(1);
-    });
     process.on('SIGTERM', async () => {
         try {
             console.log('SIGTERM signal recieved, graceful shuttingdown...');
