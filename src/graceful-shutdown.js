@@ -1,4 +1,4 @@
-export function gracefulShutdown(server) {
+export default function gracefulShutdown(server) {
     return async () => {
         try {
             console.log('starting graceful shutdown.');
