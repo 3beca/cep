@@ -12,7 +12,7 @@ Clone the repo. Install dependencies:
 npm ci 
 ```
 
-now run the test buite with the following command:
+now run the test suite with the following command:
 
 ```
 npm test
