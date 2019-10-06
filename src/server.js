@@ -17,7 +17,7 @@ export function buildServer() {
 				version: packageInfo.version
 			},
 			externalDocs: {
-				url: 'https://swagger.io',
+				url: packageInfo.homepage,
 				description: 'Find more info here'
 			},
 			host: 'localhost',
