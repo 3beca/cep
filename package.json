@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "convict": "^5.1.0",
-    "fastify": "^2.9.0"
+    "fastify": "^2.9.0",
+    "fastify-swagger": "^2.4.0"
   }
 }

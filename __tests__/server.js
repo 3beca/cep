@@ -33,4 +33,24 @@ describe('builServer', () => {
             expect(response.payload).toBe(JSON.stringify({ sucess: true }));
           });
     });
+
+    it('should return 200 for swagger endpoint', () => {
+        server.inject({
+            method: 'GET',
+            url: '/documentation/static/index.html'
+          }, (err, response) => {
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['content-type']).toBe('html/text; charset=utf-8');
+          });
+    });
+
+    it('should return 200 for swagger json endpoint', () => {
+        server.inject({
+            method: 'GET',
+            url: '/documentation/json'
+          }, (err, response) => {
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+          });
+    });
 });
