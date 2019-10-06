@@ -17,7 +17,7 @@
     "filenames/no-index": 2,
     "filenames/match-exported": 0,
     "block-scoped-var": [0],
-    "brace-style": [2, "stroustrup", {"allowSingleLine": true}],
+    "brace-style": [0, "stroustrup", {"allowSingleLine": true}],
     "camelcase": [0],
     "comma-dangle": [0],
     "comma-spacing": [2],
