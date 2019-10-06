@@ -30,7 +30,7 @@ export function buildServer() {
 
 	// End points
 	app.register(function test(fastify, options, next) {
-		fastify.post('/test', options, () => {
+		fastify.post('/test', options, async () => {
 			return { success: true };
 		});
 		next();
