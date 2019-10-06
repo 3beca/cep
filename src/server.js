@@ -2,6 +2,7 @@ import fastify from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
+import adminRoute from './routes/admin/admin';
 
 export function buildServer() {
 	const app = fastify({
@@ -29,6 +30,7 @@ export function buildServer() {
 	});
 
 	// End points
+	app.register(adminRoute, { prefix: '/admin' });
 	app.register(function test(fastify, options, next) {
 		fastify.post('/test', options, async () => {
 			return { success: true };
