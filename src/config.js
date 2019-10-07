@@ -36,8 +36,8 @@ const config = convict({
         },
         port: {
             doc: 'The external port.',
-            format: 'port',
-            default: 8888,
+            format: String,
+            default: '8888',
             env: 'EXTERNAL_HTTP_PORT',
         }
     }

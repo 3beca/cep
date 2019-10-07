@@ -11,7 +11,7 @@ describe('config', () => {
             externalHttp: {
                 protocol: 'http',
                 host: 'localhost',
-                port: 8888
+                port: '8888'
             }
         });
     });

@@ -22,7 +22,7 @@ export function buildServer() {
 				url: packageInfo.homepage,
 				description: 'Find more info here'
 			},
-			host: config.http.host + ':' + config.http.port,
+			host: config.externalHttp.host + (config.externalHttp.port ? ':' + config.externalHttp.port : ''),
 			schemes: ['http'],
 			consumes: ['application/json'],
 			produces: ['application/json']
