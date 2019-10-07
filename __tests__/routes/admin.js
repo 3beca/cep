@@ -12,13 +12,13 @@ describe('admin', () => {
     });
 
     describe('check-health', () => {
-        it('should return 204', () => {
-            server.inject({
+
+        it('should return 204', async () => {
+            const response = await server.inject({
                 method: 'GET',
                 url: '/admin/check-health'
-            }, (err, response) => {
-                expect(response.statusCode).toBe(204);
             });
+            expect(response.statusCode).toBe(204);
         });
     });
 });

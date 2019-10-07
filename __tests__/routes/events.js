@@ -12,15 +12,15 @@ describe('admin', () => {
     });
 
     describe('events', () => {
-        it('should return 200 with array of events', () => {
-            server.inject({
+
+        it('should return 200 with array of events', async () => {
+            const response = await server.inject({
                 method: 'GET',
                 url: '/admin/events'
-            }, (err, response) => {
-                expect(response.statusCode).toBe(200);
-                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify([]));
             });
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+            expect(response.payload).toBe(JSON.stringify([]));
         });
     });
 });
