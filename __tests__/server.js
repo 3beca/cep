@@ -22,17 +22,6 @@ describe('builServer', () => {
           });
     });
 
-    it('should return 200 for test endpoint', () => {
-        server.inject({
-            method: 'POST',
-            url: '/test'
-          }, (err, response) => {
-            expect(response.statusCode).toBe(200);
-            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-            expect(response.payload).toBe(JSON.stringify({ success: true }));
-          });
-    });
-
     it('should return 200 for swagger endpoint', () => {
         server.inject({
             method: 'GET',

@@ -6,7 +6,7 @@ import adminRoute from './routes/admin/admin';
 
 export function buildServer() {
 	const app = fastify({
-		logger: true
+		logger: false
 	});
 
 	app.register(fastifySwagger, {
@@ -31,12 +31,6 @@ export function buildServer() {
 
 	// End points
 	app.register(adminRoute, { prefix: '/admin' });
-	app.register(function test(fastify, options, next) {
-		fastify.post('/test', options, async () => {
-			return { success: true };
-		});
-		next();
-	});
 
 	app.setNotFoundHandler({
 		preValidation: (req, reply, next) => {
