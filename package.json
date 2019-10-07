@@ -10,7 +10,7 @@
     "start-watch": "nodemon --inspect=0.0.0.0:9229 -L src/main.js  --exec babel-node",
     "lint": "eslint src",
     "test": "jest --watchAll",
-    "test-ci": "jest"
+    "test-ci": "jest --collect-coverage"
   },
   "repository": {
     "type": "git",
