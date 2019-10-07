@@ -1,4 +1,5 @@
 import eventService from '../../services/events-service';
+import { getExternalUrl } from '../../utils/url';
 
 async function list() {
     const results = await eventService.list();
@@ -10,6 +11,7 @@ async function list() {
 async function create(request, reply) {
     const { name } = request.body;
     const event = await eventService.create({ name });
+    reply.header('Location', `${getExternalUrl(request.raw)}/${event.id}`);
     reply.status(201).send(event);
 }
 

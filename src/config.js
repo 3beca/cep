@@ -10,8 +10,8 @@ const config = convict({
     http: {
         host: {
             doc: 'The host ip address to bind.',
-            format: 'ipaddress',
-            default: '127.0.0.1',
+            format: String,
+            default: 'localhost',
             env: 'HTTP_HOST',
         },
         port: {
@@ -19,6 +19,26 @@ const config = convict({
             format: 'port',
             default: 8888,
             env: 'HTTP_PORT',
+        }
+    },
+    externalHttp: {
+        protocol: {
+            doc: 'The external protocol.',
+            format: ['http', 'https'],
+            default: 'http',
+            env: 'EXTERNAL_HTTP_PROTOCOL',
+        },
+        host: {
+            doc: 'The external host.',
+            format: String,
+            default: 'localhost',
+            env: 'EXTERNAL_HTTP_HOST',
+        },
+        port: {
+            doc: 'The external port.',
+            format: 'port',
+            default: 8888,
+            env: 'EXTERNAL_HTTP_PORT',
         }
     }
 });

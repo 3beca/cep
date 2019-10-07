@@ -5,7 +5,12 @@ describe('config', () => {
         expect(config).toStrictEqual({
             env: 'test',
             http: {
-                host: '127.0.0.1',
+                host: 'localhost',
+                port: 8888
+            },
+            externalHttp: {
+                protocol: 'http',
+                host: 'localhost',
                 port: 8888
             }
         });

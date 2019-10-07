@@ -50,6 +50,7 @@ describe('admin', () => {
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const event = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:8888/admin/events/${event.id}`);
                 expect(event.name).toBe('sensor-data');
             });
         });
