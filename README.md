@@ -6,7 +6,7 @@ A simple complex event processing system
 
 ### Swagger
 
-Swagger UI, json and yaml are available at the following url
+Swagger UI, json and yaml are available at the following urls
 
 ```
 /documentation
