@@ -21,7 +21,7 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ items: [] }));
+                expect(response.payload).toBe(JSON.stringify({ results: [] }));
             });
         });
 
@@ -49,6 +49,8 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const event = JSON.parse(response.payload);
+                expect(event.name).toBe('sensor-data');
             });
         });
     });

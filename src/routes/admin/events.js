@@ -1,11 +1,16 @@
+import eventService from '../../services/events-service';
 
 async function list() {
-    return { items: [] };
+    const results = await eventService.list();
+    return {
+        results
+    };
 }
 
-function create(request, reply) {
+async function create(request, reply) {
     const { name } = request.body;
-    reply.status(201).send({ name });
+    const event = await eventService.create({ name });
+    reply.status(201).send(event);
 }
 
 const eventSchema = {
@@ -19,14 +24,20 @@ const eventSchema = {
 };
 
 const listSchema = {
+    querystring: {
+        page: { type: 'integer', minimum: 1 },
+        pageSize: { type: 'integer', minimum: 1, maximum: 100 }
+    },
     response: {
         200: {
             type: 'object',
             properties: {
-                items: {
+                results: {
                     type: 'array',
                     items: eventSchema
-                }
+                },
+                next: { type: 'string' },
+                prev: { type: 'string' }
             }
         }
     }
