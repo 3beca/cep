@@ -24,6 +24,9 @@ const eventService = {
     async getById(id) {
         return events.find(e => e.id.toString() === id);
     },
+    async deleteById(id) {
+        events = events.filter(e => e.id.toString() !== id);
+    },
     async purge() {
         events = [];
     }

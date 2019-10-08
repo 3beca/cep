@@ -17,13 +17,19 @@ async function list(request) {
     };
 }
 
-async function get(request) {
+async function getById(request) {
     const { id } = request.params;
     const event = await eventService.getById(id);
     if (!event) {
         throw new NotFoundError();
     }
     return toEventResponse(event);
+}
+
+async function deleteById(request, reply) {
+    const { id } = request.params;
+    await eventService.deleteById(id);
+    reply.status(204).send();
 }
 
 async function create(request, reply) {
@@ -70,6 +76,14 @@ const getSchema = {
     }
 };
 
+const deleteSchema = {
+    response: {
+        204: {
+            type: 'object'
+        }
+    }
+};
+
 const createSchema = {
     body: {
         type: 'object',
@@ -85,7 +99,8 @@ const createSchema = {
 
 export default function(fastify, opts, next) {
     fastify.get('/', { ...opts, schema: listSchema }, list);
-    fastify.get('/:id', { ...opts, schema: getSchema }, get);
+    fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+    fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
     fastify.post('/', { ...opts, schema: createSchema }, create);
     next();
 }
