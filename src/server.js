@@ -3,8 +3,8 @@ import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
 import adminRoute from './routes/admin/admin';
-import NotFoundError from './errors/not-found-error.js';
-import ConflictError from './errors/name-conflict-error.js';
+import NotFoundError from './errors/not-found-error';
+import ConflictError from './errors/conflict-error';
 import { getExternalUrl } from './utils/url.js';
 
 export function buildServer() {

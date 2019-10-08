@@ -1,5 +1,5 @@
 import { ObjectId } from 'bson';
-import ConflictError from '../errors/name-conflict-error';
+import ConflictError from '../errors/conflict-error';
 
 let events = [];
 
