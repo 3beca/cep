@@ -4,6 +4,8 @@ import fastifySwagger from 'fastify-swagger';
 import config from './config';
 import adminRoute from './routes/admin/admin';
 import NotFoundError from './errors/not-found-error.js';
+import ConflictError from './errors/name-conflict-error.js';
+import { getExternalUrl } from './utils/url.js';
 
 export function buildServer() {
 	const app = fastify({
@@ -50,9 +52,16 @@ export function buildServer() {
 	app.setErrorHandler((error, request, reply) => {
 		if (error instanceof NotFoundError) {
 			reply.status(404).send({ message: 'Resource not found' });
+			return;
+		}
+		if (error instanceof ConflictError) {
+			reply.header('Location', getExternalUrl(`${request.raw.originalUrl}/${error.id}`));
+			reply.status(409).send({ message: error.message });
+			return;
 		}
 		if (error.validation) {
 			reply.status(400).send(error);
+			return;
 		}
 		reply.status(500).send({ message: 'Ups, something goes wrong' });
 	});

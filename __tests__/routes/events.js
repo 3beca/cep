@@ -226,6 +226,28 @@ describe('admin', () => {
                 expect(event.url).toBe(`http://localhost:8888/events/${event.id}`);
                 expect(ObjectId.isValid(event.id)).toBe(true);
             });
+
+            it('should return 409 when try to create an event with the same name', async () => {
+                const responseCreateEvent = await server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'same name'
+                    }
+                });
+                const event = JSON.parse(responseCreateEvent.payload);
+                const responseCreateEvent2 = await server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'same name'
+                    }
+                });
+                expect(responseCreateEvent2.statusCode).toBe(409);
+                expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(responseCreateEvent2.headers.location).toBe(`http://localhost:8888/admin/events/${event.id}`);
+                expect(responseCreateEvent2.payload).toBe(JSON.stringify({ message: `Event name must be unique and is already taken by event with id ${event.id}` }));
+            });
         });
     });
 });

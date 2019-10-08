@@ -1,4 +1,5 @@
 import { ObjectId } from 'bson';
+import ConflictError from '../errors/name-conflict-error';
 
 let events = [];
 
@@ -7,6 +8,10 @@ const eventService = {
         return events.slice((page - 1) * pageSize, page * pageSize);
     },
     async create(event) {
+        const existingEvent = events.find(e => e.name === event.name);
+        if (existingEvent) {
+            throw new ConflictError(`Event name must be unique and is already taken by event with id ${existingEvent.id}`, existingEvent.id);
+        }
         const eventToCreate = {
             ...event,
             id: new ObjectId(),
