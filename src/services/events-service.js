@@ -1,6 +1,6 @@
 import { ObjectId } from 'bson';
 
-const events = [];
+let events = [];
 
 const eventService = {
     async list(page, pageSize) {
@@ -15,6 +15,9 @@ const eventService = {
         };
         events.push(eventToCreate);
         return eventToCreate;
+    },
+    async purge() {
+        events = [];
     }
 };
 export default eventService;

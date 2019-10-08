@@ -1,5 +1,6 @@
 import { buildServer } from '../../src/server';
 import { ObjectId } from 'bson';
+import eventService from '../../src/services/events-service';
 
 describe('admin', () => {
     let server;
@@ -10,6 +11,7 @@ describe('admin', () => {
 
     afterEach(async () => {
         await server.close();
+        await eventService.purge();
     });
 
     describe('events', () => {
@@ -37,6 +39,57 @@ describe('admin', () => {
                 expect(listResponse.results.length).toBe(1);
                 const event = listResponse.results[0];
                 expect(event).toEqual(createdEvent);
+            });
+
+            it('should set next and not prev link in first page when events returned match page size', async () => {
+                await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'an event ' + value
+                    }
+                })));
+                const responseNoPrev = await server.inject({
+                    method: 'GET',
+                    url: '/admin/events?page=1&pageSize=2'
+                });
+                const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
+                expect(payloadResponseNoPrev.prev).toBeUndefined();
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/events?page=2&pageSize=2');
+            });
+
+            it('should not set next and not prev link in first page when events returned are lower than page size', async () => {
+                await Promise.all([1, 2].map(value => server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'an event ' + value
+                    }
+                })));
+                const responseNoPrev = await server.inject({
+                    method: 'GET',
+                    url: '/admin/events?page=1&pageSize=3'
+                });
+                const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
+                expect(payloadResponseNoPrev.prev).toBeUndefined();
+                expect(payloadResponseNoPrev.next).toBeUndefined();
+            });
+
+            it('should set next and prev link if a middle page', async () => {
+                await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'an event ' + value
+                    }
+                })));
+                const responseNoPrev = await server.inject({
+                    method: 'GET',
+                    url: '/admin/events?page=2&pageSize=2'
+                });
+                const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
+                expect(payloadResponseNoPrev.prev).toBe('http://localhost:8888/admin/events?page=1&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/events?page=3&pageSize=2');
             });
 
             it('should return 400 with invalid page query string', async () => {

@@ -1,5 +1,5 @@
 import eventService from '../../services/events-service';
-import { getExternalUrl } from '../../utils/url';
+import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 
 function toEventResponse(event) {
     return { ...event, url: `${getExternalUrl('/events')}/${event.id}` };
@@ -10,7 +10,9 @@ async function list(request) {
     const events = await eventService.list(page, pageSize);
     const results = events.map(toEventResponse);
     return {
-        results
+        results,
+        next: getNextLink(request, results),
+        prev: getPrevLink(request)
     };
 }
 
