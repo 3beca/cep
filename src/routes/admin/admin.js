@@ -2,6 +2,7 @@ import eventRoutes from './events';
 import packageInfo from '../../../package.json';
 
 const checkHealthSchema = {
+    tags: ['system'],
     response: {
         204: {
             description: 'Health check successfull',
@@ -15,6 +16,7 @@ function checkHealth(request, reply) {
 }
 
 const versionSchema = {
+    tags: ['system'],
     response: {
         200: {
             description: 'cep version',

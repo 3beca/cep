@@ -51,6 +51,7 @@ const eventSchema = {
 };
 
 const listSchema = {
+    tags: ['events'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
         pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
@@ -71,12 +72,14 @@ const listSchema = {
 };
 
 const getSchema = {
+    tags: ['events'],
     response: {
         200: eventSchema
     }
 };
 
 const deleteSchema = {
+    tags: ['events'],
     response: {
         204: {
             type: 'object'
@@ -85,6 +88,7 @@ const deleteSchema = {
 };
 
 const createSchema = {
+    tags: ['events'],
     body: {
         type: 'object',
         required: ['name'],

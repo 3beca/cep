@@ -25,6 +25,10 @@ export function buildServer() {
 				url: packageInfo.homepage,
 				description: 'Find more info here'
 			},
+			tags: [
+				{ name: 'system', description: 'System related end-points' },
+				{ name: 'events', description: 'Events related end-points' }
+			],
 			host: config.externalHttp.host + (config.externalHttp.port ? ':' + config.externalHttp.port : ''),
 			schemes: ['http'],
 			consumes: ['application/json'],
