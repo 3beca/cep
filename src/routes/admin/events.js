@@ -1,8 +1,14 @@
 import eventService from '../../services/events-service';
 import { getExternalUrl } from '../../utils/url';
 
-async function list() {
-    const results = await eventService.list();
+function toEventResponse(event) {
+    return { ...event, url: `${getExternalUrl('/events')}/${event.id}` };
+}
+
+async function list(request) {
+    const { page, pageSize } = request.query;
+    const events = await eventService.list(page, pageSize);
+    const results = events.map(toEventResponse);
     return {
         results
     };
@@ -11,8 +17,8 @@ async function list() {
 async function create(request, reply) {
     const { name } = request.body;
     const event = await eventService.create({ name });
-    reply.header('Location', `${getExternalUrl(request.raw)}/${event.id}`);
-    reply.status(201).send(event);
+    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${event.id}`);
+    reply.status(201).send(toEventResponse(event));
 }
 
 const eventSchema = {
@@ -21,14 +27,15 @@ const eventSchema = {
         name: { type: 'string' },
         id: { type: 'string' },
         url: { type: 'string' },
-        createAt: { type: 'string' }
+        createdAt: { type: 'string' },
+        updatedAt: { type: 'string' }
     }
 };
 
 const listSchema = {
     querystring: {
-        page: { type: 'integer', minimum: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100 }
+        page: { type: 'integer', minimum: 1, default: 1 },
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
     },
     response: {
         200: {
