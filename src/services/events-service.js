@@ -16,6 +16,9 @@ const eventService = {
         events.push(eventToCreate);
         return eventToCreate;
     },
+    async getById(id) {
+        return events.find(e => e.id.toString() === id);
+    },
     async purge() {
         events = [];
     }

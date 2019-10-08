@@ -163,6 +163,39 @@ describe('admin', () => {
             });
         });
 
+        describe('get by id', () => {
+
+            it('should return 404 when event does not exists', async () => {
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/events/' + new ObjectId()
+                });
+                expect(response.statusCode).toBe(404);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
+            });it('should return 200 with array of events', async () => {
+                const createResponse = await server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'an event'
+                    }
+                });
+                expect(createResponse.statusCode).toBe(201);
+                expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+                const createdEvent = JSON.parse(createResponse.payload);
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/events/' + createdEvent.id
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const getEvent = JSON.parse(response.payload);
+                expect(getEvent).toEqual(createdEvent);
+            });
+        });
+
         describe('post', () => {
             it('should return 400 when name is undefined', async () => {
                 const response = await server.inject({

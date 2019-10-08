@@ -1,5 +1,6 @@
 import eventService from '../../services/events-service';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
+import NotFoundError from '../../errors/not-found-error';
 
 function toEventResponse(event) {
     return { ...event, url: `${getExternalUrl('/events')}/${event.id}` };
@@ -14,6 +15,15 @@ async function list(request) {
         next: getNextLink(request, results),
         prev: getPrevLink(request)
     };
+}
+
+async function get(request) {
+    const { id } = request.params;
+    const event = await eventService.getById(id);
+    if (!event) {
+        throw new NotFoundError();
+    }
+    return toEventResponse(event);
 }
 
 async function create(request, reply) {
@@ -54,6 +64,12 @@ const listSchema = {
     }
 };
 
+const getSchema = {
+    response: {
+        200: eventSchema
+    }
+};
+
 const createSchema = {
     body: {
         type: 'object',
@@ -69,6 +85,7 @@ const createSchema = {
 
 export default function(fastify, opts, next) {
     fastify.get('/', { ...opts, schema: listSchema }, list);
+    fastify.get('/:id', { ...opts, schema: getSchema }, get);
     fastify.post('/', { ...opts, schema: createSchema }, create);
     next();
 }
