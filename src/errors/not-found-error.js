@@ -1,1 +1,5 @@
-export default class NotFoundError extends Error { }
+export default class NotFoundError extends Error {
+    constructor(message) {
+        super(message);
+    }
+}
