@@ -212,6 +212,19 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'name\'' }));
             });
 
+            it('should return 400 when name is longer than 100 characters', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/events',
+                    body: {
+                        name: 'a'.repeat(101)
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body.name should NOT be longer than 100 characters' }));
+            });
+
             it('should return 201 with created event when request is valid', async () => {
                 const response = await server.inject({
                     method: 'POST',

@@ -93,7 +93,7 @@ const createSchema = {
         type: 'object',
         required: ['name'],
         properties: {
-            name: { type: 'string' }
+            name: { type: 'string', maxLength: 100 }
         }
     },
     response: {
