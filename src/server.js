@@ -33,7 +33,7 @@ export function buildServer() {
 				{ name: 'event processing', description: 'Event processing related end-points' }
 			],
 			host: config.externalHttp.host + (config.externalHttp.port ? ':' + config.externalHttp.port : ''),
-			schemes: ['http'],
+			schemes: [config.externalHttp.protocol],
 			consumes: ['application/json'],
 			produces: ['application/json']
 		}
