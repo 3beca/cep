@@ -1,6 +1,6 @@
-import { buildServer } from '../../src/server';
+import { buildServer } from '../../../src/server';
+import eventService from '../../../src/services/events-service';
 import { ObjectId } from 'bson';
-import eventService from '../../src/services/events-service';
 
 describe('admin', () => {
     let server;

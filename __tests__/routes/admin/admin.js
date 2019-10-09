@@ -1,4 +1,4 @@
-import { buildServer } from '../../src/server';
+import { buildServer } from '../../../src/server';
 
 describe('admin', () => {
     let server;
