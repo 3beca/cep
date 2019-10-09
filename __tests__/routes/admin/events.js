@@ -174,7 +174,7 @@ describe('admin', () => {
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
             });
-            
+          
             it('should return 200 with array of events', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
