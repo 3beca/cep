@@ -2,6 +2,15 @@ import engine from '../engine';
 
 const processEventSchema = {
     tags: ['event processing'],
+    params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'event identifier'
+          }
+        }
+    },
     response: {
         204: {
             type: 'object'

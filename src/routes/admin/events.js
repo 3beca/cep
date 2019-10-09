@@ -73,6 +73,15 @@ const listSchema = {
 
 const getSchema = {
     tags: ['events'],
+    params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'event identifier'
+          }
+        }
+    },
     response: {
         200: eventSchema
     }
@@ -80,6 +89,15 @@ const getSchema = {
 
 const deleteSchema = {
     tags: ['events'],
+    params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'event identifier'
+          }
+        }
+    },
     response: {
         204: {
             type: 'object'
