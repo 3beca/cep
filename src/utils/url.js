@@ -15,14 +15,18 @@ export function getExternalUrl(path) {
     return `${protocol}://${host}${port ? ':' + port : ''}${path ? removeEndSlash(path) : ''}`;
 }
 
+function getPagedLink(path, page, pageSize) {
+    return `${getExternalUrl(path)}?page=${page}&pageSize=${pageSize}`;
+}
+
 export function getPrevLink(request) {
     const { page, pageSize } = request.query;
     const path = url.parse(request.raw.url).pathname;
-    return page !== 1 ? `${getExternalUrl()}${path}?page=${page - 1}&pageSize=${pageSize}` : undefined;
+    return page !== 1 ? getPagedLink(path, page - 1, pageSize) : undefined;
 }
 
 export function getNextLink(request, results) {
     const { page, pageSize } = request.query;
     const path = url.parse(request.raw.url).pathname;
-    return results.length === pageSize ? `${getExternalUrl()}${path}?page=${page + 1}&pageSize=${pageSize}` : undefined;
+    return results.length === pageSize ? getPagedLink(path, page + 1, pageSize) : undefined;
 }
