@@ -5,7 +5,9 @@ import 'make-promises-safe';
 
 async function main() {
     const { port, host } = config.http;
-    const server = await buildServer().listen(port, host);
+    const server = buildServer();
+
+    await server.listen(port, host);
 
     process.on('SIGTERM', gracefulShutdown(server));
     process.on('SIGINT', gracefulShutdown(server));
