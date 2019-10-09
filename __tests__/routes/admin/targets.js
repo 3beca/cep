@@ -1,5 +1,5 @@
 import { buildServer } from '../../../src/server';
-import eventService from '../../../src/services/events-service';
+import targetService from '../../../src/services/targets-service';
 import { ObjectId } from 'bson';
 
 describe('admin', () => {
@@ -11,64 +11,67 @@ describe('admin', () => {
 
     afterEach(async () => {
         await server.close();
-        await eventService.purge();
+        await targetService.purge();
     });
 
-    describe('events', () => {
+    describe('targets', () => {
 
         describe('get', () => {
-            it('should return 200 with array of events', async () => {
+            it('should return 200 with array of targets', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'an event'
+                        name: 'a target',
+                        url: 'http://example.org'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-                const createdEvent = JSON.parse(createResponse.payload);
+                const createdTarget = JSON.parse(createResponse.payload);
 
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events'
+                    url: '/admin/targets'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const listResponse = JSON.parse(response.payload);
                 expect(listResponse.results.length).toBe(1);
-                const event = listResponse.results[0];
-                expect(event).toEqual(createdEvent);
+                const target = listResponse.results[0];
+                expect(target).toEqual(createdTarget);
             });
 
-            it('should set next and not prev link in first page when events returned match page size', async () => {
+            it('should set next and not prev link in first page when targets returned match page size', async () => {
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'an event ' + value
+                        name: 'a target ' + value,
+                        url: 'http://example.org'
                     }
                 })));
                 const responseNoPrev = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?page=1&pageSize=2'
+                    url: '/admin/targets?page=1&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/events?page=2&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/targets?page=2&pageSize=2');
             });
 
-            it('should not set next and not prev link in first page when events returned are lower than page size', async () => {
+            it('should not set next and not prev link in first page when targets returned are lower than page size', async () => {
                 await Promise.all([1, 2].map(value => server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'an event ' + value
+                        name: 'a target ' + value,
+                        url: 'http://example.org'
                     }
                 })));
                 const responseNoPrev = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?page=1&pageSize=3'
+                    url: '/admin/targets?page=1&pageSize=3'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -78,24 +81,25 @@ describe('admin', () => {
             it('should set next and prev link if a middle page', async () => {
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'an event ' + value
+                        name: 'a target ' + value,
+                        url: 'http://example.org'
                     }
                 })));
                 const responseNoPrev = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?page=2&pageSize=2'
+                    url: '/admin/targets?page=2&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
-                expect(payloadResponseNoPrev.prev).toBe('http://localhost:8888/admin/events?page=1&pageSize=2');
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/events?page=3&pageSize=2');
+                expect(payloadResponseNoPrev.prev).toBe('http://localhost:8888/admin/targets?page=1&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/targets?page=3&pageSize=2');
             });
 
             it('should return 400 with invalid page query string', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?page=invalid'
+                    url: '/admin/targets?page=invalid'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -109,7 +113,7 @@ describe('admin', () => {
             it('should return 400 with invalid pageSize query string', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?pageSize=invalid'
+                    url: '/admin/targets?pageSize=invalid'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -123,7 +127,7 @@ describe('admin', () => {
             it('should return 400 with pageSize query string greater than 100', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?pageSize=101'
+                    url: '/admin/targets?pageSize=101'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -137,7 +141,7 @@ describe('admin', () => {
             it('should return 400 with pageSize query string lesser than 1', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?pageSize=0'
+                    url: '/admin/targets?pageSize=0'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -151,7 +155,7 @@ describe('admin', () => {
             it('should return 400 with page query string lesser than 1', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events?page=0'
+                    url: '/admin/targets?page=0'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -165,36 +169,37 @@ describe('admin', () => {
 
         describe('get by id', () => {
 
-            it('should return 404 when event does not exists', async () => {
+            it('should return 404 when target does not exists', async () => {
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events/' + new ObjectId()
+                    url: '/admin/targets/' + new ObjectId()
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
             });
-          
-            it('should return 200 with array of events', async () => {
+
+            it('should return 200 with array of targets', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'an event'
+                        name: 'a target',
+                        url: 'http://example.org'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-                const createdEvent = JSON.parse(createResponse.payload);
+                const createdTarget = JSON.parse(createResponse.payload);
 
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/events/' + createdEvent.id
+                    url: '/admin/targets/' + createdTarget.id
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                const getEvent = JSON.parse(response.payload);
-                expect(getEvent).toEqual(createdEvent);
+                const gettarget = JSON.parse(response.payload);
+                expect(gettarget).toEqual(createdTarget);
             });
         });
 
@@ -202,9 +207,10 @@ describe('admin', () => {
             it('should return 400 when name is undefined', async () => {
                 const response = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: undefined
+                        name: undefined,
+                        url: 'https://example.org'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -212,12 +218,41 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'name\'' }));
             });
 
+            it('should return 400 when url is undefined', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/targets',
+                    body: {
+                        name: 'a target',
+                        url: undefined
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'url\'' }));
+            });
+
+            it('should return 400 when url is not valid', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/targets',
+                    body: {
+                        name: 'a target',
+                        url: 'a non valid url'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body.url should match format "url"' }));
+            });
+
             it('should return 400 when name is longer than 100 characters', async () => {
                 const response = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'a'.repeat(101)
+                        name: 'a'.repeat(101),
+                        url: 'https://example.org'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -225,76 +260,80 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body.name should NOT be longer than 100 characters' }));
             });
 
-            it('should return 201 with created event when request is valid', async () => {
+            it('should return 201 with created target when request is valid', async () => {
                 const response = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'sensor-data'
+                        name: 'a target',
+                        url: 'http://example.org'
                     }
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                const event = JSON.parse(response.payload);
-                expect(response.headers.location).toBe(`http://localhost:8888/admin/events/${event.id}`);
-                expect(event.name).toBe('sensor-data');
-                expect(event.url).toBe(`http://localhost:8888/events/${event.id}`);
-                expect(ObjectId.isValid(event.id)).toBe(true);
+                const target = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:8888/admin/targets/${target.id}`);
+                expect(target.name).toBe('a target');
+                expect(target.url).toBe('http://example.org');
+                expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
-            it('should return 409 when try to create an event with the same name', async () => {
-                const responseCreateEvent = await server.inject({
+            it('should return 409 when try to create a target with the same name', async () => {
+                const responseCreateTarget = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'same name'
+                        name: 'same name',
+                        url: 'http://example.org'
                     }
                 });
-                const event = JSON.parse(responseCreateEvent.payload);
-                const responseCreateEvent2 = await server.inject({
+                const target = JSON.parse(responseCreateTarget.payload);
+                const responseCreateTarget2 = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'same name'
+                        name: 'same name',
+                        url: 'http://example.org'
                     }
                 });
-                expect(responseCreateEvent2.statusCode).toBe(409);
-                expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(responseCreateEvent2.headers.location).toBe(`http://localhost:8888/admin/events/${event.id}`);
-                expect(responseCreateEvent2.payload).toBe(JSON.stringify({ message: `Event name must be unique and is already taken by event with id ${event.id}` }));
+                expect(responseCreateTarget2.statusCode).toBe(409);
+                expect(responseCreateTarget2.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(responseCreateTarget2.headers.location).toBe(`http://localhost:8888/admin/targets/${target.id}`);
+                expect(responseCreateTarget2.payload).toBe(JSON.stringify({ message: `Target name must be unique and is already taken by target with id ${target.id}` }));
             });
         });
 
         describe('delete', () => {
-            it('should return 204 when event does not exist', async () => {
+            it('should return 204 when target does not exist', async () => {
                 const response = await server.inject({
                     method: 'DELETE',
-                    url: '/admin/events/' + new ObjectId()
+                    url: '/admin/targets/' + new ObjectId()
                 });
                 expect(response.statusCode).toBe(204);
             });
 
-            it('should return 204 when event exists', async () => {
+            it('should return 204 when target exists', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
-                    url: '/admin/events',
+                    url: '/admin/targets',
                     body: {
-                        name: 'sensor-data'
+                        name: 'a target',
+                        url: 'http://example.org'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-                const createdEvent = JSON.parse(createResponse.payload);
+                const createdTarget = JSON.parse(createResponse.payload);
 
                 const deleteResponse = await server.inject({
                     method: 'DELETE',
-                    url: '/admin/events/' + createdEvent.id
+                    url: '/admin/targets/' + createdTarget.id
                 });
                 expect(deleteResponse.statusCode).toBe(204);
 
                 const getResponse = await server.inject({
                     method: 'GET',
-                    url: '/admin/events' + createdEvent.id
+                    url: '/admin/targets' + createdTarget.id
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
