@@ -1,5 +1,5 @@
 import { buildServer } from '../../src/server';
-import eventService from '../../src/services/events-service';
+import eventTypesService from '../../src/services/event-types-service';
 import { ObjectId } from 'bson';
 
 describe('events', () => {
@@ -11,12 +11,12 @@ describe('events', () => {
 
     afterEach(async () => {
         await server.close();
-        await eventService.purge();
+        await eventTypesService.purge();
     });
 
     describe('post an event', () => {
 
-        it('should return 404 when event does not exists', async () => {
+        it('should return 404 when event type does not exists', async () => {
             const response = await server.inject({
                 method: 'POST',
                 url: '/events/' + new ObjectId()
@@ -26,12 +26,12 @@ describe('events', () => {
             expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
         });
 
-        it('should return 204 when an event', async () => {
+        it('should return 204 when event type exists', async () => {
             const createResponse = await server.inject({
                 method: 'POST',
-                url: '/admin/events',
+                url: '/admin/event-types',
                 body: {
-                    name: 'an event'
+                    name: 'an event type'
                 }
             });
             expect(createResponse.statusCode).toBe(201);

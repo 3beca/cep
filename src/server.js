@@ -28,7 +28,7 @@ export function buildServer() {
 			},
 			tags: [
 				{ name: 'system', description: 'System related end-points' },
-				{ name: 'events', description: 'Events related end-points' },
+				{ name: 'event types', description: 'Event Types related end-points' },
 				{ name: 'targets', description: 'Targets related end-points' },
 				{ name: 'event processing', description: 'Event processing related end-points' }
 			],

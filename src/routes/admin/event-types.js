@@ -1,15 +1,15 @@
-import eventService from '../../services/events-service';
+import eventTypesService from '../../services/event-types-service';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 
-function toEventResponse(event) {
-    return { ...event, url: `${getExternalUrl('/events')}/${event.id}` };
+function toEventTypeResponse(eventType) {
+    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
 }
 
 async function list(request) {
     const { page, pageSize } = request.query;
-    const events = await eventService.list(page, pageSize);
-    const results = events.map(toEventResponse);
+    const eventTypes = await eventTypesService.list(page, pageSize);
+    const results = eventTypes.map(toEventTypeResponse);
     return {
         results,
         next: getNextLink(request, results),
@@ -19,27 +19,27 @@ async function list(request) {
 
 async function getById(request) {
     const { id } = request.params;
-    const event = await eventService.getById(id);
-    if (!event) {
+    const eventType = await eventTypesService.getById(id);
+    if (!eventType) {
         throw new NotFoundError();
     }
-    return toEventResponse(event);
+    return toEventTypeResponse(eventType);
 }
 
 async function deleteById(request, reply) {
     const { id } = request.params;
-    await eventService.deleteById(id);
+    await eventTypesService.deleteById(id);
     reply.status(204).send();
 }
 
 async function create(request, reply) {
     const { name } = request.body;
-    const event = await eventService.create({ name });
-    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${event.id}`);
-    reply.status(201).send(toEventResponse(event));
+    const eventType = await eventTypesService.create({ name });
+    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
+    reply.status(201).send(toEventTypeResponse(eventType));
 }
 
-const eventSchema = {
+const eventTypeSchema = {
     type: 'object',
     properties: {
         name: { type: 'string' },
@@ -51,7 +51,7 @@ const eventSchema = {
 };
 
 const listSchema = {
-    tags: ['events'],
+    tags: ['event types'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
         pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
@@ -62,7 +62,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: eventSchema
+                    items: eventTypeSchema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -72,29 +72,29 @@ const listSchema = {
 };
 
 const getSchema = {
-    tags: ['events'],
+    tags: ['event types'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'event identifier'
+            description: 'event type identifier'
           }
         }
     },
     response: {
-        200: eventSchema
+        200: eventTypeSchema
     }
 };
 
 const deleteSchema = {
-    tags: ['events'],
+    tags: ['event types'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'event identifier'
+            description: 'event type identifier'
           }
         }
     },
@@ -106,7 +106,7 @@ const deleteSchema = {
 };
 
 const createSchema = {
-    tags: ['events'],
+    tags: ['event types'],
     body: {
         type: 'object',
         required: ['name'],
@@ -115,7 +115,7 @@ const createSchema = {
         }
     },
     response: {
-        201: eventSchema
+        201: eventTypeSchema
     }
 };
 

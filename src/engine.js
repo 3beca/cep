@@ -1,9 +1,9 @@
-import eventService from './services/events-service';
+import eventTypesService from './services/event-types-service';
 import NotFoundError from './errors/not-found-error';
 
 const engine = {
     async processEvent(id, eventPayload) {
-        const event = await eventService.getById(id);
+        const event = await eventTypesService.getById(id);
         if (!event) {
             throw new NotFoundError();
         }

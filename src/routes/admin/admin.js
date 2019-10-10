@@ -1,5 +1,5 @@
-import eventRoutes from './events';
-import targetRoutes from './targets';
+import eventTypesRoutes from './event-types';
+import targetsRoutes from './targets';
 import packageInfo from '../../../package.json';
 
 const checkHealthSchema = {
@@ -36,8 +36,8 @@ async function version() {
 export default function(fastify, opts, next) {
     fastify.get('/check-health', { ...opts, ...{ logLevel: 'warn', schema: checkHealthSchema } }, checkHealth);
     fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
-    fastify.register(eventRoutes, { prefix: '/events' });
-    fastify.register(targetRoutes, { prefix: '/targets' });
+    fastify.register(eventTypesRoutes, { prefix: '/event-types' });
+    fastify.register(targetsRoutes, { prefix: '/targets' });
     next();
 }
 
