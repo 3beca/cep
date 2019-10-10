@@ -136,8 +136,7 @@ function assertFilters(filters) {
             throw new FilterError(`${key} is not a valid filter operator`);
         }
         if (key === '_near') {
-            // eslint-disable-next-line no-new
-            new NearFilter(filterValue);
+            NearFilter.assertIsValid(filterValue);
         }
         const filterValueType = typeof filterValue;
         if (['_gt', '_gte', '_lt', '_lte'].includes(key) && filterValueType !== 'number') {
@@ -147,7 +146,7 @@ function assertFilters(filters) {
     });
 }
 
-export default class Filter {
+class Filter {
     constructor(filters) {
         assertIsValid(filters);
         this.filters = filters;
@@ -162,3 +161,5 @@ export default class Filter {
         };
     }
 }
+Filter.assertIsValid = assertIsValid;
+export default Filter;

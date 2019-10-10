@@ -64,7 +64,7 @@ function assertIsValid(filter) {
     }
 }
 
-export default class NearFilter {
+class NearFilter {
     constructor(filter) {
         assertIsValid(filter);
         this.filter = filter;
@@ -93,3 +93,5 @@ export default class NearFilter {
         };
     }
 }
+NearFilter.assertIsValid = assertIsValid;
+export default NearFilter;
