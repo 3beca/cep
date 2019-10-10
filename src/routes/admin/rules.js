@@ -1,0 +1,128 @@
+import rulesService from '../../services/rules-services';
+import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
+import NotFoundError from '../../errors/not-found-error';
+
+async function list(request) {
+    const { page, pageSize } = request.query;
+    const results = await rulesService.list(page, pageSize);
+    return {
+        results,
+        next: getNextLink(request, results),
+        prev: getPrevLink(request)
+    };
+}
+
+async function getById(request) {
+    const { id } = request.params;
+    const rule = await rulesService.getById(id);
+    if (!rule) {
+        throw new NotFoundError();
+    }
+    return rule;
+}
+
+async function deleteById(request, reply) {
+    const { id } = request.params;
+    await rulesService.deleteById(id);
+    reply.status(204).send();
+}
+
+async function create(request, reply) {
+    const { name, url } = request.body;
+    const rule = await rulesService.create({ name, url });
+    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
+    reply.status(201).send(rule);
+}
+
+const ruleschema = {
+    type: 'object',
+    properties: {
+        name: { type: 'string' },
+        id: { type: 'string' },
+        targetId: { type: 'string' },
+        eventTypeId: { type: 'string' },
+        filters: { type: 'object' },
+        createdAt: { type: 'string' },
+        updatedAt: { type: 'string' }
+    }
+};
+
+const listSchema = {
+    tags: ['rules'],
+    querystring: {
+        page: { type: 'integer', minimum: 1, default: 1 },
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+    },
+    response: {
+        200: {
+            type: 'object',
+            properties: {
+                results: {
+                    type: 'array',
+                    items: ruleschema
+                },
+                next: { type: 'string' },
+                prev: { type: 'string' }
+            }
+        }
+    }
+};
+
+const getSchema = {
+    tags: ['rules'],
+    params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'rule identifier'
+          }
+        }
+    },
+    response: {
+        200: ruleschema
+    }
+};
+
+const deleteSchema = {
+    tags: ['rules'],
+    params: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'rule identifier'
+          }
+        }
+    },
+    response: {
+        204: {
+            type: 'object'
+        }
+    }
+};
+
+const createSchema = {
+    tags: ['rules'],
+    body: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+            name: { type: 'string', maxLength: 100 },
+            targetId: { type: 'string' },
+            eventId: { type: 'string' },
+            filters: { type: 'object' }
+        }
+    },
+    response: {
+        201: ruleschema
+    }
+};
+
+export default function(fastify, opts, next) {
+    fastify.get('/', { ...opts, schema: listSchema }, list);
+    fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+    fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
+    fastify.post('/', { ...opts, schema: createSchema }, create);
+    next();
+}
