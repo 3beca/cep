@@ -39,9 +39,6 @@ function matchFilter(data, filterField, filterOperator) {
     return Object.keys(filterOperator).every(key => {
         const filterValue = filterOperator[key];
         switch (key) {
-            case '_eq' : {
-                return dataValue === filterValue;
-            }
             case '_gt' : {
                 return dataValue > filterValue;
             }
@@ -58,8 +55,9 @@ function matchFilter(data, filterField, filterOperator) {
                 const nearFilter = new NearFilter(filterValue);
                 return nearFilter.match(dataValue);
             }
+            case '_eq' :
             default : {
-                throw new FilterError(key + ' is not a valid filter operator');
+                return dataValue === filterValue;
             }
         }
     });
