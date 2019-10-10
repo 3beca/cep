@@ -3,7 +3,7 @@ import ConflictError from '../errors/conflict-error';
 
 let targets = [];
 
-const targetService = {
+const targetsService = {
     async list(page, pageSize) {
         return targets.slice((page - 1) * pageSize, page * pageSize);
     },
@@ -31,4 +31,4 @@ const targetService = {
         targets = [];
     }
 };
-export default targetService;
+export default targetsService;

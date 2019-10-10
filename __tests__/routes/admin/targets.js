@@ -1,5 +1,5 @@
 import { buildServer } from '../../../src/server';
-import targetService from '../../../src/services/targets-service';
+import targetsService from '../../../src/services/targets-service';
 import { ObjectId } from 'bson';
 
 describe('admin', () => {
@@ -11,7 +11,7 @@ describe('admin', () => {
 
     afterEach(async () => {
         await server.close();
-        await targetService.purge();
+        await targetsService.purge();
     });
 
     describe('targets', () => {

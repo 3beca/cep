@@ -1,10 +1,10 @@
-import targetService from '../../services/targets-service';
+import targetsService from '../../services/targets-service';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 
 async function list(request) {
     const { page, pageSize } = request.query;
-    const results = await targetService.list(page, pageSize);
+    const results = await targetsService.list(page, pageSize);
     return {
         results,
         next: getNextLink(request, results),
@@ -14,7 +14,7 @@ async function list(request) {
 
 async function getById(request) {
     const { id } = request.params;
-    const target = await targetService.getById(id);
+    const target = await targetsService.getById(id);
     if (!target) {
         throw new NotFoundError();
     }
@@ -23,13 +23,13 @@ async function getById(request) {
 
 async function deleteById(request, reply) {
     const { id } = request.params;
-    await targetService.deleteById(id);
+    await targetsService.deleteById(id);
     reply.status(204).send();
 }
 
 async function create(request, reply) {
     const { name, url } = request.body;
-    const target = await targetService.create({ name, url });
+    const target = await targetsService.create({ name, url });
     reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
     reply.status(201).send(target);
 }
