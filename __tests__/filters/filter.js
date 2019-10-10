@@ -2,6 +2,131 @@ import Filter from '../../src/filters/filter';
 
 describe('Filter', () => {
 
+    describe('constructor', () => {
+
+        it('should throw an Error if filter is not an object', () => {
+            const act = () => new Filter('not an object, is a string');
+            expect(act).toThrow('filter must be an object');
+        });
+
+        it('should throw an Error when filter contains an invalid operator', () => {
+            const filters = { level: { '_invalidOperator': 10 } };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_invalidOperator is not a valid filter operator');
+        });
+
+        it('should throw an Error when _and filter it is not an array', () => {
+            const filters = { '_and': {'a': 5} };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_and filter must be an array of filters');
+        });
+
+        it('should throw an Error when _or filter it is not an array', () => {
+            const filters = { '_or': {'a': 5} };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_or filter must be an array of filters');
+        });
+
+        ['_gt', '_lt', '_lte', '_gte'].forEach(operator => {
+            it(`should throw an Error when ${operator} value is not a number`, () => {
+                const filters = { level: {}};
+                filters.level[operator] = 'not a number';
+                const act = () => new Filter(filters);
+                expect(act).toThrow(`${operator} operator must have a number value`);
+            });
+        });
+
+        it('should throw an Error when _near filter does not specify _geometry object in query', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_maxDistance': 10, '_minDistance': 10
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter must have defined the _geometry object');
+        });
+
+        it('should throw an Error when _near filter does not specify _geometry.type', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { },
+                        '_maxDistance': 10, '_minDistance': 10
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter must have defined the _geometry.type field');
+        });
+
+        it('should throw an Error when _near filter does not support _geometry.type', () => {
+            const unknownType = 'unknown' + Math.random();
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { 'type': unknownType },
+                        '_maxDistance': 10, '_minDistance': 10
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter does not support \'' + unknownType + '\' _geometry.type');
+        });
+
+        it('should throw an Error when _near filter with _geometry.type = Point has a non location _geometry.coordinates value', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { 'type': 'Point', 'coordinates': [ 10 ] },
+                        '_maxDistance': 10, '_minDistance': 10
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter _geometry.coordinates must be a valid location array');
+        });
+
+        it('should throw an Error when _near filter does not define _maxDistance or _minDistance', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] }
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter must have defined _maxDistance and/or _minDistance');
+        });
+
+        it('should throw an Error when _near filter define a non numeric _maxDistance', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] },
+                        '_maxDistance': 'nonNumeric'
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter is invalid. _maxDistance must be a number');
+        });
+
+        it('should throw an Error when _near filter define a non numeric _minDistance', () => {
+            const filters = {
+                'a': {
+                    '_near': {
+                        '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] },
+                        '_minDistance': 'nonNumeric'
+                    }
+                }
+            };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('_near filter is invalid. _minDistance must be a number');
+        });
+    });
+
     describe('match', () => {
 
         it('should return true when filters are null or undefined', () => {
@@ -24,16 +149,6 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should throw an Error when filter contains an invalid operator', () => {
-            const data = {level: 10 },
-                filters = { level: { '_invalidOperator': 10 } },
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_invalidOperator is not a valid filter operator');
-        });
-
         it('should return false when filters are defined on a field that does not exist', () => {
             const data = { level: 10 },
                 filters = { 'notExistField': { '_eq': 10 } },
@@ -54,7 +169,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when equal filter does not the data field value', () => {
+        it('should return false when equal filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: 11 },
                 filter = new Filter(filters);
@@ -74,7 +189,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when equal filter with _eq sintaxis does not the data field value', () => {
+        it('should return false when equal filter with _eq sintaxis does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_eq': 11 } },
                 filter = new Filter(filters);
@@ -94,7 +209,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when greater than filter does not the data field value', () => {
+        it('should return false when greater than filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_gt': 10 } },
                 filter = new Filter(filters);
@@ -114,7 +229,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when greater than equal filter does not the data field value', () => {
+        it('should return false when greater than equal filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_gte': 11 } },
                 filter = new Filter(filters);
@@ -135,7 +250,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when less than filter does not the data field value', () => {
+        it('should return false when less than filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_lt': 10 } },
                 filter = new Filter(filters);
@@ -155,7 +270,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when less than equal filter does not the data field value', () => {
+        it('should return false when less than equal filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_lte': 9 } },
                 filter = new Filter(filters);
@@ -175,7 +290,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when any of multiple filters on a field does not the data field value', () => {
+        it('should return false when any of multiple filters on a field does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: { '_lte': 11, '_gte': 11 } },
                 filter = new Filter(filters);
@@ -185,7 +300,7 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should return true when filter on nested object does not the data field value', () => {
+        it('should return true when filter on nested object does not match the data field value', () => {
             const data = { 'child': { 'childChild': { level: 5 } } },
                 filters = { 'child.childChild.level': 5 },
                 filter = new Filter(filters);
@@ -195,7 +310,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when filter on nested object does not the data field value', () => {
+        it('should return false when filter on nested object does not match the data field value', () => {
             const data = { level: 10, 'nestedObject': { 'level2': 5 } },
                 filters = { 'nestedObject.level2': 9 },
                 filter = new Filter(filters);
@@ -215,7 +330,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when any AND filters does not the data field value', () => {
+        it('should return false when any AND filters does not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 5 }, 'c': 9 },
                 filters = { 'child.b': 5, 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
                 filter = new Filter(filters);
@@ -225,7 +340,7 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should return false when all AND filters does not the data field value', () => {
+        it('should return false when all AND filters does not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
                 filters = { 'child.b': 5, 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
                 filter = new Filter(filters);
@@ -235,17 +350,7 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should throw an Error when _or filter it is not an array', () => {
-            const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_or': {'a': 5} },
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_or filter needs an array as value');
-        });
-
-        it('should return false when all _or filters does not the data field value', () => {
+        it('should return false when all _or filters does not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
                 filters = { '_or': [{'child.b': 5}, {'a': { '_lte': 9 }}, {'c': { '_gt': 8 } } ] },
                 filter = new Filter(filters);
@@ -265,17 +370,7 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
-        it('should throw an Error when _and filter it is not an array', () => {
-            const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_and': {'a': 5} },
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_and filter needs an array as value');
-        });
-
-        it('should return false when any _and filter does not the data field value', () => {
+        it('should return false when any _and filter does not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
                 filters = { '_and': [{'child.b': 1}, {'a': { '_lte': 10 }}, {'c': { '_gt': 5 } } ] },
                 filter = new Filter(filters);
@@ -359,116 +454,6 @@ describe('Filter', () => {
             expect(() => filter.match({ 'a': [10, -90.1] })).toThrow(expectedError);
         });
 
-        it('should throw an Error when _near filter does not specify _geometry object in query', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_maxDistance': 10, '_minDistance': 10
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter must have defined the _geometry object');
-        });
-
-        it('should throw an Error when _near filter does not specify _geometry.type', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { },
-                            '_maxDistance': 10, '_minDistance': 10
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter must have defined the _geometry.type field');
-        });
-
-        it('should throw an Error when _near filter does not support _geometry.type', () => {
-            const data = { 'a': [10, 10] },
-                unknownType = 'unknown' + Math.random(),
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { 'type': unknownType },
-                            '_maxDistance': 10, '_minDistance': 10
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter does not support \'' + unknownType + '\' _geometry.type');
-        });
-
-        it('should throw an Error when _near filter with _geometry.type = Point has a non location _geometry.coordinates value', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { 'type': 'Point', 'coordinates': [ 10 ] },
-                            '_maxDistance': 10, '_minDistance': 10
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter _geometry.coordinates must be a valid location array');
-        });
-
-        it('should throw an Error when _near filter does not define _maxDistance or _minDistance', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] }
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter must have defined _maxDistance and/or _minDistance');
-        });
-
-        it('should throw an Error when _near filter define a non numeric _maxDistance', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] },
-                            '_maxDistance': 'nonNumeric'
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter is invalid. _maxDistance must be a number');
-        });
-
-        it('should throw an Error when _near filter define a non numeric _minDistance', () => {
-            const data = { 'a': [10, 10] },
-                filters = { 'a':
-                    { '_near':
-                        {
-                            '_geometry': { 'type': 'Point', 'coordinates': [ 10, 10 ] },
-                            '_minDistance': 'nonNumeric'
-                        }
-                    }},
-                filter = new Filter(filters);
-
-            const act = () => filter.match(data);
-
-            expect(act).toThrow('_near filter is invalid. _minDistance must be a number');
-        });
         it('should return true when _near filter with _minDistance condition is satisfied', () => {
             const data = { 'a': [37.992240, -1.130654] },
                 filters = { 'a':

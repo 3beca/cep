@@ -1,4 +1,5 @@
 import NearFilter from './near-filter';
+import FilterError from './filter-error';
 
 /**
 * This method has been adapted from:
@@ -58,7 +59,7 @@ function matchFilter(data, filterField, filterOperator) {
                 return nearFilter.match(dataValue);
             }
             default : {
-                throw new Error(key + ' is not a valid filter operator');
+                throw new FilterError(key + ' is not a valid filter operator');
             }
         }
     });
@@ -82,21 +83,75 @@ function matchFilters(data, filters) {
 }
 
 function matchAndFilters(data, filtersArray) {
-    if (!(filtersArray instanceof Array)) {
-        throw new Error('_and filter needs an array as value');
-    }
     return filtersArray.every(filter => matchFilters(data, filter));
 }
 
 function matchOrFilters(data, filtersArray) {
-    if (!(filtersArray instanceof Array)) {
-        throw new Error('_or filter needs an array as value');
-    }
     return filtersArray.some(filter => matchFilters(data, filter));
+}
+
+function assertIsValid(filters) {
+    if (!filters) {
+        return;
+    }
+    if (typeof filters !== 'object') {
+        throw new FilterError('filter must be an object');
+    }
+    Object.keys(filters).forEach(key => {
+        switch (key.toLowerCase()) {
+            case '_or' : {
+                assertOrFilters(filters[key]);
+                break;
+            }
+            case '_and' : {
+                assertAndFilters(filters[key]);
+                break;
+            }
+            default : {
+                assertFilters(filters[key]);
+            }
+        }
+    });
+}
+
+function assertAndFilters(filters) {
+    if (!Array.isArray(filters)) {
+        throw new FilterError('_and filter must be an array of filters');
+    }
+    filters.forEach(assertIsValid);
+}
+
+function assertOrFilters(filters) {
+    if (!Array.isArray(filters)) {
+        throw new FilterError('_or filter must be an array of filters');
+    }
+    filters.forEach(assertIsValid);
+}
+
+function assertFilters(filters) {
+    if (typeof filters !== 'object'){
+        return;
+    }
+    Object.keys(filters).forEach(key => {
+        const filterValue = filters[key];
+        if (!['_eq', '_gt', '_gte', '_lt', '_lte', '_near'].includes(key)) {
+            throw new FilterError(`${key} is not a valid filter operator`);
+        }
+        if (key === '_near') {
+            // eslint-disable-next-line no-new
+            new NearFilter(filterValue);
+        }
+        const filterValueType = typeof filterValue;
+        if (['_gt', '_gte', '_lt', '_lte'].includes(key) && filterValueType !== 'number') {
+            throw new FilterError(`${key} operator must have a number value`);
+        }
+        return;
+    });
 }
 
 export default class Filter {
     constructor(filters) {
+        assertIsValid(filters);
         this.filters = filters;
         this.match = function match(data) {
             if (!data){

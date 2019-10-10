@@ -1,4 +1,6 @@
 import * as geolib from 'geolib';
+import FilterMatchError from './filter-match-error';
+import FilterError from './filter-error';
 
 /**
 * This method checks if the input value
@@ -22,53 +24,53 @@ function isLocation(value) {
 }
 
 /**
-* This method validates the near filter and throws
-* an Error if is not valid
+* This method assert the valid state of the near filter
+* It throws an Error if not valid
 *
-* @method validate
+* @method assertIsValid
 * @param {Object} filter filter
 */
-function validate(filter) {
+function assertIsValid(filter) {
     const geometry = filter._geometry;
     if (!geometry) {
-        throw new Error('_near filter must have defined the _geometry object');
+        throw new FilterError('_near filter must have defined the _geometry object');
     }
 
     if (!geometry.type) {
-        throw new Error('_near filter must have defined the _geometry.type field');
+        throw new FilterError('_near filter must have defined the _geometry.type field');
     }
 
     if (geometry.type !== 'Point') {
-        throw new Error('_near filter does not support \'' + geometry.type + '\' _geometry.type');
+        throw new FilterError('_near filter does not support \'' + geometry.type + '\' _geometry.type');
     }
 
     if (!isLocation(geometry.coordinates)) {
-        throw new Error('_near filter _geometry.coordinates must be a valid location array');
+        throw new FilterError('_near filter _geometry.coordinates must be a valid location array');
     }
 
     const minDistance = filter._minDistance;
     const maxDistance = filter._maxDistance;
 
     if (minDistance === undefined && maxDistance === undefined) {
-        throw new Error('_near filter must have defined _maxDistance and/or _minDistance');
+        throw new FilterError('_near filter must have defined _maxDistance and/or _minDistance');
     }
 
     if (minDistance !== undefined && isNaN(minDistance)) {
-        throw new Error('_near filter is invalid. _minDistance must be a number');
+        throw new FilterError('_near filter is invalid. _minDistance must be a number');
     }
 
     if (maxDistance !== undefined && isNaN(maxDistance)) {
-        throw new Error('_near filter is invalid. _maxDistance must be a number');
+        throw new FilterError('_near filter is invalid. _maxDistance must be a number');
     }
 }
 
 export default class NearFilter {
     constructor(filter) {
-        validate(filter);
+        assertIsValid(filter);
         this.filter = filter;
         this.match = function match(location) {
             if (!isLocation(location)){
-                throw new Error('_near filter must be applied on a location value. This must be an array with 2 values: longitude and latitude');
+                throw new FilterMatchError('_near filter must be applied on a location value. This must be an array with 2 values: longitude and latitude');
             }
 
             const coord1 = {
