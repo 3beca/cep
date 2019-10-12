@@ -14,6 +14,10 @@
   service: app
   command: npm run test-ci
 
+- name: npm publish code coverage
+  service: app
+  command: npm run publish-code-coverage
+
 - name: docker build
   service: docker
   command: /bin/sh ./var/www/deploy/docker-build.sh

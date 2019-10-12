@@ -1,6 +1,7 @@
 app:
   build:
     dockerfile: ./deploy/Dockerfile.build
+  encrypted_env_file: ./deploy/app.encrypted
   volumes:
     - ./:/var/www
   cached: true
