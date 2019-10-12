@@ -48,6 +48,6 @@ spec:
         - name: EXTERNAL_HTTP_PROTOCOL
           value: https
         - name: EXTERNAL_HTTP_HOST
-          value: "{{ .Values.deployment.env.externalHostName }}"
+          value: "{{ .Values.deployment.env.externalHttpHost }}"
         - name: EXTERNAL_HTTP_PORT
           value: "443"
