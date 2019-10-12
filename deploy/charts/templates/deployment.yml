@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: tribeca-cep
-        image: francescorivola/tribeca-cep:{{ .Values.image.tag }}      
+        image: {{ .Values.image }}      
         readinessProbe:
           httpGet:
             path: /admin/check-health
@@ -43,6 +43,8 @@ spec:
           value: production
         - name: HTTP_PORT
           value: "3000"
+        - name: HTTP_HOST
+          value: "0.0.0.0"
         - name: EXTERNAL_HTTP_PROTOCOL
           value: https
         - name: EXTERNAL_HTTP_HOST
