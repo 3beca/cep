@@ -1,0 +1,3 @@
+Tribeca cep Release with image tribeca-cep:{{ .Values.image.tag }}
+
+Happy Release!!!

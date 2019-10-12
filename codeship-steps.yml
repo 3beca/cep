@@ -1,0 +1,27 @@
+- name: npm ci
+  service: app
+  command: npm ci
+
+- name: npm lint
+  service: app
+  command: npm run lint
+  
+- name: npm build
+  service: app
+  command: npm run build
+  
+- name: npm test-ci
+  service: app
+  command: npm run test-ci
+
+- name: docker build
+  service: docker
+  command: /bin/sh ./var/www/deploy/docker-build.sh
+
+- name: docker push
+  service: docker
+  command: /bin/sh ./var/www/deploy/docker-push.sh
+
+- name: deploy
+  service: deploy
+  command: /bin/sh ./var/www/deploy/deploy.sh

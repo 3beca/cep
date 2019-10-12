@@ -1,0 +1,3 @@
+deployment:
+    replicaCount: 1
+namespace: default

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tribeca-cep
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: tribeca-cep
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  selector:
+    matchLabels:
+      run: tribeca-cep
+  template:
+    metadata:
+      labels:
+        run: tribeca-cep
+    spec:
+      containers:
+      - name: tribeca-cep
+        image: francescorivola/tribeca-cep:{{ .Values.image.tag }}      
+        readinessProbe:
+          httpGet:
+            path: /admin/check-health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5       
+        livenessProbe:
+          exec:
+          httpGet:
+            path: /admin/check-health
+            port: 3000               
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "70Mi"
+            cpu: "20m"
+          limits:
+            memory: "200Mi"
+            cpu: "500m"
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: HTTP_PORT
+          value: 3000
+        - name: EXTERNAL_HTTP_PROTOCOL
+          value: https
+        - name: EXTERNAL_HTTP_HOST
+          value: {{ .Values.deployment.env.externalHostName }}
+        - name: EXTERNAL_HTTP_PORT
+          value: 443

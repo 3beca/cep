@@ -1,0 +1,26 @@
+app:
+  build:
+    dockerfile: ./deploy/Dockerfile.build
+  volumes:
+    - ./:/var/www
+  cached: true
+
+docker:
+  image: docker:dind
+  add_docker: true
+  volumes_from:
+    - app
+  encrypted_env_file: ./deploy/dockercfg.encrypted
+  environment:
+    - IMAGE_NAME=francescorivola/tribeca-cep
+
+deploy:
+  build:
+    dockerfile: ./deploy/Dockerfile.deploy-ssh
+    encrypted_args_file: ./deploy/deploy.encrypted
+  encrypted_env_file: ./deploy/deploy.encrypted
+  environment:
+    - IMAGE_NAME=francescorivola/cep-notifier
+  volumes_from:
+    - app
+  cached: true
