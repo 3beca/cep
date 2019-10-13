@@ -10,7 +10,8 @@ import { getExternalUrl } from './utils/url.js';
 
 export function buildServer() {
 	const app = fastify({
-		logger: false
+		logger: false,
+		trustProxy: config.trustProxy
 	});
 
 	app.register(fastifySwagger, {

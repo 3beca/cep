@@ -40,6 +40,12 @@ const config = convict({
             default: '8888',
             env: 'EXTERNAL_HTTP_PORT',
         }
+    },
+    trustedProxy: {
+        doc: 'indicates if the application is served behind a reverse proxy.',
+        format: Boolean,
+        default: false,
+        env: 'TRUSTED_PROXY',
     }
 });
 

@@ -12,7 +12,8 @@ describe('config', () => {
                 protocol: 'http',
                 host: 'localhost',
                 port: '8888'
-            }
+            },
+            trustedProxy: false
         });
     });
 });
