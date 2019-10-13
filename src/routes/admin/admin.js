@@ -34,9 +34,20 @@ async function version() {
     return { version: packageInfo.version };
 }
 
+async function testProxy(request) {
+    return {
+        ip: request.ip,
+        ips: request.ips,
+        hostName: request.hostname,
+        headers: request.headers,
+        protocol: request.raw.protocol
+    };
+}
+
 export default function(fastify, opts, next) {
     fastify.get('/check-health', { ...opts, ...{ logLevel: 'warn', schema: checkHealthSchema } }, checkHealth);
     fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
+    fastify.get('/testProxy', { ...opts }, testProxy);
     fastify.register(eventTypesRoutes, { prefix: '/event-types' });
     fastify.register(targetsRoutes, { prefix: '/targets' });
     fastify.register(rulesRoutes, { prefix: '/rules' });
