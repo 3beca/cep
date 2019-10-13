@@ -19,13 +19,14 @@ describe('admin', () => {
         describe('get', () => {
             it('should return 200 with array of rules', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -46,13 +47,14 @@ describe('admin', () => {
 
             it('should set next and not prev link in first page when rules returned match page size', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -66,13 +68,14 @@ describe('admin', () => {
 
             it('should not set next and not prev link in first page when rules returned are lower than page size', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 await Promise.all([1, 2].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -86,13 +89,14 @@ describe('admin', () => {
 
             it('should set next and prev link if a middle page', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -189,13 +193,14 @@ describe('admin', () => {
 
             it('should return 200 with rule', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -216,13 +221,14 @@ describe('admin', () => {
         describe('post', () => {
             it('should return 400 when name is undefined', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: undefined,
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -232,13 +238,14 @@ describe('admin', () => {
 
             it('should return 400 when name is longer than 100 characters', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a'.repeat(101),
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -248,6 +255,7 @@ describe('admin', () => {
 
             it('should return 400 when filters is invalid', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -257,7 +265,7 @@ describe('admin', () => {
                             a: { _aa: 0 }
                         },
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -266,6 +274,7 @@ describe('admin', () => {
             });
 
             it('should return 400 when event type id is undefined', async () => {
+                const target = await createTarget(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -275,7 +284,7 @@ describe('admin', () => {
                             a: 2
                         },
                         eventTypeId: undefined,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -303,6 +312,8 @@ describe('admin', () => {
             });
 
             it('should return 400 when event type does not exists', async () => {
+                const nonExistingEventTypeId = new ObjectId().toHexString();
+                const target = await createTarget(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -311,24 +322,45 @@ describe('admin', () => {
                         filters: {
                             a: 2
                         },
-                        eventTypeId: new ObjectId().toHexString(),
-                        targetId: new ObjectId().toHexString()
+                        eventTypeId: nonExistingEventTypeId,
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'eventTypeId does not exists' }));
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: `event type with identifier ${nonExistingEventTypeId} does not exists` }));
             });
 
-            it('should return 201 with created rule when request is valid', async () => {
+            it('should return 400 when targetId does not exists', async () => {
+                const nonExistingTargetId = new ObjectId().toHexString();
                 const eventType = await createEventType(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        filters: {
+                            a: 2
+                        },
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: nonExistingTargetId
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: `target with identifier ${nonExistingTargetId} does not exists` }));
+            });
+
+            it('should return 201 with created rule when request is valid', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        eventTypeId: eventType.id,
+                        targetId: target.id
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -341,13 +373,14 @@ describe('admin', () => {
 
             it('should return 409 when try to create a rule with the same name', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const responseCreaterule = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 const rule = JSON.parse(responseCreaterule.payload);
@@ -357,7 +390,7 @@ describe('admin', () => {
                     body: {
                         name: 'same name',
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(responseCreaterule2.statusCode).toBe(409);
@@ -378,13 +411,14 @@ describe('admin', () => {
 
             it('should return 204 when rule exists', async () => {
                 const eventType = await createEventType(server);
+                const target = await createTarget(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
-                        targetId: new ObjectId().toHexString()
+                        targetId: target.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -411,6 +445,20 @@ describe('admin', () => {
                 url: '/admin/event-types',
                 body: {
                     name: 'an event type'
+                }
+            });
+            expect(createResponse.statusCode).toBe(201);
+            expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+            return JSON.parse(createResponse.payload);
+        }
+
+        async function createTarget(server) {
+            const createResponse = await server.inject({
+                method: 'POST',
+                url: '/admin/targets',
+                body: {
+                    name: 'a target',
+                    url: 'https://example.org'
                 }
             });
             expect(createResponse.statusCode).toBe(201);

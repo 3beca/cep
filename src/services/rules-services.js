@@ -12,15 +12,18 @@ const rulesService = {
         return rules.slice((page - 1) * pageSize, page * pageSize);
     },
     async create(rule) {
-        const { filters, name, eventTypeId } = rule;
+        const { filters, name, eventTypeId, targetId } = rule;
 
         Filter.assertIsValid(filters);
 
         const eventType = await eventTypesService.getById(eventTypeId);
         if (!eventType) {
-            throw new InvalidOperationError('eventTypeId does not exists');
+            throw new InvalidOperationError(`event type with identifier ${eventTypeId} does not exists`);
         }
-
+        const target = await targetsService.getById(targetId);
+        if (!target) {
+            throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
+        }
         const existingRule = rules.find(e => e.name === name);
         if (existingRule) {
             throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule.id}`, existingRule.id);
