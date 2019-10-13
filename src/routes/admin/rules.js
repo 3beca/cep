@@ -105,11 +105,11 @@ const createSchema = {
     tags: ['rules'],
     body: {
         type: 'object',
-        required: ['name'],
+        required: ['name', 'eventTypeId'],
         properties: {
             name: { type: 'string', maxLength: 100 },
             targetId: { type: 'string' },
-            eventId: { type: 'string' },
+            eventTypeId: { type: 'string' },
             filters: { type: 'object' }
         }
     },
