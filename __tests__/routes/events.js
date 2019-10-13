@@ -1,6 +1,9 @@
 import { buildServer } from '../../src/server';
 import eventTypesService from '../../src/services/event-types-service';
 import { ObjectId } from 'bson';
+import rulesService from '../../src/services/rules-services';
+import targetsService from '../../src/services/targets-service';
+import nock from 'nock';
 
 describe('events', () => {
     let server;
@@ -12,6 +15,9 @@ describe('events', () => {
     afterEach(async () => {
         await server.close();
         await eventTypesService.purge();
+        await rulesService.purge();
+        await targetsService.purge();
+        nock.cleanAll();
     });
 
     describe('post an event', () => {
@@ -36,16 +42,121 @@ describe('events', () => {
             });
             expect(createResponse.statusCode).toBe(201);
             expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-            const createdEvent = JSON.parse(createResponse.payload);
+            const createdEventType = JSON.parse(createResponse.payload);
 
             const response = await server.inject({
                 method: 'POST',
-                url: '/events/' + createdEvent.id,
+                url: '/events/' + createdEventType.id,
                 body: {
                     value: 5
                 }
             });
             expect(response.statusCode).toBe(204);
         });
+
+        it('should not call target when event payload does not match rule filters', async () => {
+            const eventType = await createEventType(server);
+            const target = await createTarget(server, 'http://example.org');
+            await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
+
+            const scope = nock('http://example.org')
+                .post('/', { value: 2 })
+                .reply(200);
+
+            const response = await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                body: {
+                    value: 5
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(false);
+        });
+
+        it('should call target when event payload matches rule filters', async () => {
+            const eventType = await createEventType(server);
+            const target = await createTarget(server, 'http://example.org/');
+            await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
+
+            const scope = nock('http://example.org')
+                .post('/', { value: 2 })
+                .reply(200);
+
+            const response = await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                body: {
+                    value: 2
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(true);
+        });
+
+        it('should call target once when event payload matches 2 rules filters', async () => {
+            const eventType = await createEventType(server);
+            const target = await createTarget(server, 'http://example.org/');
+            await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 });
+            await createRule(server, target.id, eventType.id, 'rule 2', { value: { _gt: 1 } });
+
+            const scope = nock('http://example.org')
+                .post('/', { value: 2 })
+                .once()
+                .reply(200);
+
+            const response = await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                body: {
+                    value: 2
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(true);
+        });
     });
+
+    async function createTarget(server, url = 'http://example.org') {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/targets',
+            body: {
+                name: 'a target',
+                url
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
+
+    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters = undefined) {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/rules',
+            body: {
+                name,
+                eventTypeId,
+                targetId,
+                filters
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
+
+    async function createEventType(server) {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/event-types',
+            body: {
+                name: 'an event type'
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
 });

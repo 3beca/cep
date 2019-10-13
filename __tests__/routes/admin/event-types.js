@@ -319,7 +319,6 @@ describe('admin', () => {
         });
     });
 
-
     async function createTarget(server) {
         const createResponse = await server.inject({
             method: 'POST',

@@ -4,7 +4,6 @@ import eventTypesService from './event-types-service';
 import targetsService from './targets-service';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
-import targets from '../routes/admin/targets';
 
 let rules = [];
 
@@ -33,6 +32,7 @@ const rulesService = {
             name,
             targetId: new ObjectId(targetId),
             eventTypeId: new ObjectId(eventTypeId),
+            filters,
             id: new ObjectId(),
             createdAt: new Date(),
             updatedAt: new Date()
@@ -45,6 +45,9 @@ const rulesService = {
     },
     async deleteById(id) {
         rules = rules.filter(r => r.id.toString() !== id);
+    },
+    async getByEventTypeId(eventTypeId) {
+        return rules.filter(r => r.eventTypeId.toString() === eventTypeId.toString());
     },
     async purge() {
         await eventTypesService.purge();

@@ -34,6 +34,9 @@ const targetsService = {
     async purge() {
         targets = [];
     },
+    async getByRuleIds(ids) {
+        return targets.filter(t => ids.some(id => id.toString() === t.id.toString()));
+    },
     registerOnBeforeDelete(beforeDelete) {
         beforeDeleteEventHandlers.push(beforeDelete);
     }
