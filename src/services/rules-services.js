@@ -53,14 +53,14 @@ const rulesService = {
     }
 };
 
-targetsService.registerOnBeforeDeleting(id => {
+targetsService.registerOnBeforeDelete(id => {
     const results = rules.filter(r => r.targetId.toString() === id);
     if (results.length > 0) {
         throw new InvalidOperationError(`Target cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
     }
 });
 
-eventTypesService.registerOnBeforeDeleting(id => {
+eventTypesService.registerOnBeforeDelete(id => {
     const results = rules.filter(r => r.eventTypeId.toString() === id);
     if (results.length > 0) {
         throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
