@@ -337,6 +337,69 @@ describe('admin', () => {
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
+
+            it('should return 400 when target is used in one or more rules', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const rule = await createRule(server, target.id, eventType.id);
+
+                const deleteResponse = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/targets/' + target.id
+                });
+                expect(deleteResponse.statusCode).toBe(400);
+                expect(deleteResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(deleteResponse.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: `Target cannot be deleted as in use by rules ["${rule.id}"]`
+                }));
+            });
         });
     });
+
+    async function createTarget(server) {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/targets',
+            body: {
+                name: 'a target',
+                url: 'http://example.org'
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
+
+    async function createRule(server, targetId, eventTypeId) {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/rules',
+            body: {
+                name: 'a rule',
+                eventTypeId,
+                targetId,
+                filters: {
+                    field: 'value'
+                }
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
+
+    async function createEventType(server) {
+        const createResponse = await server.inject({
+            method: 'POST',
+            url: '/admin/event-types',
+            body: {
+                name: 'an event type'
+            }
+        });
+        expect(createResponse.statusCode).toBe(201);
+        expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+        return JSON.parse(createResponse.payload);
+    }
 });

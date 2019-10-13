@@ -4,6 +4,7 @@ import eventTypesService from './event-types-service';
 import targetsService from './targets-service';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
+import targets from '../routes/admin/targets';
 
 let rules = [];
 
@@ -24,12 +25,14 @@ const rulesService = {
         if (!target) {
             throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
         }
-        const existingRule = rules.find(e => e.name === name);
+        const existingRule = rules.find(r => r.name === name);
         if (existingRule) {
             throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule.id}`, existingRule.id);
         }
         const ruleToCreate = {
-            ...rule,
+            name,
+            targetId: new ObjectId(targetId),
+            eventTypeId: new ObjectId(eventTypeId),
             id: new ObjectId(),
             createdAt: new Date(),
             updatedAt: new Date()
@@ -38,10 +41,10 @@ const rulesService = {
         return ruleToCreate;
     },
     async getById(id) {
-        return rules.find(e => e.id.toString() === id);
+        return rules.find(r => r.id.toString() === id);
     },
     async deleteById(id) {
-        rules = rules.filter(e => e.id.toString() !== id);
+        rules = rules.filter(r => r.id.toString() !== id);
     },
     async purge() {
         await eventTypesService.purge();
@@ -49,4 +52,12 @@ const rulesService = {
         rules = [];
     }
 };
+
+targetsService.registerOnBeforeDeleting(id => {
+    const results = rules.filter(r => r.targetId.toString() === id);
+    if (results.length > 0) {
+        throw new InvalidOperationError(`Target cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
+    }
+});
+
 export default rulesService;

@@ -2,6 +2,7 @@ import { ObjectId } from 'bson';
 import ConflictError from '../errors/conflict-error';
 
 let targets = [];
+const beforeDeleting = [];
 
 const targetsService = {
     async list(page, pageSize) {
@@ -25,10 +26,16 @@ const targetsService = {
         return targets.find(e => e.id.toString() === id);
     },
     async deleteById(id) {
+        for (const beforeDelete of beforeDeleting) {
+            await beforeDelete(id);
+        }
         targets = targets.filter(e => e.id.toString() !== id);
     },
     async purge() {
         targets = [];
+    },
+    registerOnBeforeDeleting(beforeDelete) {
+        beforeDeleting.push(beforeDelete);
     }
 };
 export default targetsService;
