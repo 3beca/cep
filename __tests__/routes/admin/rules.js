@@ -204,8 +204,7 @@ describe('admin', () => {
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
-                        name: undefined,
-                        url: 'https://example.org'
+                        name: undefined
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -218,13 +217,28 @@ describe('admin', () => {
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
-                        name: 'a'.repeat(101),
-                        url: 'https://example.org'
+                        name: 'a'.repeat(101)
                     }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body.name should NOT be longer than 100 characters' }));
+            });
+
+            it('should return 400 when filters is invalid', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        filters: {
+                            a: { _aa: 0 }
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: '_aa is not a valid filter operator' }));
             });
 
             it('should return 201 with created rule when request is valid', async () => {

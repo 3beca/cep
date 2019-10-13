@@ -7,6 +7,7 @@ import eventsRoute from './routes/events';
 import NotFoundError from './errors/not-found-error';
 import ConflictError from './errors/conflict-error';
 import { getExternalUrl } from './utils/url.js';
+import FilterError from './filters/filter-error.js';
 
 export function buildServer() {
 	const app = fastify({
@@ -67,6 +68,10 @@ export function buildServer() {
 		if (error instanceof ConflictError) {
 			reply.header('Location', getExternalUrl(`${request.raw.originalUrl}/${error.id}`));
 			reply.status(409).send({ message: error.message });
+			return;
+		}
+		if (error instanceof FilterError) {
+			reply.status(400).send(error);
 			return;
 		}
 		if (error.validation) {

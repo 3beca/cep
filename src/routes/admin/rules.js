@@ -28,8 +28,7 @@ async function deleteById(request, reply) {
 }
 
 async function create(request, reply) {
-    const { name, url } = request.body;
-    const rule = await rulesService.create({ name, url });
+    const rule = await rulesService.create(request.body);
     reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
     reply.status(201).send(rule);
 }

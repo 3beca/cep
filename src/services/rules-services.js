@@ -2,6 +2,7 @@ import { ObjectId } from 'bson';
 import ConflictError from '../errors/conflict-error';
 import eventTypesService from './event-types-service';
 import targetsService from './targets-service';
+import Filter from '../filters/filter';
 
 let rules = [];
 
@@ -10,7 +11,11 @@ const rulesService = {
         return rules.slice((page - 1) * pageSize, page * pageSize);
     },
     async create(rule) {
-        const existingRule = rules.find(e => e.name === rule.name);
+        const { filters, name } = rule;
+
+        Filter.assertIsValid(filters);
+
+        const existingRule = rules.find(e => e.name === name);
         if (existingRule) {
             throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule.id}`, existingRule.id);
         }
