@@ -47,6 +47,7 @@
     "fastify-swagger": "^2.4.0",
     "geolib": "^3.0.4",
     "make-promises-safe": "^5.1.0",
+    "request": "^2.88.0",
     "request-promise-native": "^1.0.7"
   }
 }
