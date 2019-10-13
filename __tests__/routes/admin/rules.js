@@ -360,7 +360,10 @@ describe('admin', () => {
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
-                        targetId: target.id
+                        targetId: target.id,
+                        filters: {
+                            value: 8
+                        }
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -368,6 +371,9 @@ describe('admin', () => {
                 const rule = JSON.parse(response.payload);
                 expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
                 expect(rule.name).toBe('a rule');
+                expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.eventTypeId).toBe(eventType.id);
+                expect(rule.targetId).toBe(target.id);
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 

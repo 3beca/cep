@@ -40,7 +40,7 @@ const ruleschema = {
         id: { type: 'string' },
         targetId: { type: 'string' },
         eventTypeId: { type: 'string' },
-        filters: { type: 'object' },
+        filters: { type: 'object', additionalProperties: true },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
