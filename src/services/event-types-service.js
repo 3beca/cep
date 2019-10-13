@@ -2,6 +2,7 @@ import { ObjectId } from 'bson';
 import ConflictError from '../errors/conflict-error';
 
 let eventTypes = [];
+const beforeDeleting = [];
 
 const eventTypesService = {
     async list(page, pageSize) {
@@ -25,10 +26,16 @@ const eventTypesService = {
         return eventTypes.find(e => e.id.toString() === id);
     },
     async deleteById(id) {
+        for (const beforeDelete of beforeDeleting) {
+            await beforeDelete(id);
+        }
         eventTypes = eventTypes.filter(e => e.id.toString() !== id);
     },
     async purge() {
         eventTypes = [];
+    },
+    registerOnBeforeDeleting(beforeDelete) {
+        beforeDeleting.push(beforeDelete);
     }
 };
 export default eventTypesService;

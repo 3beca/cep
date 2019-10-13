@@ -60,4 +60,11 @@ targetsService.registerOnBeforeDeleting(id => {
     }
 });
 
+eventTypesService.registerOnBeforeDeleting(id => {
+    const results = rules.filter(r => r.eventTypeId.toString() === id);
+    if (results.length > 0) {
+        throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
+    }
+});
+
 export default rulesService;
