@@ -24,7 +24,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -50,7 +51,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -69,7 +71,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -88,7 +91,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -190,7 +194,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -216,7 +221,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: undefined,
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -231,7 +237,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a'.repeat(101),
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -249,7 +256,8 @@ describe('admin', () => {
                         filters: {
                             a: { _aa: 0 }
                         },
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -266,12 +274,32 @@ describe('admin', () => {
                         filters: {
                             a: 2
                         },
-                        eventTypeId: undefined
+                        eventTypeId: undefined,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'eventTypeId\'' }));
+            });
+
+            it('should return 400 when target id is undefined', async () => {
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        filters: {
+                            a: 2
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: undefined
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'targetId\'' }));
             });
 
             it('should return 400 when event type does not exists', async () => {
@@ -283,7 +311,8 @@ describe('admin', () => {
                         filters: {
                             a: 2
                         },
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: new ObjectId().toHexString(),
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -298,7 +327,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -316,7 +346,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 const rule = JSON.parse(responseCreaterule.payload);
@@ -325,7 +356,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(responseCreaterule2.statusCode).toBe(409);
@@ -351,7 +383,8 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: eventType.id
+                        eventTypeId: eventType.id,
+                        targetId: new ObjectId().toHexString()
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);

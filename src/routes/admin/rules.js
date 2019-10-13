@@ -105,7 +105,7 @@ const createSchema = {
     tags: ['rules'],
     body: {
         type: 'object',
-        required: ['name', 'eventTypeId'],
+        required: ['name', 'eventTypeId', 'targetId'],
         properties: {
             name: { type: 'string', maxLength: 100 },
             targetId: { type: 'string' },
