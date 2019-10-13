@@ -18,12 +18,13 @@ describe('admin', () => {
 
         describe('get', () => {
             it('should return 200 with array of rules', async () => {
+                const eventType = await createEventType(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -43,12 +44,13 @@ describe('admin', () => {
             });
 
             it('should set next and not prev link in first page when rules returned match page size', async () => {
+                const eventType = await createEventType(server);
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -61,12 +63,13 @@ describe('admin', () => {
             });
 
             it('should not set next and not prev link in first page when rules returned are lower than page size', async () => {
+                const eventType = await createEventType(server);
                 await Promise.all([1, 2].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -79,12 +82,13 @@ describe('admin', () => {
             });
 
             it('should set next and prev link if a middle page', async () => {
+                const eventType = await createEventType(server);
                 await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 })));
                 const responseNoPrev = await server.inject({
@@ -179,13 +183,14 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
             });
 
-            it('should return 200 with array of rules', async () => {
+            it('should return 200 with rule', async () => {
+                const eventType = await createEventType(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -205,12 +210,13 @@ describe('admin', () => {
 
         describe('post', () => {
             it('should return 400 when name is undefined', async () => {
+                const eventType = await createEventType(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: undefined,
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -219,12 +225,13 @@ describe('admin', () => {
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
+                const eventType = await createEventType(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a'.repeat(101),
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -233,6 +240,7 @@ describe('admin', () => {
             });
 
             it('should return 400 when filters is invalid', async () => {
+                const eventType = await createEventType(server);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -241,7 +249,7 @@ describe('admin', () => {
                         filters: {
                             a: { _aa: 0 }
                         },
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -266,13 +274,31 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'eventTypeId\'' }));
             });
 
-            it('should return 201 with created rule when request is valid', async () => {
+            it('should return 400 when event type does not exists', async () => {
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        filters: {
+                            a: 2
+                        },
                         eventTypeId: new ObjectId().toHexString()
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'eventTypeId does not exists' }));
+            });
+
+            it('should return 201 with created rule when request is valid', async () => {
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -284,12 +310,13 @@ describe('admin', () => {
             });
 
             it('should return 409 when try to create a rule with the same name', async () => {
+                const eventType = await createEventType(server);
                 const responseCreaterule = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 const rule = JSON.parse(responseCreaterule.payload);
@@ -298,7 +325,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(responseCreaterule2.statusCode).toBe(409);
@@ -318,12 +345,13 @@ describe('admin', () => {
             });
 
             it('should return 204 when rule exists', async () => {
+                const eventType = await createEventType(server);
                 const createResponse = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        eventTypeId: new ObjectId().toHexString()
+                        eventTypeId: eventType.id
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -343,5 +371,18 @@ describe('admin', () => {
                 expect(getResponse.statusCode).toBe(404);
             });
         });
+
+        async function createEventType(server) {
+            const createResponse = await server.inject({
+                method: 'POST',
+                url: '/admin/event-types',
+                body: {
+                    name: 'an event type'
+                }
+            });
+            expect(createResponse.statusCode).toBe(201);
+            expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+            return JSON.parse(createResponse.payload);
+        }
     });
 });

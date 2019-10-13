@@ -3,6 +3,7 @@ import ConflictError from '../errors/conflict-error';
 import eventTypesService from './event-types-service';
 import targetsService from './targets-service';
 import Filter from '../filters/filter';
+import InvalidOperationError from '../errors/invalid-operation-error';
 
 let rules = [];
 
@@ -11,9 +12,14 @@ const rulesService = {
         return rules.slice((page - 1) * pageSize, page * pageSize);
     },
     async create(rule) {
-        const { filters, name } = rule;
+        const { filters, name, eventTypeId } = rule;
 
         Filter.assertIsValid(filters);
+
+        const eventType = await eventTypesService.getById(eventTypeId);
+        if (!eventType) {
+            throw new InvalidOperationError('eventTypeId does not exists');
+        }
 
         const existingRule = rules.find(e => e.name === name);
         if (existingRule) {

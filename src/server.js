@@ -8,6 +8,7 @@ import NotFoundError from './errors/not-found-error';
 import ConflictError from './errors/conflict-error';
 import { getExternalUrl } from './utils/url.js';
 import FilterError from './filters/filter-error.js';
+import InvalidOperationError from './errors/invalid-operation-error.js';
 
 export function buildServer() {
 	const app = fastify({
@@ -71,6 +72,10 @@ export function buildServer() {
 			return;
 		}
 		if (error instanceof FilterError) {
+			reply.status(400).send(error);
+			return;
+		}
+		if (error instanceof InvalidOperationError) {
 			reply.status(400).send(error);
 			return;
 		}
