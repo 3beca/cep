@@ -1,38 +1,5 @@
-import targetsService from '../../services/targets-service';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
-
-async function list(request) {
-    const { page, pageSize } = request.query;
-    const results = await targetsService.list(page, pageSize);
-    return {
-        results,
-        next: getNextLink(request, results),
-        prev: getPrevLink(request)
-    };
-}
-
-async function getById(request) {
-    const { id } = request.params;
-    const target = await targetsService.getById(id);
-    if (!target) {
-        throw new NotFoundError();
-    }
-    return target;
-}
-
-async function deleteById(request, reply) {
-    const { id } = request.params;
-    await targetsService.deleteById(id);
-    reply.status(204).send();
-}
-
-async function create(request, reply) {
-    const { name, url } = request.body;
-    const target = await targetsService.create({ name, url });
-    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
-    reply.status(201).send(target);
-}
 
 const targetschema = {
     type: 'object',
@@ -118,11 +85,45 @@ const createSchema = {
     }
 };
 
-export default function(fastify, opts, next) {
-    fastify.get('/', { ...opts, schema: listSchema }, list);
-    fastify.get('/:id', { ...opts, schema: getSchema }, getById);
-    fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
-    fastify.post('/', { ...opts, schema: createSchema }, create);
-    next();
-}
+export function buildTargetsRoutes(targetsService) {
 
+    async function list(request) {
+        const { page, pageSize } = request.query;
+        const results = await targetsService.list(page, pageSize);
+        return {
+            results,
+            next: getNextLink(request, results),
+            prev: getPrevLink(request)
+        };
+    }
+
+    async function getById(request) {
+        const { id } = request.params;
+        const target = await targetsService.getById(id);
+        if (!target) {
+            throw new NotFoundError();
+        }
+        return target;
+    }
+
+    async function deleteById(request, reply) {
+        const { id } = request.params;
+        await targetsService.deleteById(id);
+        reply.status(204).send();
+    }
+
+    async function create(request, reply) {
+        const { name, url } = request.body;
+        const target = await targetsService.create({ name, url });
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
+        reply.status(201).send(target);
+    }
+
+    return function(fastify, opts, next) {
+        fastify.get('/', { ...opts, schema: listSchema }, list);
+        fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+        fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
+        fastify.post('/', { ...opts, schema: createSchema }, create);
+        next();
+    };
+}

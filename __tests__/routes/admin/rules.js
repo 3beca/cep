@@ -1,12 +1,20 @@
 import { buildServer } from '../../../src/server';
-import rulesService from '../../../src/services/rules-services';
 import { ObjectId } from 'bson';
+import { buildEventTypesService } from '../../../src/services/event-types-service';
+import { buildTargetsService } from '../../../src/services/targets-service';
+import { buildEngine } from '../../../src/engine';
+import { buildRulesService } from '../../../src/services/rules-services';
 
 describe('admin', () => {
     let server;
+    let rulesService;
 
     beforeEach(() => {
-        server = buildServer();
+        const eventTypesService = buildEventTypesService();
+        const targetsService = buildTargetsService();
+        const engine = buildEngine(eventTypesService, rulesService, targetsService);
+        rulesService = buildRulesService(targetsService, eventTypesService);
+        server = buildServer(eventTypesService, targetsService, rulesService, engine);
     });
 
     afterEach(async () => {

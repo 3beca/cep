@@ -1,15 +1,23 @@
 import { buildServer } from '../../src/server';
-import eventTypesService from '../../src/services/event-types-service';
+import { buildEventTypesService } from '../../src/services/event-types-service';
 import { ObjectId } from 'bson';
-import rulesService from '../../src/services/rules-services';
-import targetsService from '../../src/services/targets-service';
+import { buildRulesService } from '../../src/services/rules-services';
+import { buildTargetsService } from '../../src/services/targets-service';
 import nock from 'nock';
+import { buildEngine } from '../../src/engine';
 
 describe('events', () => {
     let server;
+    let eventTypesService;
+    let targetsService;
+    let rulesService;
 
     beforeEach(() => {
-        server = buildServer();
+        eventTypesService = buildEventTypesService();
+        targetsService = buildTargetsService();
+        rulesService = buildRulesService(targetsService, eventTypesService);
+        const engine = buildEngine(eventTypesService, rulesService, targetsService);
+        server = buildServer(eventTypesService, targetsService, rulesService, engine);
     });
 
     afterEach(async () => {

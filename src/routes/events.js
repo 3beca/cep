@@ -18,14 +18,17 @@ const processEventSchema = {
     }
 };
 
-async function processEvent(request, reply) {
-    const { body, params } = request;
-    const { id } = params;
-    await engine.processEvent(id, body);
-    reply.status(204).send();
-}
+export function buildEventsRoutes(engine) {
 
-export default function(fastify, opts, next) {
-    fastify.post('/events/:id', { ...opts, schema: processEventSchema }, processEvent);
-    next();
+    async function processEvent(request, reply) {
+        const { body, params } = request;
+        const { id } = params;
+        await engine.processEvent(id, body);
+        reply.status(204).send();
+    }
+
+    return function(fastify, opts, next) {
+        fastify.post('/events/:id', { ...opts, schema: processEventSchema }, processEvent);
+        next();
+    };
 }

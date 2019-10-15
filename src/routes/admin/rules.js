@@ -1,37 +1,5 @@
-import rulesService from '../../services/rules-services';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
-
-async function list(request) {
-    const { page, pageSize } = request.query;
-    const results = await rulesService.list(page, pageSize);
-    return {
-        results,
-        next: getNextLink(request, results),
-        prev: getPrevLink(request)
-    };
-}
-
-async function getById(request) {
-    const { id } = request.params;
-    const rule = await rulesService.getById(id);
-    if (!rule) {
-        throw new NotFoundError();
-    }
-    return rule;
-}
-
-async function deleteById(request, reply) {
-    const { id } = request.params;
-    await rulesService.deleteById(id);
-    reply.status(204).send();
-}
-
-async function create(request, reply) {
-    const rule = await rulesService.create(request.body);
-    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
-    reply.status(201).send(rule);
-}
 
 const ruleschema = {
     type: 'object',
@@ -118,10 +86,44 @@ const createSchema = {
     }
 };
 
-export default function(fastify, opts, next) {
-    fastify.get('/', { ...opts, schema: listSchema }, list);
-    fastify.get('/:id', { ...opts, schema: getSchema }, getById);
-    fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
-    fastify.post('/', { ...opts, schema: createSchema }, create);
-    next();
+export function buildRulesRoutes(rulesService) {
+
+    async function list(request) {
+        const { page, pageSize } = request.query;
+        const results = await rulesService.list(page, pageSize);
+        return {
+            results,
+            next: getNextLink(request, results),
+            prev: getPrevLink(request)
+        };
+    }
+
+    async function getById(request) {
+        const { id } = request.params;
+        const rule = await rulesService.getById(id);
+        if (!rule) {
+            throw new NotFoundError();
+        }
+        return rule;
+    }
+
+    async function deleteById(request, reply) {
+        const { id } = request.params;
+        await rulesService.deleteById(id);
+        reply.status(204).send();
+    }
+
+    async function create(request, reply) {
+        const rule = await rulesService.create(request.body);
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
+        reply.status(201).send(rule);
+    }
+
+    return function(fastify, opts, next) {
+        fastify.get('/', { ...opts, schema: listSchema }, list);
+        fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+        fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
+        fastify.post('/', { ...opts, schema: createSchema }, create);
+        next();
+    };
 }

@@ -1,6 +1,6 @@
-import eventTypesRoutes from './event-types';
-import targetsRoutes from './targets';
-import rulesRoutes from './rules';
+import { buildEventTypesRoutes } from './event-types';
+import { buildTargetsRoutes } from './targets';
+import { buildRulesRoutes } from './rules';
 import packageInfo from '../../../package.json';
 
 const checkHealthSchema = {
@@ -12,10 +12,6 @@ const checkHealthSchema = {
         }
     }
 };
-
-function checkHealth(request, reply) {
-    reply.code(204).res.end();
-}
 
 const versionSchema = {
     tags: ['system'],
@@ -30,16 +26,22 @@ const versionSchema = {
     }
 };
 
-async function version() {
-    return { version: packageInfo.version };
-}
+export function buildAdminRoutes(eventTypesService, rulesService, targetsService) {
 
-export default function(fastify, opts, next) {
-    fastify.get('/check-health', { ...opts, ...{ logLevel: 'warn', schema: checkHealthSchema } }, checkHealth);
-    fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
-    fastify.register(eventTypesRoutes, { prefix: '/event-types' });
-    fastify.register(targetsRoutes, { prefix: '/targets' });
-    fastify.register(rulesRoutes, { prefix: '/rules' });
-    next();
-}
+    function checkHealth(request, reply) {
+        reply.code(204).res.end();
+    }
 
+    async function version() {
+        return { version: packageInfo.version };
+    }
+
+    return function(fastify, opts, next) {
+        fastify.get('/check-health', { ...opts, ...{ logLevel: 'warn', schema: checkHealthSchema } }, checkHealth);
+        fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
+        fastify.register(buildEventTypesRoutes(eventTypesService), { prefix: '/event-types' });
+        fastify.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
+        fastify.register(buildRulesRoutes(rulesService), { prefix: '/rules' });
+        next();
+    };
+}

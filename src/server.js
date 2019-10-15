@@ -2,15 +2,15 @@ import fastify from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
-import adminRoute from './routes/admin/admin';
-import eventsRoute from './routes/events';
+import { buildEventsRoutes } from './routes/events';
 import NotFoundError from './errors/not-found-error';
 import ConflictError from './errors/conflict-error';
 import { getExternalUrl } from './utils/url.js';
 import FilterError from './filters/filter-error.js';
 import InvalidOperationError from './errors/invalid-operation-error.js';
+import { buildAdminRoutes } from './routes/admin/admin.js';
 
-export function buildServer() {
+export function buildServer(eventTypesService, targetsService, rulesService, engine) {
 	const app = fastify({
 		logger: false,
 		trustProxy: config.trustProxy
@@ -44,8 +44,8 @@ export function buildServer() {
 	});
 
 	// End points
-	app.register(adminRoute, { prefix: '/admin' });
-	app.register(eventsRoute);
+	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService), { prefix: '/admin' });
+	app.register(buildEventsRoutes(engine));
 
 	app.setNotFoundHandler({
 		preValidation: (req, reply, next) => {

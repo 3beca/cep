@@ -1,43 +1,5 @@
-import eventTypesService from '../../services/event-types-service';
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
-
-function toEventTypeResponse(eventType) {
-    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
-}
-
-async function list(request) {
-    const { page, pageSize } = request.query;
-    const eventTypes = await eventTypesService.list(page, pageSize);
-    const results = eventTypes.map(toEventTypeResponse);
-    return {
-        results,
-        next: getNextLink(request, results),
-        prev: getPrevLink(request)
-    };
-}
-
-async function getById(request) {
-    const { id } = request.params;
-    const eventType = await eventTypesService.getById(id);
-    if (!eventType) {
-        throw new NotFoundError();
-    }
-    return toEventTypeResponse(eventType);
-}
-
-async function deleteById(request, reply) {
-    const { id } = request.params;
-    await eventTypesService.deleteById(id);
-    reply.status(204).send();
-}
-
-async function create(request, reply) {
-    const { name } = request.body;
-    const eventType = await eventTypesService.create({ name });
-    reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
-    reply.status(201).send(toEventTypeResponse(eventType));
-}
 
 const eventTypeSchema = {
     type: 'object',
@@ -119,11 +81,50 @@ const createSchema = {
     }
 };
 
-export default function(fastify, opts, next) {
-    fastify.get('/', { ...opts, schema: listSchema }, list);
-    fastify.get('/:id', { ...opts, schema: getSchema }, getById);
-    fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
-    fastify.post('/', { ...opts, schema: createSchema }, create);
-    next();
+function toEventTypeResponse(eventType) {
+    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
 }
 
+export function buildEventTypesRoutes(eventTypesService) {
+
+    async function list(request) {
+        const { page, pageSize } = request.query;
+        const eventTypes = await eventTypesService.list(page, pageSize);
+        const results = eventTypes.map(toEventTypeResponse);
+        return {
+            results,
+            next: getNextLink(request, results),
+            prev: getPrevLink(request)
+        };
+    }
+
+    async function getById(request) {
+        const { id } = request.params;
+        const eventType = await eventTypesService.getById(id);
+        if (!eventType) {
+            throw new NotFoundError();
+        }
+        return toEventTypeResponse(eventType);
+    }
+
+    async function deleteById(request, reply) {
+        const { id } = request.params;
+        await eventTypesService.deleteById(id);
+        reply.status(204).send();
+    }
+
+    async function create(request, reply) {
+        const { name } = request.body;
+        const eventType = await eventTypesService.create({ name });
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
+        reply.status(201).send(toEventTypeResponse(eventType));
+    }
+
+    return function(fastify, opts, next) {
+        fastify.get('/', { ...opts, schema: listSchema }, list);
+        fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+        fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
+        fastify.post('/', { ...opts, schema: createSchema }, create);
+        next();
+    };
+}
