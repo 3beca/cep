@@ -1,4 +1,4 @@
-import { ObjectId } from 'bson';
+import { ObjectId } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 
 export function buildTargetsService() {

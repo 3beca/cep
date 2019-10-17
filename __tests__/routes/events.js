@@ -1,6 +1,6 @@
 import { buildServer } from '../../src/server';
 import { buildEventTypesService } from '../../src/services/event-types-service';
-import { ObjectId } from 'bson';
+import { ObjectId } from 'mongodb';
 import { buildRulesService } from '../../src/services/rules-services';
 import { buildTargetsService } from '../../src/services/targets-service';
 import nock from 'nock';
