@@ -1,15 +1,13 @@
 version: '3'
 services:
-  grafana:
+  cep-grafana:
     image: grafana/grafana
-    container_name: "grafana"
     ports:
       - 3000:3000
     volumes:
-      - grafana-storage:/var/lib/grafana
-  graphite:
+      - cep-grafana-storage:/var/lib/grafana
+  cep-graphite:
     image: graphiteapp/graphite-statsd
-    container_name: "graphite"
     ports:
       - "80:80"
       - "2003-2004:2003-2004"
@@ -17,12 +15,20 @@ services:
       - "8125:8125/udp"
       - "8126:8126"
     volumes:
-      - graphite-storage:/opt/graphite/storage
-  tribeca-cep:
+      - cep-graphite-storage:/opt/graphite/storage
+  cep-mongodb:
+      image: mongo:4.2.0
+      environment:
+        - MONGO_DATA_DIR=/data/db
+      volumes:
+        - cep-mongo-storage:/data/db
+      ports:
+        - 27017:27017
+  cep:
     build: .
-    container_name: "tribeca-cep"
     ports:
       - "8888:8888"
 volumes:
-  grafana-storage:
-  graphite-storage:
+  cep-grafana-storage:
+  cep-graphite-storage:
+  cep-mongodb-storage:
