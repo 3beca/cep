@@ -5,7 +5,7 @@ import { buildTargetsService } from '../../../src/services/targets-service';
 import { buildEngine } from '../../../src/engine';
 import { buildRulesService } from '../../../src/services/rules-services';
 
-describe('admin', () => {
+describe.skip('admin', () => {
     let server;
     let rulesService;
 

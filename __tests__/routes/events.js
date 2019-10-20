@@ -6,7 +6,7 @@ import { buildTargetsService } from '../../src/services/targets-service';
 import nock from 'nock';
 import { buildEngine } from '../../src/engine';
 
-describe('events', () => {
+describe.skip('events', () => {
     let server;
     let eventTypesService;
     let targetsService;
@@ -22,7 +22,6 @@ describe('events', () => {
 
     afterEach(async () => {
         await server.close();
-        await eventTypesService.purge();
         await rulesService.purge();
         await targetsService.purge();
         nock.cleanAll();

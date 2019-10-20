@@ -46,7 +46,21 @@ const config = convict({
         format: Boolean,
         default: false,
         env: 'TRUSTED_PROXY',
-    }
+    },
+    mongodb: {
+        url: {
+            doc: 'Mongodb connection string url.',
+            format: String,
+            default: 'mongodb://localhost:27017',
+            env: 'MONGODB_URL',
+        },
+        databaseName: {
+            doc: 'Mongodb database name.',
+            format: String,
+            default: 'tribeca-cep',
+            env: 'MONGODB_DATABASE_NAME'
+        }
+    },
 });
 
 config.validate({ allowed: 'strict' });

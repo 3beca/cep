@@ -13,7 +13,11 @@ describe('config', () => {
                 host: 'localhost',
                 port: '8888'
             },
-            trustedProxy: false
+            trustedProxy: false,
+            mongodb: {
+                url: 'mongodb://localhost:27017',
+                databaseName: 'tribeca-cep'
+            }
         });
     });
 });

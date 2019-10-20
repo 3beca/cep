@@ -5,7 +5,7 @@ import { buildEventTypesService } from '../../../src/services/event-types-servic
 import { buildRulesService } from '../../../src/services/rules-services';
 import { buildEngine } from '../../../src/engine';
 
-describe('admin', () => {
+describe.skip('admin', () => {
     let server;
     let targetsService;
 
