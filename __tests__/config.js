@@ -15,7 +15,7 @@ describe('config', () => {
             },
             trustedProxy: false,
             mongodb: {
-                url: 'mongodb://localhost:27017',
+                url: process.env.MONGODB_URL || 'mongodb://localhost:27017',
                 databaseName: 'tribeca-cep'
             }
         });
