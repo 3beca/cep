@@ -20,7 +20,7 @@ export function buildTargetsService(db) {
             };
             try {
                 const { insertedId } = await collection.insertOne(targetToCreate);
-                return { ...targetToCreate, id: insertedId};
+                return { ...targetToCreate, id: insertedId.toString() };
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingTarget = await collection.findOne({ name: target.name });
@@ -41,7 +41,7 @@ export function buildTargetsService(db) {
             }
             await collection.deleteOne({ _id: new ObjectId(id) });
         },
-        async getByRuleIds(ids) {
+        async getByIds(ids) {
             const targets = await collection.find({ _id: { $in: ids.map(id => new ObjectId(id)) }}).toArray();
             return targets.map(toDto);
         },

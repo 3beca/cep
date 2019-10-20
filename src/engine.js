@@ -18,7 +18,7 @@ export function buildEngine(
             if (matchesTargetIds.length === 0) {
                 return;
             }
-            const targets = await targetsService.getByRuleIds(matchesTargetIds);
+            const targets = await targetsService.getByIds(matchesTargetIds);
             await Promise.all(targets.map(t => request.post(t.url, {
                 json: true,
                 body: eventPayload

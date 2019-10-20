@@ -20,7 +20,7 @@ export function buildEventTypesService(db) {
             };
             try {
                 const { insertedId } = await collection.insertOne(eventTypeToCreate);
-                return { ...eventTypeToCreate, id: insertedId};
+                return { ...eventTypeToCreate, id: insertedId.toString() };
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingEventType = await collection.findOne({ name: eventType.name });

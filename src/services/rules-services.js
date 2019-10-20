@@ -2,28 +2,30 @@ import { ObjectId } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
+import { toDto } from '../utils/dto';
 
 export function buildRulesService(db, targetsService, eventTypesService) {
 
-    let rules = [];
+    const collection = db.collection('rules');
 
-    targetsService.registerOnBeforeDelete(id => {
-        const results = rules.filter(r => r.targetId.toString() === id);
-        if (results.length > 0) {
-            throw new InvalidOperationError(`Target cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
+    targetsService.registerOnBeforeDelete(async id => {
+        const rules = await collection.find({ targetId: new ObjectId(id) }).toArray();
+        if (rules.length > 0) {
+            throw new InvalidOperationError(`Target cannot be deleted as in use by rules [${rules.map(r => `"${r._id}"`).join(', ')}]`);
         }
     });
 
-    eventTypesService.registerOnBeforeDelete(id => {
-        const results = rules.filter(r => r.eventTypeId.toString() === id);
-        if (results.length > 0) {
-            throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${results.map(r => `"${r.id}"`).join(', ')}]`);
+    eventTypesService.registerOnBeforeDelete(async id => {
+        const rules = await collection.find({ eventTypeId: new ObjectId(id) }).toArray();
+        if (rules.length > 0) {
+            throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${rules.map(r => `"${r._id}"`).join(', ')}]`);
         }
     });
 
     return {
         async list(page, pageSize) {
-            return rules.slice((page - 1) * pageSize, page * pageSize);
+            const rules = await collection.find({}).skip((page - 1) * pageSize).limit(pageSize).toArray();
+            return rules.map(toDto);
         },
         async create(rule) {
             const { filters, name, eventTypeId, targetId } = rule;
@@ -38,35 +40,37 @@ export function buildRulesService(db, targetsService, eventTypesService) {
             if (!target) {
                 throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
             }
-            const existingRule = rules.find(r => r.name === name);
-            if (existingRule) {
-                throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule.id}`, existingRule.id);
-            }
             const ruleToCreate = {
                 name,
                 targetId: new ObjectId(targetId),
                 eventTypeId: new ObjectId(eventTypeId),
                 filters,
-                id: new ObjectId(),
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
-            rules.push(ruleToCreate);
-            return ruleToCreate;
+            try {
+                const { insertedId } = await collection.insertOne(ruleToCreate);
+                return { ...ruleToCreate, id: insertedId.toString() };
+            } catch (error) {
+                if (error.name === 'MongoError' && error.code === 11000) {
+                    const existingRule = await collection.findOne({ name });
+                    if (existingRule) {
+                        throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id);
+                    }
+                }
+                throw error;
+            }
         },
         async getById(id) {
-            return rules.find(r => r.id.toString() === id);
+            const rule = await collection.findOne({ _id: new ObjectId(id) });
+            return toDto(rule);
         },
         async deleteById(id) {
-            rules = rules.filter(r => r.id.toString() !== id);
+            await collection.deleteOne({ _id: new ObjectId(id) });
         },
         async getByEventTypeId(eventTypeId) {
-            return rules.filter(r => r.eventTypeId.toString() === eventTypeId.toString());
-        },
-        async purge() {
-            await eventTypesService.purge();
-            await targetsService.purge();
-            rules = [];
+            const rules = await collection.find({ eventTypeId: new ObjectId(eventTypeId) }).toArray();
+            return rules.map(toDto);
         }
     };
 }

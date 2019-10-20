@@ -4,15 +4,11 @@ import { buildTargetsService } from '../../../src/services/targets-service';
 import { buildRulesService } from '../../../src/services/rules-services';
 import { buildEngine } from '../../../src/engine';
 
-describe.skip('admin', () => {
+describe('admin', () => {
     let server;
 
     beforeEach(() => {
-        const eventTypesService = buildEventTypesService();
-        const targetsService = buildTargetsService();
-        const rulesService = buildRulesService(targetsService, eventTypesService);
-        const engine = buildEngine(eventTypesService, rulesService, targetsService);
-        server = buildServer(eventTypesService, targetsService, rulesService, engine);
+        server = buildServer();
     });
 
     afterEach(async () => {

@@ -83,7 +83,6 @@ export function buildServer(eventTypesService, targetsService, rulesService, eng
 			reply.status(400).send(error);
 			return;
 		}
-		console.error(error);
 		reply.status(500).send({ message: 'Ups, something goes wrong' });
 	});
 

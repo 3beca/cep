@@ -5,25 +5,30 @@ import { buildRulesService } from '../../src/services/rules-services';
 import { buildTargetsService } from '../../src/services/targets-service';
 import nock from 'nock';
 import { buildEngine } from '../../src/engine';
+import { connect, getAndSetupDatabase } from '../../src/database';
+import config from '../../src/config';
 
-describe.skip('events', () => {
+describe('events', () => {
+
     let server;
-    let eventTypesService;
-    let targetsService;
-    let rulesService;
+    let dbClient;
+    let db;
 
-    beforeEach(() => {
-        eventTypesService = buildEventTypesService();
-        targetsService = buildTargetsService();
-        rulesService = buildRulesService(targetsService, eventTypesService);
+    beforeEach(async () => {
+        const { url, databaseName } = config.mongodb;
+        dbClient = await connect(url);
+        db = await getAndSetupDatabase(dbClient, `${databaseName}-test-${new ObjectId()}`);
+        const eventTypesService = buildEventTypesService(db);
+        const targetsService = buildTargetsService(db);
+        const rulesService = buildRulesService(db, targetsService, eventTypesService);
         const engine = buildEngine(eventTypesService, rulesService, targetsService);
         server = buildServer(eventTypesService, targetsService, rulesService, engine);
     });
 
     afterEach(async () => {
         await server.close();
-        await rulesService.purge();
-        await targetsService.purge();
+        await db.dropDatabase();
+        await dbClient.close();
         nock.cleanAll();
     });
 
