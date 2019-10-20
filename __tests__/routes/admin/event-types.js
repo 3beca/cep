@@ -13,9 +13,9 @@ describe('admin', () => {
     let db;
 
     beforeEach(async () => {
-        const { url } = config.mongodb;
+        const { url, databaseName } = config.mongodb;
         dbClient = await connect(url);
-        db = await getAndSetupDatabase(dbClient, `test-${new ObjectId()}`);
+        db = await getAndSetupDatabase(dbClient, `${databaseName}-test-${new ObjectId()}`);
         const eventTypesService = buildEventTypesService(db);
         const targetsService = buildTargetsService(db);
         const rulesService = buildRulesService(db, targetsService, eventTypesService);

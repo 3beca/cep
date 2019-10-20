@@ -4,22 +4,30 @@ import { ObjectId } from 'mongodb';
 import { buildEventTypesService } from '../../../src/services/event-types-service';
 import { buildRulesService } from '../../../src/services/rules-services';
 import { buildEngine } from '../../../src/engine';
+import { connect, getAndSetupDatabase } from '../../../src/database';
+import config from '../../../src/config';
 
-describe.skip('admin', () => {
+describe('admin', () => {
+
     let server;
-    let targetsService;
+    let dbClient;
+    let db;
 
-    beforeEach(() => {
-        const eventTypesService = buildEventTypesService();
-        targetsService = buildTargetsService();
-        const rulesService = buildRulesService(targetsService, eventTypesService);
+    beforeEach(async () => {
+        const { url, databaseName } = config.mongodb;
+        dbClient = await connect(url);
+        db = await getAndSetupDatabase(dbClient, `${databaseName}-test-${new ObjectId()}`);
+        const eventTypesService = buildEventTypesService(db);
+        const targetsService = buildTargetsService(db);
+        const rulesService = buildRulesService(db, targetsService, eventTypesService);
         const engine = buildEngine(eventTypesService, rulesService, targetsService);
         server = buildServer(eventTypesService, targetsService, rulesService, engine);
     });
 
     afterEach(async () => {
         await server.close();
-        await targetsService.purge();
+        await db.dropDatabase();
+        await dbClient.close();
     });
 
     describe('targets', () => {
