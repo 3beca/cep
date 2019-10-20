@@ -6,14 +6,22 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    services:
+      mongodb:
+        image: mongo:4.2.0
+        options: >-
+          --health-cmd "mongo --quiet --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       matrix:
         node-version: [12.x]
-
+    env:
+      MONGODB_URL: mongodb://mongodb:27017
     steps:
     - uses: actions/checkout@v1
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: use node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
