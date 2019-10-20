@@ -53,3 +53,5 @@ spec:
           value: "443"
         - name: TRUSTED_PROXY
           value: "true"
+        - name: MONGODB_URL
+          value: mongodb://10.1.1.1:27017
