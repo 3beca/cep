@@ -17,8 +17,6 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
-    env:
-      MONGODB_URL: mongodb://mongodb:27017
     steps:
     - uses: actions/checkout@v1
     - name: use node.js ${{ matrix.node-version }}
@@ -33,3 +31,4 @@ jobs:
         npm run test-ci
       env:
         CI: true
+        MONGODB_URL: mongodb://mongodb:27017
