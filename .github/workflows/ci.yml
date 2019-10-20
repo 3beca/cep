@@ -14,6 +14,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+        - 27017:27017
     strategy:
       matrix:
         node-version: [12.x]
@@ -31,4 +33,4 @@ jobs:
         npm run test-ci
       env:
         CI: true
-        MONGODB_URL: mongodb://mongodb:27017
+        MONGODB_URL: mongodb://mongodb:${{ job.services.mongodb.ports[27017] }}
