@@ -1,7 +1,15 @@
+mongodb:
+  image: mongo:4.2.0
+  cached: true
+
 app:
   build:
     dockerfile: ./deploy/Dockerfile.build
   encrypted_env_file: ./deploy/app.encrypted
+  links:
+    - mongodb
+  environment:
+    - MONGODB_URL=mongodb://mongodb:27017
   volumes:
     - ./:/var/www
   cached: true
