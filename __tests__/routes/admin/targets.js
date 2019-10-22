@@ -1,3 +1,4 @@
+jest.mock('pino');
 import { buildServer } from '../../../src/server';
 import { buildTargetsService } from '../../../src/services/targets-service';
 import { ObjectId } from 'mongodb';

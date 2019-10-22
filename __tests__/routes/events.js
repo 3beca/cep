@@ -1,3 +1,4 @@
+jest.mock('pino');
 import { buildServer } from '../../src/server';
 import { buildEventTypesService } from '../../src/services/event-types-service';
 import { ObjectId } from 'mongodb';

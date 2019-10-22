@@ -1,3 +1,4 @@
+jest.mock('pino');
 import { buildServer } from '../src/server';
 
 describe('builServer', () => {

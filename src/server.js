@@ -9,10 +9,11 @@ import { getExternalUrl } from './utils/url.js';
 import FilterError from './filters/filter-error.js';
 import InvalidOperationError from './errors/invalid-operation-error.js';
 import { buildAdminRoutes } from './routes/admin/admin.js';
+import logger from './logger';
 
 export function buildServer(eventTypesService, targetsService, rulesService, engine) {
 	const app = fastify({
-		logger: false,
+		logger,
 		trustProxy: config.trustProxy
 	});
 

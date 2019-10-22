@@ -1,8 +1,5 @@
+jest.mock('pino');
 import { buildServer } from '../../../src/server';
-import { buildEventTypesService } from '../../../src/services/event-types-service';
-import { buildTargetsService } from '../../../src/services/targets-service';
-import { buildRulesService } from '../../../src/services/rules-services';
-import { buildEngine } from '../../../src/engine';
 
 describe('admin', () => {
     let server;
