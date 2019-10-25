@@ -21,9 +21,9 @@ const processEventSchema = {
 export function buildEventsRoutes(engine) {
 
     async function processEvent(request, reply) {
-        const { body, params } = request;
+        const { body, params, id: requestId } = request;
         const { id } = params;
-        await engine.processEvent(id, body);
+        await engine.processEvent(id, body, requestId);
         reply.status(204).send();
     }
 

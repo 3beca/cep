@@ -7,7 +7,7 @@ export function buildEngine(
     rulesService,
     targetsService) {
     return {
-        async processEvent(id, eventPayload) {
+        async processEvent(id, eventPayload, requestId) {
             const eventType = await eventTypesService.getById(id);
             if (!eventType) {
                 throw new NotFoundError();
@@ -21,7 +21,10 @@ export function buildEngine(
             const targets = await targetsService.getByIds(matchesTargetIds);
             await Promise.all(targets.map(t => request.post(t.url, {
                 json: true,
-                body: eventPayload
+                body: eventPayload,
+                headers: {
+                    'request-id': requestId
+                }
             })));
         }
     };

@@ -87,18 +87,25 @@ describe('events', () => {
             expect(scope.isDone()).toBe(false);
         });
 
-        it('should call target when event payload matches rule filters', async () => {
+        it('should call target when event payload matches rule filters with request-id header and payload as body', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
             await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
 
-            const scope = nock('http://example.org')
+            const requestId = new ObjectId().toHexString();
+            const scope = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': requestId,
+                }})
                 .post('/', { value: 2 })
                 .reply(200);
 
             const response = await server.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': requestId
+                },
                 body: {
                     value: 2
                 }
