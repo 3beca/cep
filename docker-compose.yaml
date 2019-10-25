@@ -28,6 +28,7 @@ services:
     image: francescorivola/tribeca-cep:latest
     environment:
       - MONGODB_URL=mongodb://cep-mongodb:27017
+      - HTTP_HOST=0.0.0.0
     ports:
       - "8888:8888"
 volumes:
