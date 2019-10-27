@@ -3,10 +3,10 @@ A simple complex event processing system
 
 [![CodeFactor](https://www.codefactor.io/repository/github/3beca/cep/badge)](https://www.codefactor.io/repository/github/3beca/cep)
 [![Codeship Status for 3beca/cep](https://app.codeship.com/projects/899145b0-ca70-0137-5cc0-0edeb012ab79/status?branch=master)](https://app.codeship.com/projects/367897) 
-[![Greenkeeper badge](https://badges.greenkeeper.io/3beca/cep.svg)](https://greenkeeper.io/)
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=3beca/cep)](https://dependabot.com)
 [![codecov](https://codecov.io/gh/3beca/cep/branch/master/graph/badge.svg)](https://codecov.io/gh/3beca/cep)
 
-## Getting started
+## Getting Started
 
 Clone the repo. Install dependencies:
 
@@ -20,7 +20,7 @@ After this is done, run the application in watch mode
 npm run start-watch
 ```
 
-## Getting Started
+## Introduction
 
 Cep is very simple. It is modeled in 3 main concepts:
 * Event Type: define a type of event where you can send event payload to a given url
