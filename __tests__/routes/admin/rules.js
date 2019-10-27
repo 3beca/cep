@@ -236,6 +236,21 @@ describe('admin', () => {
         });
 
         describe('post', () => {
+
+            it('should return 400 when payload is not a valid json', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: '{invalid: json}'
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'Unexpected token i in JSON at position 1' }));
+            });
+
             it('should return 400 when name is undefined', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);

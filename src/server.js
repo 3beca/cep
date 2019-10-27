@@ -64,27 +64,29 @@ export function buildServer(eventTypesService, targetsService, rulesService, eng
 
 	app.setErrorHandler((error, request, reply) => {
 		if (error instanceof NotFoundError) {
+			request.log.info(error);
 			reply.status(404).send({ message: 'Resource not found' });
 			return;
 		}
 		if (error instanceof ConflictError) {
+			request.log.info(error);
 			reply.header('Location', getExternalUrl(`${request.raw.originalUrl}/${error.id}`));
 			reply.status(409).send({ message: error.message });
 			return;
 		}
-		if (error instanceof FilterError) {
+		if (error instanceof FilterError ||
+			error instanceof InvalidOperationError ||
+			error.validation) {
+			request.log.info(error);
 			reply.status(400).send(error);
 			return;
 		}
-		if (error instanceof InvalidOperationError) {
-			reply.status(400).send(error);
-			return;
+		if (error.statusCode < 500) {
+			request.log.info(error);
+		} else {
+			request.log.error(error);
 		}
-		if (error.validation) {
-			reply.status(400).send(error);
-			return;
-		}
-		reply.status(500).send({ message: 'Ups, something goes wrong' });
+		reply.status(error.statusCode).send(error);
 	});
 
 	return app;
