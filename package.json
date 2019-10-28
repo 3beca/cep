@@ -41,7 +41,7 @@
     "nodemon": "^1.19.4"
   },
   "dependencies": {
-    "convict": "^5.1.0",
+    "convict": "^5.2.0",
     "fastify": "^2.10.0",
     "fastify-swagger": "^2.4.0",
     "geolib": "^3.0.4",
