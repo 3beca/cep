@@ -48,6 +48,6 @@
     "make-promises-safe": "^5.1.0",
     "mongodb": "^3.3.3",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.7"
+    "request-promise-native": "^1.0.8"
   }
 }
