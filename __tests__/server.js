@@ -39,4 +39,23 @@ describe('builServer', () => {
         expect(response.statusCode).toBe(200);
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
     });
+
+    it('should return 500 when unhandled errors happened', async () => {
+        server.register(
+            function(fastify, opts, next) {
+                fastify.get('/', opts, async () => {
+                    throw new Error('Something bad');
+                });
+                next();
+            }, { prefix: '/error' }
+        );
+
+        const response = await server.inject({
+            method: 'GET',
+            url: '/error'
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+    });
 });
