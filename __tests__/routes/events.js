@@ -46,20 +46,11 @@ describe('events', () => {
         });
 
         it('should return 204 when event type exists', async () => {
-            const createResponse = await server.inject({
-                method: 'POST',
-                url: '/admin/event-types',
-                body: {
-                    name: 'an event type'
-                }
-            });
-            expect(createResponse.statusCode).toBe(201);
-            expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-            const createdEventType = JSON.parse(createResponse.payload);
+            const eventType = await createEventType(server);
 
             const response = await server.inject({
                 method: 'POST',
-                url: '/events/' + createdEventType.id,
+                url: '/events/' + eventType.id,
                 body: {
                     value: 5
                 }
