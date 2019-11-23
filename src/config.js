@@ -48,7 +48,7 @@ const config = convict({
         env: 'TRUSTED_PROXY',
     },
     mongodb: {
-        url: {
+        databaseUrl: {
             doc: 'Mongodb connection string url.',
             format: String,
             default: 'mongodb://localhost:27017',

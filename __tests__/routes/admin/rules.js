@@ -1,34 +1,25 @@
 jest.mock('pino');
-import { buildServer } from '../../../src/server';
+import { buildApp } from '../../../src/app';
 import { ObjectId } from 'mongodb';
-import { buildEventTypesService } from '../../../src/services/event-types-service';
-import { buildTargetsService } from '../../../src/services/targets-service';
-import { buildEngine } from '../../../src/engine';
-import { buildRulesService } from '../../../src/services/rules-services';
-import { connect, getAndSetupDatabase } from '../../../src/database';
 import config from '../../../src/config';
 
 describe('admin', () => {
-
+    let app;
     let server;
-    let dbClient;
-    let db;
 
     beforeEach(async () => {
-        const { url, databaseName } = config.mongodb;
-        dbClient = await connect(url);
-        db = await getAndSetupDatabase(dbClient, `${databaseName}-test-${new ObjectId()}`);
-        const eventTypesService = buildEventTypesService(db);
-        const targetsService = buildTargetsService(db);
-        const rulesService = buildRulesService(db, targetsService, eventTypesService);
-        const engine = buildEngine(eventTypesService, rulesService, targetsService);
-        server = buildServer(eventTypesService, targetsService, rulesService, engine);
+        const options = {
+            databaseName: `test-${new ObjectId()}`,
+            databaseUrl: config.mongodb.databaseUrl
+        };
+        app = await buildApp(options);
+        server = app.server;
     });
 
     afterEach(async () => {
-        await server.close();
-        await db.dropDatabase();
-        await dbClient.close();
+        await app.server.close();
+        await app.db.dropDatabase();
+        await app.dbClient.close();
     });
 
     describe('rules', () => {
