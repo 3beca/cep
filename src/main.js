@@ -11,13 +11,13 @@ async function main() {
     logger.info('starting cep service');
 
     const options = { databaseUrl, databaseName };
-    const { server, dbClient } = await buildApp(options);
-    await server.listen(port, host);
+    const app = await buildApp(options);
+    await app.getServer().listen(port, host);
 
     logger.info('started cep service. Listening at port', port);
 
-    process.on('SIGTERM', gracefulShutdown(server, dbClient));
-    process.on('SIGINT', gracefulShutdown(server, dbClient));
+    process.on('SIGTERM', gracefulShutdown(app));
+    process.on('SIGINT', gracefulShutdown(app));
 }
 
 main().catch(error => {

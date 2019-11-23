@@ -13,5 +13,16 @@ export async function buildApp(options) {
     const rulesService = buildRulesService(db, targetsService, eventTypesService);
     const engine = buildEngine(eventTypesService, rulesService, targetsService);
     const server = buildServer(eventTypesService, targetsService, rulesService, engine);
-    return { server, db, dbClient };
+    return {
+        async close() {
+            await server.close();
+            await dbClient.close();
+        },
+        getServer() {
+            return server;
+        },
+        getDatabase() {
+            return db;
+        }
+    };
 }

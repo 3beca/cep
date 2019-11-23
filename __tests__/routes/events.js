@@ -14,13 +14,12 @@ describe('events', () => {
             databaseUrl: config.mongodb.databaseUrl
         };
         app = await buildApp(options);
-        server = app.server;
+        server = app.getServer();
     });
 
     afterEach(async () => {
-        await app.server.close();
-        await app.db.dropDatabase();
-        await app.dbClient.close();
+        await app.getDatabase().dropDatabase();
+        await app.close();
         nock.cleanAll();
     });
 

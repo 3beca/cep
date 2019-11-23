@@ -1,11 +1,10 @@
 import logger from './logger';
 
-export default function gracefulShutdown(server, dbClient) {
+export default function gracefulShutdown(app) {
     return async () => {
         try {
             logger.info('starting graceful shutdown.');
-            await server.close();
-            await dbClient.close();
+            await app.stop();
             logger.info('graceful shutdown complete.');
             process.exit(0);
         } catch (error) {
