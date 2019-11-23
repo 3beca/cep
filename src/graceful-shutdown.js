@@ -4,7 +4,7 @@ export default function gracefulShutdown(app) {
     return async () => {
         try {
             logger.info('starting graceful shutdown.');
-            await app.stop();
+            await app.close();
             logger.info('graceful shutdown complete.');
             process.exit(0);
         } catch (error) {
