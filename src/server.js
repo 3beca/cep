@@ -35,6 +35,7 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 				{ name: 'event types', description: 'Event Types related end-points' },
 				{ name: 'targets', description: 'Targets related end-points' },
 				{ name: 'rules', description: 'Rules related end-points' },
+				{ name: 'events', description: 'Processed events log related end-points' },
 				{ name: 'event processing', description: 'Event processing related end-points' }
 			],
 			host: config.externalHttp.host + (config.externalHttp.port ? ':' + config.externalHttp.port : ''),
