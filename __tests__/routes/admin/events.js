@@ -56,10 +56,12 @@ describe('admin', () => {
             expect(event1.eventTypeId).toBe(eventType.id);
             expect(event1.eventTypeName).toBe(eventType.name);
             expect(event1.payload).toStrictEqual({ value: 7 });
+            expect(event1.createdAt).not.toBe(undefined);
             const event2 = listResponse.results[1];
             expect(event2.eventTypeId).toBe(eventType.id);
             expect(event2.eventTypeName).toBe(eventType.name);
             expect(event2.payload).toStrictEqual({ value: 8 });
+            expect(event2.createdAt).not.toBe(undefined);
             expect(listResponse.next).toBe(undefined);
             expect(listResponse.prev).toBe(undefined);
         });
@@ -95,6 +97,7 @@ describe('admin', () => {
             expect(event1.eventTypeId).toBe(eventType.id);
             expect(event1.eventTypeName).toBe(eventType.name);
             expect(event1.payload).toStrictEqual({ value: 2 });
+            expect(event1.createdAt).not.toBe(undefined);
             expect(event1.rules).toStrictEqual([
                 { id: rule1.id, name: rule1.name, targetId: rule1.targetId },
                 { id: rule2.id, name: rule2.name, targetId: rule2.targetId },
