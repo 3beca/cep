@@ -4,6 +4,10 @@ const eventSchema = {
     type: 'object',
     properties: {
         id: { type: 'string' },
+        eventTypeId: { type: 'string' },
+        eventTypeName: { type: 'string' },
+        payload: { type: 'object', additionalProperties: true },
+        requestId: { type: 'string' },
         createdAt: { type: 'string' }
     }
 };

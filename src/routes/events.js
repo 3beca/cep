@@ -1,5 +1,3 @@
-import engine from '../engine';
-
 const processEventSchema = {
     tags: ['event processing'],
     params: {

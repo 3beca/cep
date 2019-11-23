@@ -13,7 +13,7 @@ export async function buildApp(options) {
     const targetsService = buildTargetsService(db);
     const rulesService = buildRulesService(db, targetsService, eventTypesService);
     const eventsService = buildEventsService(db);
-    const engine = buildEngine(eventTypesService, rulesService, targetsService);
+    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService);
     const server = buildServer(eventTypesService, targetsService, rulesService, eventsService, engine);
     return {
         async close() {
