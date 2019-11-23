@@ -1,5 +1,29 @@
 import { getNextLink, getPrevLink } from '../../utils/url';
 
+const ruleSchema = {
+    type: 'object',
+    properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        targetId: { type: 'string' }
+    }
+};
+
+const targetSchema = {
+    type: 'object',
+    properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        response: {
+            type: 'object',
+            properties: {
+                statusCode: { type: 'number' },
+                body: { type: 'object', additionalProperties: true }
+            }
+        }
+    }
+};
+
 const eventSchema = {
     type: 'object',
     properties: {
@@ -8,7 +32,9 @@ const eventSchema = {
         eventTypeName: { type: 'string' },
         payload: { type: 'object', additionalProperties: true },
         requestId: { type: 'string' },
-        createdAt: { type: 'string' }
+        createdAt: { type: 'string' },
+        rules: { type: 'array', items: ruleSchema },
+        targets: { type: 'array', items: targetSchema }
     }
 };
 
