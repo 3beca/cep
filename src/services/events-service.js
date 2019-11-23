@@ -10,7 +10,7 @@ export function buildEventsService(db) {
             return events.map(toDto);
         },
         async create(event) {
-            event.createAt = new Date();
+            event.createdAt = new Date();
             await collection.insertOne(event);
             return event;
         }
