@@ -1,7 +1,6 @@
 import NotFoundError from './errors/not-found-error';
 import Filter from './filters/filter';
 import request from 'request-promise-native';
-import { placeholder } from '@babel/types';
 
 export function buildEngine(
     eventTypesService,
