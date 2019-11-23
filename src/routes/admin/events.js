@@ -32,7 +32,8 @@ const listSchema = {
 export function buildEventsRoutes(eventsService) {
 
     async function list(request) {
-        const events = await eventsService.list();
+        const { page, pageSize } = request.query;
+        const events = await eventsService.list(page, pageSize);
         const results = events;
         return {
             results,
