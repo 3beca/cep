@@ -4,6 +4,7 @@ import { buildEventTypesService } from './services/event-types-service';
 import { buildTargetsService } from './services/targets-service';
 import { buildRulesService } from './services/rules-services';
 import { buildEngine } from './engine';
+import { buildEventsService } from './services/events-service';
 
 export async function buildApp(options) {
     const dbClient = await connect(options.databaseUrl);
@@ -11,8 +12,9 @@ export async function buildApp(options) {
     const eventTypesService = buildEventTypesService(db);
     const targetsService = buildTargetsService(db);
     const rulesService = buildRulesService(db, targetsService, eventTypesService);
+    const eventsService = buildEventsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService);
-    const server = buildServer(eventTypesService, targetsService, rulesService, engine);
+    const server = buildServer(eventTypesService, targetsService, rulesService, eventsService, engine);
     return {
         async close() {
             await server.close();

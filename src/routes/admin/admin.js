@@ -2,6 +2,7 @@ import { buildEventTypesRoutes } from './event-types';
 import { buildTargetsRoutes } from './targets';
 import { buildRulesRoutes } from './rules';
 import packageInfo from '../../../package.json';
+import { buildEventsRoutes } from './events';
 
 const checkHealthSchema = {
     tags: ['system'],
@@ -26,7 +27,7 @@ const versionSchema = {
     }
 };
 
-export function buildAdminRoutes(eventTypesService, rulesService, targetsService) {
+export function buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService) {
 
     function checkHealth(request, reply) {
         reply.code(204).res.end();
@@ -42,6 +43,7 @@ export function buildAdminRoutes(eventTypesService, rulesService, targetsService
         fastify.register(buildEventTypesRoutes(eventTypesService), { prefix: '/event-types' });
         fastify.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
         fastify.register(buildRulesRoutes(rulesService), { prefix: '/rules' });
+        fastify.register(buildEventsRoutes(eventsService), { prefix: '/events' });
         next();
     };
 }

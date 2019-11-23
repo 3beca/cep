@@ -11,7 +11,7 @@ import InvalidOperationError from './errors/invalid-operation-error.js';
 import { buildAdminRoutes } from './routes/admin/admin.js';
 import logger from './logger';
 
-export function buildServer(eventTypesService, targetsService, rulesService, engine) {
+export function buildServer(eventTypesService, targetsService, rulesService, eventsService, engine) {
 	const app = fastify({
 		logger,
 		trustProxy: config.trustProxy
@@ -45,7 +45,7 @@ export function buildServer(eventTypesService, targetsService, rulesService, eng
 	});
 
 	// End points
-	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService), { prefix: '/admin' });
+	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService), { prefix: '/admin' });
 	app.register(buildEventsRoutes(engine));
 
 	app.setNotFoundHandler({
