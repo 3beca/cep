@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb';
 import { toDto } from '../utils/dto';
 
 export function buildEventsService(db) {

@@ -8,6 +8,8 @@ export function connect(uri) {
     });
 }
 
+const ninetyDays = 60 * 60 * 24 * 30 * 3;
+
 export async function getAndSetupDatabase(client, databaseName) {
     const db = client.db(databaseName);
     const eventTypes = db.collection('event-types');
@@ -19,7 +21,7 @@ export async function getAndSetupDatabase(client, databaseName) {
     await rules.createIndex({ name: 1 }, { unique: true });
     await rules.createIndex({ targetId: 1 });
     await rules.createIndex({ eventTypeId: 1 });
-    await events.createIndex({ createdAt: 1 });
+    await events.createIndex({ createdAt: 1 }, { expireAfterSeconds: ninetyDays });
     await events.createIndex({ eventTypeId: 1, createdAt: 1 });
     return db;
 }
