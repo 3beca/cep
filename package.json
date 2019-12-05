@@ -43,7 +43,7 @@
   "dependencies": {
     "convict": "^5.2.0",
     "fastify": "^2.10.0",
-    "fastify-swagger": "^2.4.0",
+    "fastify-swagger": "^2.5.0",
     "geolib": "^3.1.0",
     "make-promises-safe": "^5.1.0",
     "mongodb": "^3.3.5",
