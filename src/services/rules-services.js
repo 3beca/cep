@@ -28,7 +28,7 @@ export function buildRulesService(db, targetsService, eventTypesService) {
             return rules.map(toDto);
         },
         async create(rule) {
-            const { filters, name, eventTypeId, targetId } = rule;
+            const { filters, name, eventTypeId, targetId, skipOnConsecutivesMatches } = rule;
 
             Filter.assertIsValid(filters);
 
@@ -45,6 +45,7 @@ export function buildRulesService(db, targetsService, eventTypesService) {
                 targetId: new ObjectId(targetId),
                 eventTypeId: new ObjectId(eventTypeId),
                 filters,
+                skipOnConsecutivesMatches,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };

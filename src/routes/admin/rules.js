@@ -8,6 +8,7 @@ const ruleschema = {
         id: { type: 'string' },
         targetId: { type: 'string' },
         eventTypeId: { type: 'string' },
+        skipOnConsecutivesMatches: { type: 'boolean' },
         filters: { type: 'object', additionalProperties: true },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
@@ -78,6 +79,7 @@ const createSchema = {
             name: { type: 'string', maxLength: 100 },
             targetId: { type: 'string' },
             eventTypeId: { type: 'string' },
+            skipOnConsecutivesMatches: { type: 'boolean' },
             filters: { type: 'object' }
         }
     },

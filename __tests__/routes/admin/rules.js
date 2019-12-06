@@ -33,6 +33,7 @@ describe('admin', () => {
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
+                        skipOnConsecutivesMatches: true,
                         targetId: target.id
                     }
                 });
@@ -207,6 +208,7 @@ describe('admin', () => {
                     body: {
                         name: 'a rule',
                         eventTypeId: eventType.id,
+                        skipOnConsecutivesMatches: false,
                         targetId: target.id
                     }
                 });
@@ -383,6 +385,7 @@ describe('admin', () => {
                         name: 'a rule',
                         eventTypeId: eventType.id,
                         targetId: target.id,
+                        skipOnConsecutivesMatches: true,
                         filters: {
                             value: 8
                         }
@@ -396,6 +399,7 @@ describe('admin', () => {
                 expect(rule.filters).toEqual({ value: 8 });
                 expect(rule.eventTypeId).toBe(eventType.id);
                 expect(rule.targetId).toBe(target.id);
+                expect(rule.skipOnConsecutivesMatches).toBe(true);
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 
