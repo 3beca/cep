@@ -1,4 +1,5 @@
 import { toDto } from '../utils/dto';
+import { ObjectId } from 'mongodb';
 
 export function buildEventsService(db) {
 
@@ -9,10 +10,25 @@ export function buildEventsService(db) {
             const events = await collection.find({}).skip((page - 1) * pageSize).sort({ createdAt: -1 }).limit(pageSize).toArray();
             return events.map(toDto);
         },
-        async create(event) {
-            event.createdAt = new Date();
+        async getLastEvent(eventTypeId) {
+            const events = await collection.find({ eventTypeId: new ObjectId(eventTypeId) }).sort({ createdAt: -1 }).limit(1).toArray();
+            return toDto(events[0]);
+        },
+        async create(eventType, payload, requestId, rules, targets = [], targetsResponse = []) {
+            const event = {
+                payload,
+                requestId,
+                eventTypeId: new ObjectId(eventType.id),
+                eventTypeName: eventType.name,
+                rules: rules.map(r => ({ id: new ObjectId(r.id), name: r.name, targetId: new ObjectId(r.targetId) })),
+                targets: targets.map((t, index) => {
+                    const { statusCode, body } = targetsResponse[index];
+                    return { id: new ObjectId(t.id), name: t.name, response: { statusCode, body } };
+                }),
+                createdAt: new Date()
+            };
             await collection.insertOne(event);
-            return event;
+            return toDto(event);
         }
     };
 }

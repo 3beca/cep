@@ -116,6 +116,118 @@ describe('events', () => {
             expect(response.statusCode).toBe(204);
             expect(scope.isDone()).toBe(true);
         });
+
+        it('should call target only on first matches when rule is created with skipOnConsecutivesMatches=true', async () => {
+            const eventType = await createEventType(server);
+            const target = await createTarget(server, 'http://example.org/');
+            const skipOnConsecutivesMatches = true;
+            await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 }, skipOnConsecutivesMatches);
+
+            const scope1 = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': '1',
+                }})
+                .post('/', { value: 2 })
+                .once()
+                .reply(200);
+
+            await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': '1'
+                },
+                body: {
+                    value: 2
+                }
+            });
+
+            expect(scope1.isDone()).toBe(true);
+
+            const scope2 = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': '2',
+                }})
+                .post('/', { value: 2 })
+                .once()
+                .reply(200);
+
+            await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': '2'
+                },
+                body: {
+                    value: 2
+                }
+            });
+
+            expect(scope2.isDone()).toBe(false);
+
+            const scope3 = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': '3',
+                }})
+                .post('/', { value: 3 })
+                .once()
+                .reply(200);
+
+            await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': '3'
+                },
+                body: {
+                    value: 3
+                }
+            });
+
+            expect(scope3.isDone()).toBe(false);
+
+            const scope4 = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': '4',
+                }})
+                .post('/', { value: 2 })
+                .once()
+                .reply(200);
+
+            await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': '4'
+                },
+                body: {
+                    value: 2
+                }
+            });
+
+            expect(scope4.isDone()).toBe(true);
+
+            const scope5 = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': '5',
+                }})
+                .post('/', { value: 2 })
+                .once()
+                .reply(200);
+
+            await server.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': '5'
+                },
+                body: {
+                    value: 2
+                }
+            });
+
+            expect(scope5.isDone()).toBe(false);
+        });
     });
 
     async function createTarget(server, url = 'http://example.org') {
@@ -132,7 +244,7 @@ describe('events', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters = undefined) {
+    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters = undefined, skipOnConsecutivesMatches = false) {
         const createResponse = await server.inject({
             method: 'POST',
             url: '/admin/rules',
@@ -140,7 +252,8 @@ describe('events', () => {
                 name,
                 eventTypeId,
                 targetId,
-                filters
+                filters,
+                skipOnConsecutivesMatches
             }
         });
         expect(createResponse.statusCode).toBe(201);

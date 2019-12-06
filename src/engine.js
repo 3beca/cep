@@ -16,9 +16,20 @@ export function buildEngine(
 
             const rules = await rulesService.getByEventTypeId(eventType.id);
             const matchesRules = rules.filter(r => new Filter(r.filters).match(eventPayload));
-            const matchesTargetIds = matchesRules.map(r => r.targetId);
+            const rulesMustBeSkipped = [];
+            if (matchesRules.some(r => r.skipOnConsecutivesMatches)) {
+                const lastEvent = await eventsService.getLastEvent(eventType.id);
+                const lastEventMatchesRulesIds = ((lastEvent || {}).rules || []).map(r => r.id);
+
+                rulesMustBeSkipped.push.apply(
+                    rulesMustBeSkipped,
+                    matchesRules
+                        .filter(r => r.skipOnConsecutivesMatches)
+                        .filter(r => lastEventMatchesRulesIds.includes(r.id)));
+            }
+            const matchesTargetIds = matchesRules.filter(r => !rulesMustBeSkipped.includes(r)).map(r => r.targetId);
             if (matchesTargetIds.length === 0) {
-                await storeEvent(eventType, eventPayload, requestId);
+                await eventsService.create(eventType, eventPayload, requestId, matchesRules);
                 return;
             }
             const targets = await targetsService.getByIds(matchesTargetIds);
@@ -30,21 +41,7 @@ export function buildEngine(
                 },
                 resolveWithFullResponse: true
             }).catch(error => error)));
-            await storeEvent(eventType, eventPayload, requestId, matchesRules, targets, targetsResponse);
+            await eventsService.create(eventType, eventPayload, requestId, matchesRules, targets, targetsResponse);
         }
     };
-
-    function storeEvent(eventType, payload, requestId, rules = [], targets = [], targetsResponse = []) {
-        return eventsService.create({
-            payload,
-            requestId,
-            eventTypeId: eventType.id,
-            eventTypeName: eventType.name,
-            rules: rules.map(r => ({ id: r.id, name: r.name, targetId: r.targetId })),
-            targets: targets.map((t, index) => {
-                const { statusCode, body } = targetsResponse[index];
-                return { id: t.id, name: t.name, response: { statusCode, body } };
-            })
-        });
-    }
 }
