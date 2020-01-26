@@ -95,7 +95,7 @@ describe('events', () => {
             expect(scope.isDone()).toBe(true);
         });
 
-        it('should call target once when event payload matches 2 rules filters', async () => {
+        it('should call target twice when event payload matches 2 rules filters', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
             await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 });
@@ -103,7 +103,7 @@ describe('events', () => {
 
             const scope = nock('http://example.org')
                 .post('/', { value: 2 })
-                .once()
+                .twice()
                 .reply(200);
 
             const response = await server.inject({

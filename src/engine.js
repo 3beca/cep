@@ -27,20 +27,24 @@ export function buildEngine(
                         .filter(r => r.skipOnConsecutivesMatches)
                         .filter(r => lastEventMatchesRulesIds.includes(r.id)));
             }
-            const matchesTargetIds = matchesRules.filter(r => !rulesMustBeSkipped.includes(r)).map(r => r.targetId);
-            if (matchesTargetIds.length === 0) {
+            const finalMatchesRules = matchesRules.filter(r => !rulesMustBeSkipped.includes(r));
+            if (finalMatchesRules.length === 0) {
                 await eventsService.create(eventType, eventPayload, requestId, matchesRules);
                 return;
             }
-            const targets = await targetsService.getByIds(matchesTargetIds);
-            const targetsResponse = await Promise.all(targets.map(t => request.post(t.url, {
-                json: true,
-                body: eventPayload,
-                headers: {
-                    'request-id': requestId
-                },
-                resolveWithFullResponse: true
-            }).catch(error => error)));
+            const targetIds = finalMatchesRules.map(r => r.targetId);
+            const targets = await targetsService.getByIds(targetIds);
+            const targetsResponse = await Promise.all(finalMatchesRules.map(r => {
+                const target = targets.find(t => t.id === r.targetId);
+                return request.post(target.url, {
+                    json: true,
+                    body: eventPayload,
+                    headers: {
+                        'request-id': requestId
+                    },
+                    resolveWithFullResponse: true
+                }).catch(error => error);
+            }));
             await eventsService.create(eventType, eventPayload, requestId, matchesRules, targets, targetsResponse);
         }
     };
