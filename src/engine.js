@@ -34,13 +34,17 @@ export function buildEngine(
             }
             const targetIds = finalMatchesRules.map(r => r.targetId);
             const targets = await targetsService.getByIds(targetIds);
-            const targetsResponse = await Promise.all(finalMatchesRules.map(r => {
-                const target = targets.find(t => t.id === r.targetId);
+            const targetsResponse = await Promise.all(finalMatchesRules.map(rule => {
+                const target = targets.find(t => t.id === rule.targetId);
                 return request.post(target.url, {
                     json: true,
                     body: eventPayload,
                     headers: {
-                        'request-id': requestId
+                        'request-id': requestId,
+                        'X-Rule-Id': rule.id,
+                        'X-Rule-Name': rule.name,
+                        'X-Target-Id': target.id,
+                        'X-Target-Name': target.name
                     },
                     resolveWithFullResponse: true
                 }).catch(error => error);

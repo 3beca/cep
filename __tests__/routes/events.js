@@ -71,12 +71,16 @@ describe('events', () => {
         it('should call target when event payload matches rule filters with request-id header and payload as body', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
-            await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
+            const rule = await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
 
             const requestId = new ObjectId().toHexString();
             const scope = nock('http://example.org', {
                 reqheaders: {
                     'request-id': requestId,
+                    'X-Rule-Id': rule.id,
+                    'X-Rule-Name': rule.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name
                 }})
                 .post('/', { value: 2 })
                 .reply(200);
@@ -98,12 +102,29 @@ describe('events', () => {
         it('should call target twice when event payload matches 2 rules filters', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
-            await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 });
-            await createRule(server, target.id, eventType.id, 'rule 2', { value: { _gt: 1 } });
+            const rule1 = await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 });
+            const rule2 = await createRule(server, target.id, eventType.id, 'rule 2', { value: { _gt: 1 } });
 
-            const scope = nock('http://example.org')
+            const scope1 = nock('http://example.org', {
+                reqheaders: {
+                    'X-Rule-Id': rule1.id,
+                    'X-Rule-Name': rule1.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name,
+                }})
                 .post('/', { value: 2 })
-                .twice()
+                .once()
+                .reply(200);
+            
+            const scope2 = nock('http://example.org', {
+                reqheaders: {
+                    'X-Rule-Id': rule2.id,
+                    'X-Rule-Name': rule2.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name,
+                }})
+                .post('/', { value: 2 })
+                .once()
                 .reply(200);
 
             const response = await server.inject({
@@ -114,18 +135,23 @@ describe('events', () => {
                 }
             });
             expect(response.statusCode).toBe(204);
-            expect(scope.isDone()).toBe(true);
+            expect(scope1.isDone()).toBe(true);
+            expect(scope2.isDone()).toBe(true);
         });
 
         it('should call target only on first matches when rule is created with skipOnConsecutivesMatches=true', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
             const skipOnConsecutivesMatches = true;
-            await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 }, skipOnConsecutivesMatches);
+            const rule = await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 }, skipOnConsecutivesMatches);
 
             const scope1 = nock('http://example.org', {
                 reqheaders: {
                     'request-id': '1',
+                    'X-Rule-Id': rule.id,
+                    'X-Rule-Name': rule.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name
                 }})
                 .post('/', { value: 2 })
                 .once()
@@ -189,6 +215,10 @@ describe('events', () => {
             const scope4 = nock('http://example.org', {
                 reqheaders: {
                     'request-id': '4',
+                    'X-Rule-Id': rule.id,
+                    'X-Rule-Name': rule.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name
                 }})
                 .post('/', { value: 2 })
                 .once()
