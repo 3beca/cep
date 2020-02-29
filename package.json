@@ -10,7 +10,7 @@
     "start-watch": "nodemon -L src/main.ts --inspect=0.0.0.0:9229 --exec ts-node",
     "lint": "eslint . --ext .ts",
     "test": "jest --watchAll",
-    "test-ci": "jest --collect-coverage --detectOpenHandles",
+    "test-ci": "jest --collect-coverage",
     "publish-code-coverage": "codecov"
   },
   "repository": {

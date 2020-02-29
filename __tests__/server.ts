@@ -17,7 +17,8 @@ describe('builServer', () => {
     });
 
     afterEach(async () => {
-        await server.close();
+        await app.getDatabase().dropDatabase();
+        await app.close();
     });
 
     it('should return 404 for no existing endpoint', async () => {

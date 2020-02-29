@@ -17,7 +17,8 @@ describe('admin', () => {
     });
 
     afterEach(async () => {
-        await server.close();
+        await app.getDatabase().dropDatabase();
+        await app.close();
     });
 
     describe('check-health', () => {
