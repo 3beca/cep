@@ -51,7 +51,7 @@
     "fastify-swagger": "^2.5.0",
     "geolib": "^3.2.1",
     "make-promises-safe": "^5.1.0",
-    "mongodb": "^3.5.3",
+    "mongodb": "^3.5.4",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8"
   }
