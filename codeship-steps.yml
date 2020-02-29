@@ -21,11 +21,14 @@
 - name: docker build
   service: docker
   command: /bin/sh ./var/www/deploy/docker-build.sh
+  tag: master
 
 - name: docker push
   service: docker
   command: /bin/sh ./var/www/deploy/docker-push.sh
+  tag: master
 
 - name: deploy
   service: deploy
   command: /bin/sh ./var/www/deploy/deploy.sh
+  tag: master
