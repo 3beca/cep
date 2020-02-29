@@ -8,7 +8,7 @@ describe('geolib', function() {
             const coord1 = { someOtherInvalidField: 2};
             const coord2 = { someInvalidField: 1};
 
-            const distance = geolib.getDistance(coord1, coord2);
+            const distance = geolib.getDistance(coord1 as any, coord2 as any);
 
             expect(distance).toBe(NaN);
         });

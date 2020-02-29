@@ -1,11 +1,19 @@
 jest.mock('pino');
-import { buildServer } from '../src/server';
+import config from '../src/config';
+import { ObjectId } from 'bson';
+import { buildApp } from '../src/app';
 
 describe('builServer', () => {
+    let app;
     let server;
 
-    beforeEach(() => {
-        server = buildServer();
+    beforeEach(async () => {
+        const options = {
+            databaseName: `test-${new ObjectId()}`,
+            databaseUrl: config.mongodb.databaseUrl
+        };
+        app = await buildApp(options);
+        server = app.getServer();
     });
 
     afterEach(async () => {

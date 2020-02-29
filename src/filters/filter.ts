@@ -147,18 +147,23 @@ function assertFilters(filters) {
 }
 
 class Filter {
+    static assertIsValid;
+    
+    private filters;
+    
+    public match(data) {
+        if (!data){
+            return false;
+        }
+        if (!this.filters) {
+            return true;
+        }
+        return matchFilters(data, this.filters);
+    };
+    
     constructor(filters) {
         assertIsValid(filters);
         this.filters = filters;
-        this.match = function match(data) {
-            if (!data){
-                return false;
-            }
-            if (!this.filters) {
-                return true;
-            }
-            return matchFilters(data, this.filters);
-        };
     }
 }
 Filter.assertIsValid = assertIsValid;

@@ -1,16 +1,21 @@
 {
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
 
   "env": {
     "browser": false,
     "node": true,
-    "es6": true,
-    "jest": true
+    "jest": true,
+    "es6": true
   },
 
   "plugins": [
+    "@typescript-eslint",
     "filenames"
   ],
+
+  "parserOptions": {
+    "sourceType": "module"
+  },
 
   "rules": {
     "filenames/match-regex": [2, "^([a-z][a-z0-9]*)(-[a-z0-9]+)*(.test)?$", false],

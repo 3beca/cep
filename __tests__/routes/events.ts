@@ -115,7 +115,7 @@ describe('events', () => {
                 .post('/', { value: 2 })
                 .once()
                 .reply(200);
-            
+
             const scope2 = nock('http://example.org', {
                 reqheaders: {
                     'X-Rule-Id': rule2.id,

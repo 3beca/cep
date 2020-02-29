@@ -11,7 +11,7 @@ export function buildEngine(
         async processEvent(id, eventPayload, requestId) {
             const eventType = await eventTypesService.getById(id);
             if (!eventType) {
-                throw new NotFoundError();
+                throw new NotFoundError(`Event type ${id} cannot found`);
             }
 
             const rules = await rulesService.getByEventTypeId(eventType.id);

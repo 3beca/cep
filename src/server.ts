@@ -5,16 +5,16 @@ import config from './config';
 import { buildEventsRoutes } from './routes/events';
 import NotFoundError from './errors/not-found-error';
 import ConflictError from './errors/conflict-error';
-import { getExternalUrl } from './utils/url.js';
-import FilterError from './filters/filter-error.js';
-import InvalidOperationError from './errors/invalid-operation-error.js';
-import { buildAdminRoutes } from './routes/admin/admin.js';
+import { getExternalUrl } from './utils/url';
+import FilterError from './filters/filter-error';
+import InvalidOperationError from './errors/invalid-operation-error';
+import { buildAdminRoutes } from './routes/admin/admin';
 import logger from './logger';
 
 export function buildServer(eventTypesService, targetsService, rulesService, eventsService, engine) {
 	const app = fastify({
 		logger,
-		trustProxy: config.trustProxy
+		trustProxy: config.trustedProxy
 	});
 
 	app.register(fastifySwagger, {
@@ -22,7 +22,7 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 		exposeRoute: true,
 		swagger: {
 			info: {
-				title: packageInfo.title,
+				title: packageInfo.name,
 				description: packageInfo.description,
 				version: packageInfo.version
 			},
@@ -49,16 +49,7 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService), { prefix: '/admin' });
 	app.register(buildEventsRoutes(engine));
 
-	app.setNotFoundHandler({
-		preValidation: (req, reply, next) => {
-			// your code
-			next();
-		},
-		preHandler: (req, reply, next) => {
-			// your code
-			next();
-		}
-	}, function(request, reply) {
+	app.setNotFoundHandler(function(request, reply) {
 		// Default not found handler with preValidation and preHandler hooks
 		reply.code(404).send({ message: 'Resource not found' });
 	});
@@ -71,7 +62,7 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 		}
 		if (error instanceof ConflictError) {
 			request.log.info(error);
-			reply.header('Location', getExternalUrl(`${request.raw.originalUrl}/${error.id}`));
+			reply.header('Location', getExternalUrl(`${(request.raw as any).originalUrl}/${error.id}`));
 			reply.status(409).send({ message: error.message });
 			return;
 		}

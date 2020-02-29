@@ -1,7 +1,7 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 
-const targetschema = {
+const eventTypeSchema = {
     type: 'object',
     properties: {
         name: { type: 'string' },
@@ -13,7 +13,7 @@ const targetschema = {
 };
 
 const listSchema = {
-    tags: ['targets'],
+    tags: ['event types'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
         pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
@@ -24,7 +24,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: targetschema
+                    items: eventTypeSchema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -34,29 +34,29 @@ const listSchema = {
 };
 
 const getSchema = {
-    tags: ['targets'],
+    tags: ['event types'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'target identifier'
+            description: 'event type identifier'
           }
         }
     },
     response: {
-        200: targetschema
+        200: eventTypeSchema
     }
 };
 
 const deleteSchema = {
-    tags: ['targets'],
+    tags: ['event types'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'target identifier'
+            description: 'event type identifier'
           }
         }
     },
@@ -68,28 +68,29 @@ const deleteSchema = {
 };
 
 const createSchema = {
-    tags: ['targets'],
+    tags: ['event types'],
     body: {
         type: 'object',
-        required: ['name', 'url'],
+        required: ['name'],
         properties: {
-            name: { type: 'string', maxLength: 100 },
-            url: {
-                type: 'string',
-                format: 'url'
-            }
+            name: { type: 'string', maxLength: 100 }
         }
     },
     response: {
-        201: targetschema
+        201: eventTypeSchema
     }
 };
 
-export function buildTargetsRoutes(targetsService) {
+function toEventTypeResponse(eventType) {
+    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
+}
+
+export function buildEventTypesRoutes(eventTypesService) {
 
     async function list(request) {
         const { page, pageSize } = request.query;
-        const results = await targetsService.list(page, pageSize);
+        const eventTypes = await eventTypesService.list(page, pageSize);
+        const results = eventTypes.map(toEventTypeResponse);
         return {
             results,
             next: getNextLink(request, results),
@@ -99,24 +100,24 @@ export function buildTargetsRoutes(targetsService) {
 
     async function getById(request) {
         const { id } = request.params;
-        const target = await targetsService.getById(id);
-        if (!target) {
-            throw new NotFoundError();
+        const eventType = await eventTypesService.getById(id);
+        if (!eventType) {
+            throw new NotFoundError(`Event type ${id} cannot be found`);
         }
-        return target;
+        return toEventTypeResponse(eventType);
     }
 
     async function deleteById(request, reply) {
         const { id } = request.params;
-        await targetsService.deleteById(id);
+        await eventTypesService.deleteById(id);
         reply.status(204).send();
     }
 
     async function create(request, reply) {
-        const { name, url } = request.body;
-        const target = await targetsService.create({ name, url });
-        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
-        reply.status(201).send(target);
+        const { name } = request.body;
+        const eventType = await eventTypesService.create({ name });
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
+        reply.status(201).send(toEventTypeResponse(eventType));
     }
 
     return function(fastify, opts, next) {

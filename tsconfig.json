@@ -1,0 +1,22 @@
+{
+    "include": [
+        "./src/**/*.ts"
+    ],
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2018",
+        "noImplicitAny": false,
+        "declaration": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "sourceMap": true,
+        "outDir": "build",
+        "watch": false,
+        "lib": [
+            "es2018"
+        ],
+        "moduleResolution": "node",
+        "noUnusedLocals": true,
+        "strict": false
+    }
+}

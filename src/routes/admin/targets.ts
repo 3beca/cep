@@ -1,22 +1,19 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 
-const ruleschema = {
+const targetschema = {
     type: 'object',
     properties: {
         name: { type: 'string' },
         id: { type: 'string' },
-        targetId: { type: 'string' },
-        eventTypeId: { type: 'string' },
-        skipOnConsecutivesMatches: { type: 'boolean' },
-        filters: { type: 'object', additionalProperties: true },
+        url: { type: 'string' },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
 };
 
 const listSchema = {
-    tags: ['rules'],
+    tags: ['targets'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
         pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
@@ -27,7 +24,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: ruleschema
+                    items: targetschema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -37,29 +34,29 @@ const listSchema = {
 };
 
 const getSchema = {
-    tags: ['rules'],
+    tags: ['targets'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'rule identifier'
+            description: 'target identifier'
           }
         }
     },
     response: {
-        200: ruleschema
+        200: targetschema
     }
 };
 
 const deleteSchema = {
-    tags: ['rules'],
+    tags: ['targets'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'rule identifier'
+            description: 'target identifier'
           }
         }
     },
@@ -71,28 +68,28 @@ const deleteSchema = {
 };
 
 const createSchema = {
-    tags: ['rules'],
+    tags: ['targets'],
     body: {
         type: 'object',
-        required: ['name', 'eventTypeId', 'targetId'],
+        required: ['name', 'url'],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            targetId: { type: 'string' },
-            eventTypeId: { type: 'string' },
-            skipOnConsecutivesMatches: { type: 'boolean' },
-            filters: { type: 'object' }
+            url: {
+                type: 'string',
+                format: 'url'
+            }
         }
     },
     response: {
-        201: ruleschema
+        201: targetschema
     }
 };
 
-export function buildRulesRoutes(rulesService) {
+export function buildTargetsRoutes(targetsService) {
 
     async function list(request) {
         const { page, pageSize } = request.query;
-        const results = await rulesService.list(page, pageSize);
+        const results = await targetsService.list(page, pageSize);
         return {
             results,
             next: getNextLink(request, results),
@@ -102,23 +99,24 @@ export function buildRulesRoutes(rulesService) {
 
     async function getById(request) {
         const { id } = request.params;
-        const rule = await rulesService.getById(id);
-        if (!rule) {
-            throw new NotFoundError();
+        const target = await targetsService.getById(id);
+        if (!target) {
+            throw new NotFoundError(`Target ${id} cannot be found`);
         }
-        return rule;
+        return target;
     }
 
     async function deleteById(request, reply) {
         const { id } = request.params;
-        await rulesService.deleteById(id);
+        await targetsService.deleteById(id);
         reply.status(204).send();
     }
 
     async function create(request, reply) {
-        const rule = await rulesService.create(request.body);
-        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
-        reply.status(201).send(rule);
+        const { name, url } = request.body;
+        const target = await targetsService.create({ name, url });
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
+        reply.status(201).send(target);
     }
 
     return function(fastify, opts, next) {

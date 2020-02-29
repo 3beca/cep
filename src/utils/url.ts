@@ -1,5 +1,5 @@
 import config from '../config';
-import url from 'url';
+import * as url from 'url';
 
 const { externalHttp } = config;
 

@@ -1,19 +1,22 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 
-const eventTypeSchema = {
+const ruleschema = {
     type: 'object',
     properties: {
         name: { type: 'string' },
         id: { type: 'string' },
-        url: { type: 'string' },
+        targetId: { type: 'string' },
+        eventTypeId: { type: 'string' },
+        skipOnConsecutivesMatches: { type: 'boolean' },
+        filters: { type: 'object', additionalProperties: true },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
 };
 
 const listSchema = {
-    tags: ['event types'],
+    tags: ['rules'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
         pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
@@ -24,7 +27,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: eventTypeSchema
+                    items: ruleschema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -34,29 +37,29 @@ const listSchema = {
 };
 
 const getSchema = {
-    tags: ['event types'],
+    tags: ['rules'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'event type identifier'
+            description: 'rule identifier'
           }
         }
     },
     response: {
-        200: eventTypeSchema
+        200: ruleschema
     }
 };
 
 const deleteSchema = {
-    tags: ['event types'],
+    tags: ['rules'],
     params: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
-            description: 'event type identifier'
+            description: 'rule identifier'
           }
         }
     },
@@ -68,29 +71,28 @@ const deleteSchema = {
 };
 
 const createSchema = {
-    tags: ['event types'],
+    tags: ['rules'],
     body: {
         type: 'object',
-        required: ['name'],
+        required: ['name', 'eventTypeId', 'targetId'],
         properties: {
-            name: { type: 'string', maxLength: 100 }
+            name: { type: 'string', maxLength: 100 },
+            targetId: { type: 'string' },
+            eventTypeId: { type: 'string' },
+            skipOnConsecutivesMatches: { type: 'boolean' },
+            filters: { type: 'object' }
         }
     },
     response: {
-        201: eventTypeSchema
+        201: ruleschema
     }
 };
 
-function toEventTypeResponse(eventType) {
-    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
-}
-
-export function buildEventTypesRoutes(eventTypesService) {
+export function buildRulesRoutes(rulesService) {
 
     async function list(request) {
         const { page, pageSize } = request.query;
-        const eventTypes = await eventTypesService.list(page, pageSize);
-        const results = eventTypes.map(toEventTypeResponse);
+        const results = await rulesService.list(page, pageSize);
         return {
             results,
             next: getNextLink(request, results),
@@ -100,24 +102,23 @@ export function buildEventTypesRoutes(eventTypesService) {
 
     async function getById(request) {
         const { id } = request.params;
-        const eventType = await eventTypesService.getById(id);
-        if (!eventType) {
-            throw new NotFoundError();
+        const rule = await rulesService.getById(id);
+        if (!rule) {
+            throw new NotFoundError(`Rule ${id} cannot be found`);
         }
-        return toEventTypeResponse(eventType);
+        return rule;
     }
 
     async function deleteById(request, reply) {
         const { id } = request.params;
-        await eventTypesService.deleteById(id);
+        await rulesService.deleteById(id);
         reply.status(204).send();
     }
 
     async function create(request, reply) {
-        const { name } = request.body;
-        const eventType = await eventTypesService.create({ name });
-        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
-        reply.status(201).send(toEventTypeResponse(eventType));
+        const rule = await rulesService.create(request.body);
+        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
+        reply.status(201).send(rule);
     }
 
     return function(fastify, opts, next) {

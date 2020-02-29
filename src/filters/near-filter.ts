@@ -65,32 +65,37 @@ function assertIsValid(filter) {
 }
 
 class NearFilter {
+    static assertIsValid;    
+    
+    private filter;
+
+    public match(location) {
+        if (!isLocation(location)){
+            throw new FilterMatchError('_near filter must be applied on a location value. This must be an array with 2 values: longitude and latitude');
+        }
+
+        const coord1 = {
+            longitude: location[0],
+            latitude: location[1]
+        };
+
+        const geometry = this.filter._geometry;
+        const coord2 = {
+            longitude: geometry.coordinates[0],
+            latitude: geometry.coordinates[1]
+        };
+
+        const distance = geolib.getDistance(coord1, coord2);
+
+        const minDistance = this.filter._minDistance || 0;
+        const maxDistance = this.filter._maxDistance || Number.MAX_VALUE;
+
+        return distance >= minDistance && distance <= maxDistance;
+    }
+    
     constructor(filter) {
         assertIsValid(filter);
         this.filter = filter;
-        this.match = function match(location) {
-            if (!isLocation(location)){
-                throw new FilterMatchError('_near filter must be applied on a location value. This must be an array with 2 values: longitude and latitude');
-            }
-
-            const coord1 = {
-                longitude: location[0],
-                latitude: location[1]
-            };
-
-            const geometry = this.filter._geometry;
-            const coord2 = {
-                longitude: geometry.coordinates[0],
-                latitude: geometry.coordinates[1]
-            };
-
-            const distance = geolib.getDistance(coord1, coord2);
-
-            const minDistance = this.filter._minDistance || 0;
-            const maxDistance = this.filter._maxDistance || Number.MAX_VALUE;
-
-            return distance >= minDistance && distance <= maxDistance;
-        };
     }
 }
 NearFilter.assertIsValid = assertIsValid;
