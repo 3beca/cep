@@ -274,7 +274,7 @@ describe('events', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters = undefined, skipOnConsecutivesMatches = false) {
+    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters: any = undefined, skipOnConsecutivesMatches = false) {
         const createResponse = await server.inject({
             method: 'POST',
             url: '/admin/rules',

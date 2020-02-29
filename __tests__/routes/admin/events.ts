@@ -145,7 +145,7 @@ describe('admin', () => {
             return JSON.parse(createResponse.payload);
         }
 
-        async function createRule(server, targetId, eventTypeId, name = 'a rule', filters = undefined) {
+        async function createRule(server, targetId, eventTypeId, name = 'a rule', filters: any = undefined) {
             const createResponse = await server.inject({
                 method: 'POST',
                 url: '/admin/rules',

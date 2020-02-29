@@ -14,7 +14,7 @@ export function buildEventsService(db) {
             const events = await collection.find({ eventTypeId: new ObjectId(eventTypeId) }).sort({ createdAt: -1 }).limit(1).toArray();
             return toDto(events[0]);
         },
-        async create(eventType, payload, requestId, rules, targets = [], targetsResponse = []) {
+        async create(eventType, payload, requestId, rules, targets: any[] = [], targetsResponse: any[] = []) {
             const event = {
                 payload,
                 requestId,

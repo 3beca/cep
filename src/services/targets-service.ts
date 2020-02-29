@@ -5,7 +5,7 @@ import { toDto } from '../utils/dto';
 export function buildTargetsService(db) {
 
     const collection = db.collection('targets');
-    const beforeDeleteEventHandlers = [];
+    const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
 
     return {
         async list(page, pageSize) {

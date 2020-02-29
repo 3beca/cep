@@ -14,7 +14,7 @@ describe('geolib', function() {
         });
 
         it('should thrown an Error when coordinates inputs are null', function() {
-            function act() { geolib.getDistance(null, null); }
+            function act() { geolib.getDistance(null as any, null as any); }
 
             expect(act).toThrow();
         });

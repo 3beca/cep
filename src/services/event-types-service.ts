@@ -5,7 +5,7 @@ import { toDto } from '../utils/dto';
 export function buildEventTypesService(db) {
 
     const collection = db.collection('event-types');
-    const beforeDeleteEventHandlers = [];
+    const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
 
     return {
         async list(page, pageSize) {

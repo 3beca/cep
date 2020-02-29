@@ -17,6 +17,6 @@
         ],
         "moduleResolution": "node",
         "noUnusedLocals": true,
-        "strict": false
+        "strict": true
     }
 }

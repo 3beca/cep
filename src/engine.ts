@@ -16,7 +16,7 @@ export function buildEngine(
 
             const rules = await rulesService.getByEventTypeId(eventType.id);
             const matchesRules = rules.filter(r => new Filter(r.filters).match(eventPayload));
-            const rulesMustBeSkipped = [];
+            const rulesMustBeSkipped: any[] = [];
             if (matchesRules.some(r => r.skipOnConsecutivesMatches)) {
                 const lastEvent = await eventsService.getLastEvent(eventType.id);
                 const lastEventMatchesRulesIds = ((lastEvent || {}).rules || []).map(r => r.id);

@@ -73,12 +73,12 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 			reply.status(400).send(error);
 			return;
 		}
-		if (error.statusCode < 500) {
+		if (error.statusCode && error.statusCode < 500) {
 			request.log.info(error);
 		} else {
 			request.log.error(error);
 		}
-		reply.status(error.statusCode).send(error);
+		reply.status(error.statusCode ?? 500).send(error);
 	});
 
 	return app;
