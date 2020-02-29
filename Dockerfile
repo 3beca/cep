@@ -8,6 +8,6 @@ COPY ./package*.json ./
 
 RUN npm ci
 
-COPY ./build ./build
+COPY ./build ./
 
-CMD ["node", "build/main.js"]
+CMD ["node", "src/main.js"]
