@@ -148,9 +148,9 @@ function assertFilters(filters) {
 
 class Filter {
     static assertIsValid;
-    
+
     private filters;
-    
+
     public match(data) {
         if (!data){
             return false;
@@ -159,8 +159,8 @@ class Filter {
             return true;
         }
         return matchFilters(data, this.filters);
-    };
-    
+    }
+
     constructor(filters) {
         assertIsValid(filters);
         this.filters = filters;

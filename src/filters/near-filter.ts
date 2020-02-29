@@ -65,8 +65,8 @@ function assertIsValid(filter) {
 }
 
 class NearFilter {
-    static assertIsValid;    
-    
+    static assertIsValid;
+
     private filter;
 
     public match(location) {
@@ -92,7 +92,7 @@ class NearFilter {
 
         return distance >= minDistance && distance <= maxDistance;
     }
-    
+
     constructor(filter) {
         assertIsValid(filter);
         this.filter = filter;
