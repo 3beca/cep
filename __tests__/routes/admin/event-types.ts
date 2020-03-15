@@ -301,7 +301,7 @@ describe('admin', () => {
 
                 const getResponse = await server.inject({
                     method: 'GET',
-                    url: '/admin/event-types' + createdEvent.id
+                    url: '/admin/event-types/' + createdEvent.id
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
