@@ -465,7 +465,7 @@ describe('admin', () => {
 
                 const getResponse = await server.inject({
                     method: 'GET',
-                    url: '/admin/rules' + createdRule.id
+                    url: '/admin/rules/' + createdRule.id
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
