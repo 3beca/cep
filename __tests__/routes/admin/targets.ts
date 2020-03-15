@@ -340,7 +340,7 @@ describe('admin', () => {
 
                 const getResponse = await server.inject({
                     method: 'GET',
-                    url: '/admin/targets' + createdTarget.id
+                    url: '/admin/targets/' + createdTarget.id
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
