@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "convict": "^5.2.0",
-    "fastify": "^2.12.1",
+    "fastify": "^2.13.0",
     "fastify-swagger": "^2.5.0",
     "geolib": "^3.2.1",
     "make-promises-safe": "^5.1.0",
