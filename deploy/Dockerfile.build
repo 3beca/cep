@@ -1,4 +1,0 @@
-FROM node:13.0.1
-
-WORKDIR /var/www
-
