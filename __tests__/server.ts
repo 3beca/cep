@@ -81,13 +81,24 @@ describe('builServer', () => {
             }, { prefix: '/cors' }
         );
 
-        const response = await server.inject({
+        const responseOptions = await server.inject({
             method: 'OPTIONS',
             url: '/cors'
         });
 
-        expect(response.statusCode).toBe(404);
-        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+        expect(responseOptions.statusCode).toBe(404);
+        expect(responseOptions.headers['content-type']).toBe('application/json; charset=utf-8');
+
+        const responseGet = await server.inject({
+            method: 'GET',
+            url: '/cors',
+            headers: {
+                origin: 'https://mywebsite.com'
+            }
+        });
+
+        expect(responseGet.statusCode).toBe(200);
+        expect(responseGet.headers['access-control-allow-origin']).toBe(undefined);
     });
 
     it('should return 204 when CORS preflight request and cors is enabled', async () => {
@@ -102,11 +113,22 @@ describe('builServer', () => {
             }, { prefix: '/cors' }
         );
 
-        const response = await server.inject({
+        const responseOptions = await server.inject({
             method: 'OPTIONS',
             url: '/cors'
         });
 
-        expect(response.statusCode).toBe(204);
+        expect(responseOptions.statusCode).toBe(204);
+
+        const responseGet = await server.inject({
+            method: 'GET',
+            url: '/cors',
+            headers: {
+                origin: 'https://mywebsite.com'
+            }
+        });
+
+        expect(responseGet.statusCode).toBe(200);
+        expect(responseGet.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
     });
 });
