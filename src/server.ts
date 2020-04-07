@@ -9,12 +9,18 @@ import { getExternalUrl } from './utils/url';
 import FilterError from './filters/filter-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { buildAdminRoutes } from './routes/admin/admin';
+import fastifyCors from 'fastify-cors';
 import logger from './logger';
 
-export function buildServer(eventTypesService, targetsService, rulesService, eventsService, engine) {
+export type ServerOptions = {
+	trustProxy: boolean;
+	enableCors: boolean;
+};
+
+export function buildServer(options: ServerOptions, eventTypesService, targetsService, rulesService, eventsService, engine) {
 	const app = fastify({
 		logger,
-		trustProxy: config.trustedProxy
+		trustProxy: options.trustProxy
 	});
 
 	app.register(fastifySwagger, {
@@ -44,6 +50,14 @@ export function buildServer(eventTypesService, targetsService, rulesService, eve
 			produces: ['application/json']
 		}
 	});
+
+	if (options.enableCors) {
+		app.register(fastifyCors, {
+			origin: true,
+			methods: ['GET', 'POST', 'DELETE', 'PUT' ],
+			allowedHeaders: ['Content-Type']
+		});
+	}
 
 	// End points
 	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService), { prefix: '/admin' });

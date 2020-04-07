@@ -10,7 +10,9 @@ describe('admin', () => {
     beforeEach(async () => {
         const options = {
             databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl
+            databaseUrl: config.mongodb.databaseUrl,
+            trustProxy: false,
+            enableCors: false
         };
         app = await buildApp(options);
         server = app.getServer();

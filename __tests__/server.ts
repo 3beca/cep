@@ -2,6 +2,7 @@ jest.mock('pino');
 import config from '../src/config';
 import { ObjectId } from 'bson';
 import { buildApp } from '../src/app';
+import { buildServer } from '../src/server';
 
 describe('builServer', () => {
     let app;
@@ -10,7 +11,9 @@ describe('builServer', () => {
     beforeEach(async () => {
         const options = {
             databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl
+            databaseUrl: config.mongodb.databaseUrl,
+            trustProxy: false,
+            enableCors: false
         };
         app = await buildApp(options);
         server = app.getServer();
@@ -66,5 +69,66 @@ describe('builServer', () => {
 
         expect(response.statusCode).toBe(500);
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+    });
+
+    it('should return 404 when CORS preflight request but cors is not enabled', async () => {
+        server.register(
+            function(fastify, opts, next) {
+                fastify.get('/', async (request, reply) => {
+                    reply.status(200).send({ success: true });
+                });
+                next();
+            }, { prefix: '/cors' }
+        );
+
+        const responseOptions = await server.inject({
+            method: 'OPTIONS',
+            url: '/cors'
+        });
+
+        expect(responseOptions.statusCode).toBe(404);
+        expect(responseOptions.headers['content-type']).toBe('application/json; charset=utf-8');
+
+        const responseGet = await server.inject({
+            method: 'GET',
+            url: '/cors',
+            headers: {
+                origin: 'https://mywebsite.com'
+            }
+        });
+
+        expect(responseGet.statusCode).toBe(200);
+        expect(responseGet.headers['access-control-allow-origin']).toBe(undefined);
+    });
+
+    it('should return 204 when CORS preflight request and cors is enabled', async () => {
+        const server = buildServer({ trustProxy: false, enableCors: true },
+            null, null, null, null, null);
+        server.register(
+            function(fastify, opts, next) {
+                fastify.get('/', async (request, reply) => {
+                    reply.status(200).send({ success: true });
+                });
+                next();
+            }, { prefix: '/cors' }
+        );
+
+        const responseOptions = await server.inject({
+            method: 'OPTIONS',
+            url: '/cors'
+        });
+
+        expect(responseOptions.statusCode).toBe(204);
+
+        const responseGet = await server.inject({
+            method: 'GET',
+            url: '/cors',
+            headers: {
+                origin: 'https://mywebsite.com'
+            }
+        });
+
+        expect(responseGet.statusCode).toBe(200);
+        expect(responseGet.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
     });
 });

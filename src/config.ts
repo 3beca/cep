@@ -41,11 +41,17 @@ const config = convict({
             env: 'EXTERNAL_HTTP_PORT',
         }
     },
-    trustedProxy: {
+    trustProxy: {
         doc: 'indicates if the application is served behind a reverse proxy.',
         format: Boolean,
         default: false,
-        env: 'TRUSTED_PROXY',
+        env: 'TRUST_PROXY',
+    },
+    enableCors: {
+        doc: 'indicates if the application supports cors requests.',
+        format: Boolean,
+        default: false,
+        env: 'ENABLE_CORS'
     },
     mongodb: {
         databaseUrl: {
