@@ -10,7 +10,6 @@ import FilterError from './filters/filter-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { buildAdminRoutes } from './routes/admin/admin';
 import fastifyCors from 'fastify-cors';
-import fastifyRateLimit from 'fastify-rate-limit';
 import logger from './logger';
 
 export type ServerOptions = {
@@ -59,11 +58,6 @@ export function buildServer(options: ServerOptions, eventTypesService, targetsSe
 			allowedHeaders: ['Content-Type']
 		});
 	}
-
-	app.register(fastifyRateLimit, {
-		max: 100,
-		timeWindow: '1 minute'
-	});
 
 	// End points
 	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService), { prefix: '/admin' });
