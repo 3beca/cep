@@ -51,7 +51,9 @@ spec:
           value: "{{ .Values.deployment.env.externalHttpHost }}"
         - name: EXTERNAL_HTTP_PORT
           value: "443"
-        - name: TRUSTED_PROXY
+        - name: TRUST_PROXY
+          value: "true"
+        - name: ENABLE_CORS
           value: "true"
         - name: MONGODB_URL
           value: mongodb://10.1.1.1:27017
