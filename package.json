@@ -33,7 +33,7 @@
     "@types/mongodb": "^3.5.14",
     "@types/node": "^13.13.4",
     "@types/request": "^2.48.4",
-    "@typescript-eslint/eslint-plugin": "^2.29.0",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
     "codecov": "^3.6.2",
     "eslint": "^6.8.0",
