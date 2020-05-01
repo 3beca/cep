@@ -7,7 +7,7 @@ export function buildEventsService(db) {
 
     return {
         async list(page, pageSize, eventTypeId?: string) {
-            const query =  eventTypeId ? { eventTypeId: new ObjectId(eventTypeId) } : {};
+            const query = eventTypeId ? { eventTypeId: new ObjectId(eventTypeId) } : {};
             const events = await collection.find(query).skip((page - 1) * pageSize).sort({ createdAt: -1 }).limit(pageSize).toArray();
             return events.map(toDto);
         },
