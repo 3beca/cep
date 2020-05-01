@@ -33,17 +33,21 @@ const listSchema = {
     }
 };
 
+const targetIdParam = {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'target identifier',
+        pattern: '^[a-f0-9]{24}$'
+      }
+    },
+    errorMessage: 'target id must be a valid ObjectId'
+};
+
 const getSchema = {
     tags: ['targets'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'target identifier'
-          }
-        }
-    },
+    params: targetIdParam,
     response: {
         200: targetschema
     }
@@ -51,15 +55,7 @@ const getSchema = {
 
 const deleteSchema = {
     tags: ['targets'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'target identifier'
-          }
-        }
-    },
+    params: targetIdParam,
     response: {
         204: {
             type: 'object'

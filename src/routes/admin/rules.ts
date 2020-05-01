@@ -36,17 +36,21 @@ const listSchema = {
     }
 };
 
+const ruleIdParam = {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'rule identifier',
+        pattern: '^[a-f0-9]{24}$'
+      }
+    },
+    errorMessage: 'rule id must be a valid ObjectId'
+};
+
 const getSchema = {
     tags: ['rules'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'rule identifier'
-          }
-        }
-    },
+    params: ruleIdParam,
     response: {
         200: ruleschema
     }
@@ -54,15 +58,7 @@ const getSchema = {
 
 const deleteSchema = {
     tags: ['rules'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'rule identifier'
-          }
-        }
-    },
+    params: ruleIdParam,
     response: {
         204: {
             type: 'object'

@@ -191,6 +191,16 @@ describe('admin', () => {
 
         describe('get by id', () => {
 
+            it('should return 400 when rule identifier is not a valid ObjectId', async () => {
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules/invalid-object-id-here'
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params rule id must be a valid ObjectId' }));
+            });
+
             it('should return 404 when rule does not exists', async () => {
                 const response = await server.inject({
                     method: 'GET',
@@ -435,6 +445,17 @@ describe('admin', () => {
         });
 
         describe('delete', () => {
+
+            it('should return 400 when rule identifier is not a valid ObjectId', async () => {
+                const response = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/rules/invalid-object-id-here'
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params rule id must be a valid ObjectId' }));
+            });
+
             it('should return 204 when rule does not exist', async () => {
                 const response = await server.inject({
                     method: 'DELETE',
