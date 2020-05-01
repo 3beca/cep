@@ -33,17 +33,21 @@ const listSchema = {
     }
 };
 
+const eventTypeIdParam = {
+    type: 'object',
+    properties: {
+      id: {
+        type: 'string',
+        description: 'event type identifier',
+        pattern: '^[a-f0-9]{24}$'
+      }
+    },
+    errorMessage: 'event type id must be a valid ObjectId'
+};
+
 const getSchema = {
     tags: ['event types'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'event type identifier'
-          }
-        }
-    },
+    params: eventTypeIdParam,
     response: {
         200: eventTypeSchema
     }
@@ -51,15 +55,7 @@ const getSchema = {
 
 const deleteSchema = {
     tags: ['event types'],
-    params: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'event type identifier'
-          }
-        }
-    },
+    params: eventTypeIdParam,
     response: {
         204: {
             type: 'object'

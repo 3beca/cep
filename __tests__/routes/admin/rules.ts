@@ -128,7 +128,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'querystring.page should be integer'
+                    message: 'querystring/page should be integer'
                 }));
             });
 
@@ -142,7 +142,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'querystring.pageSize should be integer'
+                    message: 'querystring/pageSize should be integer'
                 }));
             });
 
@@ -156,7 +156,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'querystring.pageSize should be <= 100'
+                    message: 'querystring/pageSize should be <= 100'
                 }));
             });
 
@@ -170,7 +170,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'querystring.pageSize should be >= 1'
+                    message: 'querystring/pageSize should be >= 1'
                 }));
             });
 
@@ -184,7 +184,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'querystring.page should be >= 1'
+                    message: 'querystring/page should be >= 1'
                 }));
             });
         });
@@ -276,7 +276,7 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body.name should NOT be longer than 100 characters' }));
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/name should NOT be longer than 100 characters' }));
             });
 
             it('should return 400 when filters is invalid', async () => {

@@ -11,6 +11,8 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { buildAdminRoutes } from './routes/admin/admin';
 import fastifyCors from 'fastify-cors';
 import logger from './logger';
+import AjvErrors from 'ajv-errors';
+import Ajv from 'ajv';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -22,6 +24,17 @@ export function buildServer(options: ServerOptions, eventTypesService, targetsSe
 		logger,
 		trustProxy: options.trustProxy
 	});
+
+	const ajv = new Ajv({
+		removeAdditional: true,
+		useDefaults: true,
+		coerceTypes: true,
+		allErrors: true,
+		nullable: true,
+		jsonPointers: true
+	});
+	AjvErrors(ajv);
+	app.setSchemaCompiler(schema => ajv.compile(schema));
 
 	app.register(fastifySwagger, {
 		routePrefix: '/documentation',
