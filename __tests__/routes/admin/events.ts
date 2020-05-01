@@ -68,6 +68,40 @@ describe('admin', () => {
             expect(listResponse.prev).toBe(undefined);
         });
 
+        it('should return 400 bad request when events are filtered by an invalid eventTypeId', async () => {
+            const response = await server.inject({
+                method: 'GET',
+                url: '/admin/events?eventTypeId=invalid-object-id-here'
+            });
+            expect(response.statusCode).toBe(400);
+            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+            expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'querystring/eventTypeId should be a valid ObjectId' }));
+        });
+
+        it('should return a list of the processed events filtered by eventTypeId', async () => {
+            const eventType1 = await createEventType(server);
+            const eventType2 = await createEventType(server);
+
+            await processEvent(server, eventType1.id, { value: 8 });
+            await processEvent(server, eventType2.id, { value: 7 });
+
+            const response = await server.inject({
+                method: 'GET',
+                url: '/admin/events?eventTypeId=' + eventType1.id
+            });
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+            const listResponse = JSON.parse(response.payload);
+            expect(listResponse.results.length).toBe(1);
+            const event1 = listResponse.results[0];
+            expect(event1.eventTypeId).toBe(eventType1.id);
+            expect(event1.eventTypeName).toBe(eventType1.name);
+            expect(event1.payload).toStrictEqual({ value: 8 });
+            expect(event1.createdAt).not.toBe(undefined);
+            expect(listResponse.next).toBe(undefined);
+            expect(listResponse.prev).toBe(undefined);
+        });
+
         it('should return a list of the processed events and rule matching and target response', async () => {
             const eventType = await createEventType(server);
             const target1 = await createTarget(server, 'http://example.org');
@@ -168,7 +202,7 @@ describe('admin', () => {
                 method: 'POST',
                 url: '/admin/event-types',
                 body: {
-                    name: 'an event type'
+                    name: 'an event type ' + Math.random()
                 }
             });
             expect(createResponse.statusCode).toBe(201);

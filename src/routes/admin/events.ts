@@ -42,7 +42,8 @@ const listSchema = {
     tags: ['events'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' }
     },
     response: {
         200: {
@@ -62,8 +63,8 @@ const listSchema = {
 export function buildEventsRoutes(eventsService) {
 
     async function list(request) {
-        const { page, pageSize } = request.query;
-        const events = await eventsService.list(page, pageSize);
+        const { page, pageSize, eventTypeId } = request.query;
+        const events = await eventsService.list(page, pageSize, eventTypeId);
         const results = events;
         return {
             results,
