@@ -309,7 +309,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: '_aa is not a valid filter operator' }));
             });
 
-            it('should return 400 when filters is invalid', async () => {
+            it('should return 400 when filters has an invalid key', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
                 const response = await server.inject({

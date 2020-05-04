@@ -27,6 +27,12 @@ describe('Filter', () => {
             expect(act).toThrow('filter key \'child.level\' cannot contain invalid symbol \'.\'');
         });
 
+        it('should throw an Error when filter inside _and array have a key containing . symbol', () => {
+            const filters = { '_and': [ { 'child.level': 10 } ] };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('filter key \'child.level\' cannot contain invalid symbol \'.\'');
+        });
+
         it('should throw an Error when _and filter it is not an array', () => {
             const filters = { '_and': {'a': 5} };
             const act = () => new Filter(filters);
