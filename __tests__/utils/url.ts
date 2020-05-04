@@ -14,8 +14,8 @@ describe('url', () => {
             expect(result).toBe('http://localhost:8888/my-path');
         });
 
-        it('should return external url when path is undefined', () => {
-            const result = getExternalUrl(undefined);
+        it('should return external url when path is null', () => {
+            const result = getExternalUrl(null);
             expect(result).toBe('http://localhost:8888');
         });
     });
