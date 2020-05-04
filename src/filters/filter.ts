@@ -26,6 +26,17 @@ function getObjectByKey(object, key) {
     return result;
 }
 
+function assertKeyIsValid(key: string): void {
+    assertKeyDoesNotContainSymbol(key, '$');
+    assertKeyDoesNotContainSymbol(key, '.');
+}
+
+function assertKeyDoesNotContainSymbol(key: string, symbol: string): void {
+    if (key.includes(symbol)) {
+        throw new FilterError(`filter key '${key}' cannot contain invalid symbol '${symbol}'`);
+    }
+}
+
 function matchFilter(data, filterField, filterOperator) {
     const dataValue = getObjectByKey(data, filterField);
     if (!dataValue) {
@@ -96,6 +107,7 @@ function assertIsValid(filters) {
         throw new FilterError('filter must be an object');
     }
     Object.keys(filters).forEach(key => {
+        assertKeyIsValid(key);
         switch (key.toLowerCase()) {
             case '_or' : {
                 assertOrFilters(filters[key]);

@@ -15,6 +15,18 @@ describe('Filter', () => {
             expect(act).toThrow('_invalidOperator is not a valid filter operator');
         });
 
+        it('should throw an Error when filter key contains $ symbol', () => {
+            const filters = { '$level': 10 };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('filter key \'$level\' cannot contain invalid symbol \'$\'');
+        });
+
+        it('should throw an Error when filter key contains . symbol', () => {
+            const filters = { 'child.level': 10 };
+            const act = () => new Filter(filters);
+            expect(act).toThrow('filter key \'child.level\' cannot contain invalid symbol \'.\'');
+        });
+
         it('should throw an Error when _and filter it is not an array', () => {
             const filters = { '_and': {'a': 5} };
             const act = () => new Filter(filters);
@@ -300,29 +312,9 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should return true when filter on nested object does not match the data field value', () => {
-            const data = { 'child': { 'childChild': { level: 5 } } },
-                filters = { 'child.childChild.level': 5 },
-                filter = new Filter(filters);
-
-            const result = filter.match(data);
-
-            expect(result).toBe(true);
-        });
-
-        it('should return false when filter on nested object does not match the data field value', () => {
-            const data = { level: 10, 'nestedObject': { 'level2': 5 } },
-                filters = { 'nestedObject.level2': 9 },
-                filter = new Filter(filters);
-
-            const result = filter.match(data);
-
-            expect(result).toBe(false);
-        });
-
         it('should return true when all AND filters the data field values', () => {
-            const data = { 'a': 10, 'child': { 'b': 5 }, 'c': 9 },
-                filters = { 'child.b': 5, 'a': { '_lte': 10 }, 'c': { '_gt': 8 } },
+            const data = { 'a': 10, 'c': 9 },
+                filters = { 'a': { '_lte': 10 }, 'c': { '_gt': 8 } },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -331,8 +323,8 @@ describe('Filter', () => {
         });
 
         it('should return false when any AND filters does not match the data field value', () => {
-            const data = { 'a': 10, 'child': { 'b': 5 }, 'c': 9 },
-                filters = { 'child.b': 5, 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
+            const data = { 'a': 10, 'c': 9 },
+                filters = { 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -341,8 +333,8 @@ describe('Filter', () => {
         });
 
         it('should return false when all AND filters does not match the data field value', () => {
-            const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { 'child.b': 5, 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
+            const data = { 'a': 10, 'c': 5 },
+                filters = { 'a': { '_lte': 9 }, 'c': { '_gt': 8 } },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -351,8 +343,8 @@ describe('Filter', () => {
         });
 
         it('should return false when all _or filters does not match the data field value', () => {
-            const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_or': [{'child.b': 5}, {'a': { '_lte': 9 }}, {'c': { '_gt': 8 } } ] },
+            const data = { 'a': 10, 'c': 5 },
+                filters = { '_or': [{'a': { '_lte': 9 }}, {'c': { '_gt': 8 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -362,7 +354,7 @@ describe('Filter', () => {
 
         it('should return true when all _or filters the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_or': [{'child.b': 1}, {'a': { '_lte': 10 }}, {'c': { '_gt': 4 } } ] },
+                filters = { '_or': [{'a': { '_lte': 10 }}, {'c': { '_gt': 4 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -372,7 +364,7 @@ describe('Filter', () => {
 
         it('should return false when any _and filter does not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_and': [{'child.b': 1}, {'a': { '_lte': 10 }}, {'c': { '_gt': 5 } } ] },
+                filters = { '_and': [{'a': { '_lte': 10 }}, {'c': { '_gt': 5 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -382,7 +374,7 @@ describe('Filter', () => {
 
         it('should return true when all _and filters the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_and': [{'child.b': 1}, {'a': { '_lte': 10 }}, {'c': { '_gt': 4 } } ] },
+                filters = { '_and': [{'a': { '_lte': 10 }}, {'c': { '_gt': 4 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -392,7 +384,7 @@ describe('Filter', () => {
 
         it('should return true when _or with _and filters the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_or': [{'_and': [{'child.b': 1}, {'a': 10}]}, {'c': { '_gt': 100 } } ] },
+                filters = { '_or': [{'_and': [{'a': 10}]}, {'c': { '_gt': 100 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -402,7 +394,7 @@ describe('Filter', () => {
 
         it('should return false when _or with _and filters do not the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_or': [{'_and': [{'child.b': 1}, {'a': 9}]}, {'c': { '_gt': 100 } } ] },
+                filters = { '_or': [{'_and': [{'a': 9}]}, {'c': { '_gt': 100 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -410,9 +402,9 @@ describe('Filter', () => {
             expect(result).toBe(false);
         });
 
-        it('should return true when _and with _or filters do not the data field value', () => {
+        it('should return true when _and with _or filters do not match the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_and': [{'_or': [{'child.b': 1}, {'a': 9}]}, {'c': { '_gt': 4 } } ] },
+                filters = { '_and': [{'_or': [{'a': 9}, { 'c': 5 }]}, {'c': { '_gt': 4 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);
@@ -422,7 +414,7 @@ describe('Filter', () => {
 
         it('should return false when _and with _or filters do not the data field value', () => {
             const data = { 'a': 10, 'child': { 'b': 1 }, 'c': 5 },
-                filters = { '_and': [{'_or': [{'child.b': 10}, {'a': 9}]}, {'c': { '_gt': 4 } } ] },
+                filters = { '_and': [{'_or': [{'a': 9}, {'c': 4}]}, {'c': { '_gt': 4 } } ] },
                 filter = new Filter(filters);
 
             const result = filter.match(data);

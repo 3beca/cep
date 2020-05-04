@@ -309,6 +309,26 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: '_aa is not a valid filter operator' }));
             });
 
+            it('should return 400 when filters is invalid', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        filters: {
+                            '$a': 6
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'filter key \'$a\' cannot contain invalid symbol \'$\'' }));
+            });
+
             it('should return 400 when event type id is undefined', async () => {
                 const target = await createTarget(server);
                 const response = await server.inject({
