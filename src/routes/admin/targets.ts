@@ -16,7 +16,8 @@ const listSchema = {
     tags: ['targets'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        search: { type: 'string' }
     },
     response: {
         200: {
@@ -84,8 +85,8 @@ const createSchema = {
 export function buildTargetsRoutes(targetsService) {
 
     async function list(request) {
-        const { page, pageSize } = request.query;
-        const results = await targetsService.list(page, pageSize);
+        const { page, pageSize, search } = request.query;
+        const results = await targetsService.list(page, pageSize, search);
         return {
             results,
             next: getNextLink(request, results),

@@ -1,15 +1,16 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, Db } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 
-export function buildTargetsService(db) {
+export function buildTargetsService(db: Db) {
 
     const collection = db.collection('targets');
     const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
 
     return {
-        async list(page, pageSize) {
-            const targets = await collection.find({}).skip((page - 1) * pageSize).limit(pageSize).toArray();
+        async list(page: number, pageSize: number, search: string) {
+            const query = search ? { name: { $regex: `.*${search}.*`, $options: 'i' } } : {};
+            const targets = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return targets.map(toDto);
         },
         async create(target) {
@@ -31,17 +32,17 @@ export function buildTargetsService(db) {
                 throw error;
             }
         },
-        async getById(id) {
+        async getById(id: string) {
             const target = await collection.findOne({ _id: new ObjectId(id) });
             return toDto(target);
         },
-        async deleteById(id) {
+        async deleteById(id: string) {
             for (const beforeDelete of beforeDeleteEventHandlers) {
                 await beforeDelete(id);
             }
             await collection.deleteOne({ _id: new ObjectId(id) });
         },
-        async getByIds(ids) {
+        async getByIds(ids: string[]) {
             const targets = await collection.find({ _id: { $in: ids.map(id => new ObjectId(id)) }}).toArray();
             return targets.map(toDto);
         },

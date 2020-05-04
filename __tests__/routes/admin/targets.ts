@@ -26,6 +26,7 @@ describe('admin', () => {
     describe('targets', () => {
 
         describe('get', () => {
+
             it('should return 200 with array of targets', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
@@ -49,6 +50,26 @@ describe('admin', () => {
                 expect(listResponse.results.length).toBe(1);
                 const target = listResponse.results[0];
                 expect(target).toEqual(createdTarget);
+            });
+
+            it('should return 200 with array of targets filtered by search query string', async () => {
+                await createTarget(server, 'my target');
+                await createTarget(server, 'my blaster');
+                await createTarget(server, 'good target');
+                await createTarget(server, 'bad target');
+                await createTarget(server, 'juice');
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/targets?search=tArg'
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const listResponse = JSON.parse(response.payload);
+                expect(listResponse.results.length).toBe(3);
+                expect(listResponse.results[0].name).toBe('bad target');
+                expect(listResponse.results[1].name).toBe('good target');
+                expect(listResponse.results[2].name).toBe('my target');
             });
 
             it('should set next and not prev link in first page when targets returned match page size', async () => {
@@ -388,12 +409,12 @@ describe('admin', () => {
         });
     });
 
-    async function createTarget(server) {
+    async function createTarget(server, name = 'a target') {
         const createResponse = await server.inject({
             method: 'POST',
             url: '/admin/targets',
             body: {
-                name: 'a target',
+                name,
                 url: 'http://example.org'
             }
         });
