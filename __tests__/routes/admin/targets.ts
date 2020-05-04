@@ -53,23 +53,23 @@ describe('admin', () => {
             });
 
             it('should return 200 with array of targets filtered by search query string', async () => {
-                await createTarget(server, 'my target');
+                await createTarget(server, 'my targ?t');
                 await createTarget(server, 'my blaster');
-                await createTarget(server, 'good target');
-                await createTarget(server, 'bad target');
+                await createTarget(server, 'good targ?t');
+                await createTarget(server, 'bad targ?t');
                 await createTarget(server, 'juice');
 
                 const response = await server.inject({
                     method: 'GET',
-                    url: '/admin/targets?search=tArg'
+                    url: '/admin/targets?search=tArg%3Ft'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const listResponse = JSON.parse(response.payload);
                 expect(listResponse.results.length).toBe(3);
-                expect(listResponse.results[0].name).toBe('bad target');
-                expect(listResponse.results[1].name).toBe('good target');
-                expect(listResponse.results[2].name).toBe('my target');
+                expect(listResponse.results[0].name).toBe('bad targ?t');
+                expect(listResponse.results[1].name).toBe('good targ?t');
+                expect(listResponse.results[2].name).toBe('my targ?t');
             });
 
             it('should set next and not prev link in first page when targets returned match page size', async () => {

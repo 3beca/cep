@@ -1,15 +1,20 @@
 import { ObjectId, Db } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
+import escapeStringRegex from 'escape-string-regexp';
 
 export function buildTargetsService(db: Db) {
 
     const collection = db.collection('targets');
     const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
 
+    function getContainsRegex(search: string): string {
+        return `.*${escapeStringRegex(search)}.*`;
+    }
+
     return {
-        async list(page: number, pageSize: number, search: string) {
-            const query = search ? { name: { $regex: `.*${search}.*`, $options: 'i' } } : {};
+        async list(page: number, pageSize: number, search?: string) {
+            const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const targets = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return targets.map(toDto);
         },
