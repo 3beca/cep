@@ -3,6 +3,7 @@ import ConflictError from '../errors/conflict-error';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { toDto } from '../utils/dto';
+import escapeStringRegexp from 'escape-string-regexp';
 
 export function buildRulesService(db, targetsService, eventTypesService) {
 
@@ -22,9 +23,14 @@ export function buildRulesService(db, targetsService, eventTypesService) {
         }
     });
 
+    function getContainsRegex(search: string): string {
+        return `.*${escapeStringRegexp(search)}.*`;
+    }
+
     return {
-        async list(page, pageSize) {
-            const rules = await collection.find({}).skip((page - 1) * pageSize).limit(pageSize).toArray();
+        async list(page: number, pageSize: number, search: string) {
+            const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
+            const rules = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return rules.map(toDto);
         },
         async create(rule) {

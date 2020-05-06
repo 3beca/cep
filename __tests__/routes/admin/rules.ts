@@ -26,6 +26,7 @@ describe('admin', () => {
     describe('rules', () => {
 
         describe('get', () => {
+
             it('should return 200 with array of rules', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
@@ -53,6 +54,50 @@ describe('admin', () => {
                 expect(listResponse.results.length).toBe(1);
                 const rule = listResponse.results[0];
                 expect(rule).toEqual(createdRule);
+            });
+
+            it('should return 200 with array of rules filtered by search query string', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                await createRule(server, eventType, target, 'my ru?e');
+                await createRule(server, eventType, target, 'my rute');
+                await createRule(server, eventType, target, 'my ru?e2');
+                await createRule(server, eventType, target, 'my ruue');
+                await createRule(server, eventType, target, 'my ru?e1');
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules?search=ru%3Fe'
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const listResponse = JSON.parse(response.payload);
+                expect(listResponse.results.length).toBe(3);
+                expect(listResponse.results[0].name).toBe('my ru?e');
+                expect(listResponse.results[1].name).toBe('my ru?e1');
+                expect(listResponse.results[2].name).toBe('my ru?e2');
+            });
+
+            it('should return 200 with next and prev links filtered by search query string', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                await createRule(server, eventType, target, 'my ru?e');
+                await createRule(server, eventType, target, 'my rute');
+                await createRule(server, eventType, target, 'my ru?e2');
+                await createRule(server, eventType, target, 'my ruue');
+                await createRule(server, eventType, target, 'my ru?e1');
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules?search=ru%3Fe&pageSize=1&page=2'
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const listResponse = JSON.parse(response.payload);
+                expect(listResponse.results.length).toBe(1);
+                expect(listResponse.results[0].name).toBe('my ru?e1');
+                expect(listResponse.prev).toBe('http://localhost:8888/admin/rules?page=1&pageSize=1&search=ru%3Fe');
+                expect(listResponse.next).toBe('http://localhost:8888/admin/rules?page=3&pageSize=1&search=ru%3Fe');
             });
 
             it('should set next and not prev link in first page when rules returned match page size', async () => {
@@ -487,18 +532,7 @@ describe('admin', () => {
             it('should return 204 when rule exists', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
-                const createResponse = await server.inject({
-                    method: 'POST',
-                    url: '/admin/rules',
-                    body: {
-                        name: 'a rule',
-                        eventTypeId: eventType.id,
-                        targetId: target.id
-                    }
-                });
-                expect(createResponse.statusCode).toBe(201);
-                expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-                const createdRule = JSON.parse(createResponse.payload);
+                const createdRule = await createRule(server, eventType, target);
 
                 const deleteResponse = await server.inject({
                     method: 'DELETE',
@@ -513,6 +547,21 @@ describe('admin', () => {
                 expect(getResponse.statusCode).toBe(404);
             });
         });
+
+        async function createRule(server, eventType, target, name = 'a rule') {
+            const createResponse = await server.inject({
+                method: 'POST',
+                url: '/admin/rules',
+                body: {
+                    name,
+                    eventTypeId: eventType.id,
+                    targetId: target.id
+                }
+            });
+            expect(createResponse.statusCode).toBe(201);
+            expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+            return JSON.parse(createResponse.payload);
+        }
 
         async function createEventType(server) {
             const createResponse = await server.inject({

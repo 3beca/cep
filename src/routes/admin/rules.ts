@@ -19,7 +19,8 @@ const listSchema = {
     tags: ['rules'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        search: { type: 'string' }
     },
     response: {
         200: {
@@ -87,8 +88,8 @@ const createSchema = {
 export function buildRulesRoutes(rulesService) {
 
     async function list(request) {
-        const { page, pageSize } = request.query;
-        const results = await rulesService.list(page, pageSize);
+        const { page, pageSize, search } = request.query;
+        const results = await rulesService.list(page, pageSize, search);
         return {
             results,
             next: getNextLink(request, results),
