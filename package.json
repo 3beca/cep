@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/3beca/cep#readme",
   "devDependencies": {
-    "@types/convict": "^4.2.1",
+    "@types/convict": "^5.2.0",
     "@types/jest": "^25.2.1",
     "@types/mongodb": "^3.5.16",
     "@types/node": "^13.13.4",
