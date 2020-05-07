@@ -47,7 +47,7 @@ export function buildTargetsService(db: Db) {
             }
             await collection.deleteOne({ _id: new ObjectId(id) });
         },
-        async getByIds(ids: string[]) {
+        async getByIds(ids: string[]): Promise<any[]> {
             const targets = await collection.find({ _id: { $in: ids.map(id => new ObjectId(id)) }}).toArray();
             return targets.map(toDto);
         },

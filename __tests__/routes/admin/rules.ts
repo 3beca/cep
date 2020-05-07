@@ -475,7 +475,9 @@ describe('admin', () => {
                 expect(rule.name).toBe('a rule');
                 expect(rule.filters).toEqual({ value: 8 });
                 expect(rule.eventTypeId).toBe(eventType.id);
+                expect(rule.eventTypeName).toBe(eventType.name);
                 expect(rule.targetId).toBe(target.id);
+                expect(rule.targetName).toBe(target.name);
                 expect(rule.skipOnConsecutivesMatches).toBe(true);
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });

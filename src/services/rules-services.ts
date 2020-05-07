@@ -27,11 +27,48 @@ export function buildRulesService(db, targetsService, eventTypesService) {
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
+    function reduceToDictionary(dictionary, current) {
+        dictionary[current.id] = current;
+        return dictionary;
+    }
+
+    async function getEventTypesDictionaryByIds(ids: string[]): Promise<{[key: string]: any }> {
+        const eventTypes = await eventTypesService.getByIds(ids);
+        return eventTypes.reduce(reduceToDictionary, {});
+    }
+
+    async function getTargetsDictionaryByIds(ids: string[]): Promise<{[key: string]: any }> {
+        const targets = await targetsService.getByIds(ids);
+        return targets.reduce(reduceToDictionary, {});
+    }
+
+    async function toRuleDto(rule) {
+        const { eventTypeId, targetId } = rule;
+        const eventTypes = await getEventTypesDictionaryByIds([eventTypeId.toHexString()]);
+        const targets = await getTargetsDictionaryByIds([targetId.toHexString()]);
+        return toDto(denormalizeRule(rule, eventTypes, targets));
+    }
+
+    async function toRulesDtos(rules: any[]) {
+        const eventTypesIds = [ ...new Set(rules.map(r => r.eventTypeId.toHexString())) ];
+        const targetsIds = [ ...new Set(rules.map(r => r.targetId.toHexString())) ];
+        const eventTypes = await getEventTypesDictionaryByIds(eventTypesIds);
+        const targets = await getTargetsDictionaryByIds(targetsIds);
+        return rules.map(rule => denormalizeRule(rule, eventTypes, targets)).map(toDto);
+    }
+
+    function denormalizeRule(rule: any, eventTypes: {[key:string]: any}, targets: {[key:string]: any}) {
+        const { eventTypeId, targetId } = rule;
+        const { name: eventTypeName } = eventTypes[eventTypeId.toHexString()];
+        const { name: targetName } = targets[targetId.toHexString()];
+        return { ...rule, eventTypeName, targetName };
+    }
+
     return {
         async list(page: number, pageSize: number, search: string) {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const rules = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
-            return rules.map(toDto);
+            return toRulesDtos(rules);
         },
         async create(rule) {
             const { filters, name, eventTypeId, targetId, skipOnConsecutivesMatches } = rule;
@@ -57,7 +94,10 @@ export function buildRulesService(db, targetsService, eventTypesService) {
             };
             try {
                 const { insertedId } = await collection.insertOne(ruleToCreate);
-                return { ...ruleToCreate, id: insertedId.toString() };
+                return toRuleDto({
+                    ...ruleToCreate,
+                    id: insertedId.toString()
+                });
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });
@@ -68,16 +108,19 @@ export function buildRulesService(db, targetsService, eventTypesService) {
                 throw error;
             }
         },
-        async getById(id) {
+        async getById(id: string) {
             const rule = await collection.findOne({ _id: new ObjectId(id) });
-            return toDto(rule);
+            if (!rule) {
+                return null;
+            }
+            return toRuleDto(rule);
         },
-        async deleteById(id) {
+        async deleteById(id: string) {
             await collection.deleteOne({ _id: new ObjectId(id) });
         },
-        async getByEventTypeId(eventTypeId) {
+        async getByEventTypeId(eventTypeId: string) {
             const rules = await collection.find({ eventTypeId: new ObjectId(eventTypeId) }).toArray();
-            return rules.map(toDto);
+            return toRulesDtos(rules);
         }
     };
 }

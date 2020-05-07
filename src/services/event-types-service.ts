@@ -31,11 +31,15 @@ export function buildEventTypesService(db) {
                 throw error;
             }
         },
-        async getById(id) {
+        async getById(id: string) {
             const eventType = await collection.findOne({ _id: new ObjectId(id) });
             return toDto(eventType);
         },
-        async deleteById(id) {
+        async getByIds(ids: string[]): Promise<any[]> {
+            const eventTypes = await collection.find({ _id: { $in: ids.map(id => new ObjectId(id)) }}).toArray();
+            return eventTypes.map(toDto);
+        },
+        async deleteById(id: string) {
             for (const beforeDelete of beforeDeleteEventHandlers) {
                 await beforeDelete(id);
             }
