@@ -3,6 +3,8 @@ import { buildTargetsRoutes } from './targets';
 import { buildRulesRoutes } from './rules';
 import packageInfo from '../../../package.json';
 import { buildEventsRoutes } from './events';
+import { RulesExecutionsService } from '../../services/rules-executions-service';
+import { buildRulesExecutionsRoutes } from './rules-executions';
 
 const checkHealthSchema = {
     tags: ['system'],
@@ -27,7 +29,9 @@ const versionSchema = {
     }
 };
 
-export function buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService) {
+export function buildAdminRoutes(
+    eventTypesService, rulesService, targetsService,
+    rulesExecutionsService: RulesExecutionsService, eventsService) {
 
     function checkHealth(request, reply) {
         reply.code(204).res.end();
@@ -44,6 +48,7 @@ export function buildAdminRoutes(eventTypesService, rulesService, targetsService
         fastify.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
         fastify.register(buildRulesRoutes(rulesService), { prefix: '/rules' });
         fastify.register(buildEventsRoutes(eventsService), { prefix: '/events' });
+        fastify.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
         next();
     };
 }

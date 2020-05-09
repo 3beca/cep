@@ -13,13 +13,17 @@ import fastifyCors from 'fastify-cors';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
+import { RulesExecutionsService } from './services/rules-executions-service';
 
 export type ServerOptions = {
 	trustProxy: boolean;
 	enableCors: boolean;
 };
 
-export function buildServer(options: ServerOptions, eventTypesService, targetsService, rulesService, eventsService, engine) {
+export function buildServer(options: ServerOptions,
+	eventTypesService, targetsService, rulesService,
+	eventsService, rulesExecutionsService: RulesExecutionsService, engine) {
+
 	const app = fastify({
 		logger,
 		trustProxy: options.trustProxy
@@ -73,7 +77,9 @@ export function buildServer(options: ServerOptions, eventTypesService, targetsSe
 	}
 
 	// End points
-	app.register(buildAdminRoutes(eventTypesService, rulesService, targetsService, eventsService), { prefix: '/admin' });
+	app.register(buildAdminRoutes(
+		eventTypesService, rulesService, targetsService,
+		rulesExecutionsService, eventsService), { prefix: '/admin' });
 	app.register(buildEventsRoutes(engine));
 
 	app.setNotFoundHandler(function(request, reply) {

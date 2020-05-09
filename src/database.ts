@@ -16,12 +16,17 @@ export async function getAndSetupDatabase(client, databaseName) {
     const targets = db.collection('targets');
     const rules = db.collection('rules');
     const events = db.collection('events');
-    await eventTypes.createIndex({ name: 1 }, { unique: true });
-    await targets.createIndex({ name: 1 }, { unique: true });
-    await rules.createIndex({ name: 1 }, { unique: true });
-    await rules.createIndex({ targetId: 1 });
-    await rules.createIndex({ eventTypeId: 1 });
-    await events.createIndex({ createdAt: 1 }, { expireAfterSeconds: ninetyDays });
-    await events.createIndex({ eventTypeId: 1, createdAt: 1 });
+    const rulesExecutions = db.collection('rules-executions');
+    await Promise.all([
+        eventTypes.createIndex({ name: 1 }, { unique: true }),
+        targets.createIndex({ name: 1 }, { unique: true }),
+        rules.createIndex({ name: 1 }, { unique: true }),
+        rules.createIndex({ targetId: 1 }),
+        rules.createIndex({ eventTypeId: 1 }),
+        events.createIndex({ createdAt: 1 }, { expireAfterSeconds: ninetyDays }),
+        events.createIndex({ eventTypeId: 1, createdAt: 1 }),
+        rulesExecutions.createIndex({ ruleId: 1, executionAt: 1 }),
+        rulesExecutions.createIndex({ eventTypeId: 1, ruleId: 1, executionAt: 1 })
+    ]);
     return db;
 }

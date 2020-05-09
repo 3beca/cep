@@ -3,6 +3,7 @@ import config from '../src/config';
 import { ObjectId } from 'bson';
 import { buildApp } from '../src/app';
 import { buildServer } from '../src/server';
+import { RulesExecutionsService } from '../src/services/rules-executions-service';
 
 describe('builServer', () => {
     let app;
@@ -103,7 +104,7 @@ describe('builServer', () => {
 
     it('should return 204 when CORS preflight request and cors is enabled', async () => {
         const server = buildServer({ trustProxy: false, enableCors: true },
-            null, null, null, null, null);
+            null, null, null, null, null as unknown as RulesExecutionsService, null);
         server.register(
             function(fastify, opts, next) {
                 fastify.get('/', async (request, reply) => {

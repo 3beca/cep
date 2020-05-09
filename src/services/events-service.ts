@@ -28,8 +28,8 @@ export function buildEventsService(db) {
                 }),
                 createdAt: new Date()
             };
-            await collection.insertOne(event);
-            return toDto(event);
+            const { insertedId } = await collection.insertOne(event);
+            return toDto({ ...event, _id: insertedId });
         }
     };
 }

@@ -5,6 +5,7 @@ import { buildTargetsService } from './services/targets-service';
 import { buildRulesService } from './services/rules-services';
 import { buildEngine } from './engine';
 import { buildEventsService } from './services/events-service';
+import { buildRulesExecutionsService } from './services/rules-executions-service';
 
 export type AppOptions = {
     databaseUrl: string,
@@ -21,8 +22,10 @@ export async function buildApp(options: AppOptions) {
     const targetsService = buildTargetsService(db);
     const rulesService = buildRulesService(db, targetsService, eventTypesService);
     const eventsService = buildEventsService(db);
-    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService);
-    const server = buildServer({ trustProxy, enableCors }, eventTypesService, targetsService, rulesService, eventsService, engine);
+    const rulesExecutionsService = buildRulesExecutionsService(db);
+    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
+    const server = buildServer({ trustProxy, enableCors },
+        eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine);
     return {
         async close() {
             await server.close();
