@@ -1,15 +1,21 @@
 import { ObjectId } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
+import escapeStringRegexp from 'escape-string-regexp';
 
 export function buildEventTypesService(db) {
 
     const collection = db.collection('event-types');
     const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
 
+    function getContainsRegex(search: string): string {
+        return `.*${escapeStringRegexp(search)}.*`;
+    }
+
     return {
-        async list(page, pageSize) {
-            const eventTypes = await collection.find({}).skip((page - 1) * pageSize).limit(pageSize).toArray();
+        async list(page: number, pageSize: number, search: string) {
+            const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
+            const eventTypes = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return eventTypes.map(toDto);
         },
         async create(eventType) {

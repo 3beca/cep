@@ -16,7 +16,8 @@ const listSchema = {
     tags: ['event types'],
     querystring: {
         page: { type: 'integer', minimum: 1, default: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 }
+        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        search: { type: 'string' }
     },
     response: {
         200: {
@@ -84,8 +85,8 @@ function toEventTypeResponse(eventType) {
 export function buildEventTypesRoutes(eventTypesService) {
 
     async function list(request) {
-        const { page, pageSize } = request.query;
-        const eventTypes = await eventTypesService.list(page, pageSize);
+        const { page, pageSize, search } = request.query;
+        const eventTypes = await eventTypesService.list(page, pageSize, search);
         const results = eventTypes.map(toEventTypeResponse);
         return {
             results,

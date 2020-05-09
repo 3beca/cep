@@ -26,6 +26,7 @@ describe('admin', () => {
     describe('event types', () => {
 
         describe('get', () => {
+
             it('should return 200 with array of event types', async () => {
                 const createResponse = await server.inject({
                     method: 'POST',
@@ -48,6 +49,46 @@ describe('admin', () => {
                 expect(listResponse.results.length).toBe(1);
                 const event = listResponse.results[0];
                 expect(event).toEqual(createdEvent);
+            });
+
+            it('should return 200 with array of event types filtered by search query string', async () => {
+                await createEventType(server, 'my event?ype');
+                await createEventType(server, 't?y');
+                await createEventType(server, 'good targ?t');
+                await createEventType(server, 'bad targ?t');
+                await createEventType(server, 'bbbbt?yppp');
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/event-types?search=T%3FY'
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const listResponse = JSON.parse(response.payload);
+                expect(listResponse.results.length).toBe(3);
+                expect(listResponse.results[0].name).toBe('bbbbt?yppp');
+                expect(listResponse.results[1].name).toBe('my event?ype');
+                expect(listResponse.results[2].name).toBe('t?y');
+            });
+
+            it('should return 200 with next and prev links filtered by search query string', async () => {
+                await createEventType(server, 'my event?ype');
+                await createEventType(server, 't?y');
+                await createEventType(server, 'good targ?t');
+                await createEventType(server, 'bad targ?t');
+                await createEventType(server, 'bbbbt?yppp');
+
+                const response = await server.inject({
+                    method: 'GET',
+                    url: '/admin/event-types?search=T%3FY&pageSize=1&page=2'
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const listResponse = JSON.parse(response.payload);
+                expect(listResponse.results.length).toBe(1);
+                expect(listResponse.results[0].name).toBe('my event?ype');
+                expect(listResponse.prev).toBe('http://localhost:8888/admin/event-types?page=1&pageSize=1&search=T%3FY');
+                expect(listResponse.next).toBe('http://localhost:8888/admin/event-types?page=3&pageSize=1&search=T%3FY');
             });
 
             it('should set next and not prev link in first page when event types returned match page size', async () => {
@@ -381,12 +422,12 @@ describe('admin', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createEventType(server) {
+    async function createEventType(server, name = 'an event type') {
         const createResponse = await server.inject({
             method: 'POST',
             url: '/admin/event-types',
             body: {
-                name: 'an event type'
+                name
             }
         });
         expect(createResponse.statusCode).toBe(201);
