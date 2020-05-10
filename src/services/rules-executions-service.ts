@@ -1,6 +1,6 @@
 import { toDto } from '../utils/dto';
 import { ObjectId, Db } from 'mongodb';
-import { RuleExecution } from '../models/rules-executions';
+import { RuleExecution } from '../models/rule-execution';
 
 export type RulesExecutionsService = {
     list(page: number, pageSize: number, eventTypeId?: string, ruleId?: string): Promise<RuleExecution[]>;
