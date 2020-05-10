@@ -1,4 +1,7 @@
 import { Engine } from '../engine';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { ServerResponse } from 'http';
+import { ObjectId } from 'mongodb';
 
 const processEventSchema = {
     tags: ['event processing'],
@@ -7,9 +10,11 @@ const processEventSchema = {
         properties: {
           id: {
             type: 'string',
-            description: 'event identifier'
+            description: 'event identifier',
+            pattern: '^[a-f0-9]{24}$'
           }
-        }
+        },
+        errorMessage: 'event type id must be a valid ObjectId'
     },
     response: {
         204: {
@@ -20,14 +25,15 @@ const processEventSchema = {
 
 export function buildEventsRoutes(engine: Engine) {
 
-    async function processEvent(request, reply) {
+    async function processEvent(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
         const { body, params, id: requestId } = request;
         const { id } = params;
-        await engine.processEvent(id, body, requestId);
+        const eventTypeId = ObjectId.createFromHexString(id);
+        await engine.processEvent(eventTypeId, body, requestId);
         reply.status(204).send();
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.post('/events/:id', { ...opts, schema: processEventSchema }, processEvent);
         next();
     };

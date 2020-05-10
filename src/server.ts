@@ -16,6 +16,7 @@ import Ajv from 'ajv';
 import { RulesExecutionsService } from './services/rules-executions-service';
 import { Engine } from './engine';
 import { EventsService } from './services/events-service';
+import { EventTypesService } from './services/event-types-service';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -23,7 +24,8 @@ export type ServerOptions = {
 };
 
 export function buildServer(options: ServerOptions,
-	eventTypesService, targetsService, rulesService,
+	eventTypesService: EventTypesService,
+	targetsService, rulesService,
 	eventsService: EventsService,
 	rulesExecutionsService: RulesExecutionsService,
 	engine: Engine) {

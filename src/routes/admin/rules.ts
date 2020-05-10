@@ -1,5 +1,8 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { ServerResponse } from 'http';
+import { ObjectId } from 'mongodb';
 
 const ruleschema = {
     type: 'object',
@@ -89,7 +92,7 @@ const createSchema = {
 
 export function buildRulesRoutes(rulesService) {
 
-    async function list(request) {
+    async function list(request: FastifyRequest) {
         const { page, pageSize, search } = request.query;
         const results = await rulesService.list(page, pageSize, search);
         return {
@@ -99,7 +102,7 @@ export function buildRulesRoutes(rulesService) {
         };
     }
 
-    async function getById(request) {
+    async function getById(request: FastifyRequest) {
         const { id } = request.params;
         const rule = await rulesService.getById(id);
         if (!rule) {
@@ -108,14 +111,19 @@ export function buildRulesRoutes(rulesService) {
         return rule;
     }
 
-    async function deleteById(request, reply) {
+    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
         const { id } = request.params;
         await rulesService.deleteById(id);
         reply.status(204).send();
     }
 
     async function create(request, reply) {
-        const rule = await rulesService.create(request.body);
+        const { body } = request;
+        const ruleToCreate = {
+            ...body,
+            eventTypeId: ObjectId.createFromHexString(body.eventTypeId)
+        };
+        const rule = await rulesService.create(ruleToCreate);
         reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${rule.id}`);
         reply.status(201).send(rule);
     }

@@ -6,6 +6,7 @@ import { buildServer } from '../src/server';
 import { RulesExecutionsService } from '../src/services/rules-executions-service';
 import { Engine } from '../src/engine';
 import { EventsService } from '../src/services/events-service';
+import { EventTypesService } from '../src/services/event-types-service';
 
 describe('builServer', () => {
     let app;
@@ -106,7 +107,8 @@ describe('builServer', () => {
 
     it('should return 204 when CORS preflight request and cors is enabled', async () => {
         const server = buildServer({ trustProxy: false, enableCors: true },
-            null, null, null,
+            null as unknown as EventTypesService,
+            null, null,
             null as unknown as EventsService,
             null as unknown as RulesExecutionsService,
             null as unknown as Engine);

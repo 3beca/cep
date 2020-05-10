@@ -3,17 +3,26 @@ import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 
-export function buildEventTypesService(db: Db) {
+export type EventTypesService = {
+    list(page: number, pageSize: number, search: string): Promise<any[]>;
+    create(eventType);
+    getById(id: ObjectId): Promise<any>;
+    getByIds(ids: ObjectId[]): Promise<any[]>;
+    deleteById(id: ObjectId): Promise<void>;
+    registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void;
+}
+
+export function buildEventTypesService(db: Db): EventTypesService {
 
     const collection = db.collection('event-types');
-    const beforeDeleteEventHandlers: ((id: string) => void)[] = [];
+    const beforeDeleteEventHandlers: ((id: ObjectId) => void)[] = [];
 
     function getContainsRegex(search: string): string {
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
     return {
-        async list(page: number, pageSize: number, search: string) {
+        async list(page: number, pageSize: number, search: string): Promise<any[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const eventTypes = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return eventTypes.map(toDto);
@@ -37,21 +46,21 @@ export function buildEventTypesService(db: Db) {
                 throw error;
             }
         },
-        async getById(id: string) {
-            const eventType = await collection.findOne({ _id: new ObjectId(id) });
+        async getById(id: ObjectId): Promise<any> {
+            const eventType = await collection.findOne({ _id: id });
             return toDto(eventType);
         },
-        async getByIds(ids: string[]): Promise<any[]> {
-            const eventTypes = await collection.find({ _id: { $in: ids.map(id => new ObjectId(id)) }}).toArray();
+        async getByIds(ids: ObjectId[]): Promise<any[]> {
+            const eventTypes = await collection.find({ _id: { $in: ids }}).toArray();
             return eventTypes.map(toDto);
         },
-        async deleteById(id: string) {
+        async deleteById(id: ObjectId): Promise<void> {
             for (const beforeDelete of beforeDeleteEventHandlers) {
                 await beforeDelete(id);
             }
-            await collection.deleteOne({ _id: new ObjectId(id) });
+            await collection.deleteOne({ _id: id });
         },
-        registerOnBeforeDelete(beforeDelete) {
+        registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void {
             beforeDeleteEventHandlers.push(beforeDelete);
         }
     };

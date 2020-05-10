@@ -1,5 +1,9 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
+import { FastifyReply, FastifyInstance, FastifyRequest } from 'fastify';
+import { ServerResponse } from 'http';
+import { ObjectId } from 'mongodb';
+import { EventTypesService } from '../../services/event-types-service';
 
 const eventTypeSchema = {
     type: 'object',
@@ -82,7 +86,7 @@ function toEventTypeResponse(eventType) {
     return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
 }
 
-export function buildEventTypesRoutes(eventTypesService) {
+export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
 
     async function list(request) {
         const { page, pageSize, search } = request.query;
@@ -95,18 +99,20 @@ export function buildEventTypesRoutes(eventTypesService) {
         };
     }
 
-    async function getById(request) {
+    async function getById(request: FastifyRequest) {
         const { id } = request.params;
-        const eventType = await eventTypesService.getById(id);
+        const eventTypeId = ObjectId.createFromHexString(id);
+        const eventType = await eventTypesService.getById(eventTypeId);
         if (!eventType) {
             throw new NotFoundError(`Event type ${id} cannot be found`);
         }
         return toEventTypeResponse(eventType);
     }
 
-    async function deleteById(request, reply) {
+    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
         const { id } = request.params;
-        await eventTypesService.deleteById(id);
+        const eventTypeId = ObjectId.createFromHexString(id);
+        await eventTypesService.deleteById(eventTypeId);
         reply.status(204).send();
     }
 
@@ -117,7 +123,7 @@ export function buildEventTypesRoutes(eventTypesService) {
         reply.status(201).send(toEventTypeResponse(eventType));
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);

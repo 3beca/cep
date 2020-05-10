@@ -4,8 +4,9 @@ import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
+import { EventTypesService } from './event-types-service';
 
-export function buildRulesService(db, targetsService, eventTypesService) {
+export function buildRulesService(db, targetsService, eventTypesService: EventTypesService) {
 
     const collection = db.collection('rules');
 
@@ -16,8 +17,8 @@ export function buildRulesService(db, targetsService, eventTypesService) {
         }
     });
 
-    eventTypesService.registerOnBeforeDelete(async id => {
-        const rules = await collection.find({ eventTypeId: new ObjectId(id) }).toArray();
+    eventTypesService.registerOnBeforeDelete(async eventTypeId => {
+        const rules = await collection.find({ eventTypeId }).toArray();
         if (rules.length > 0) {
             throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${rules.map(r => `"${r._id}"`).join(', ')}]`);
         }
@@ -32,7 +33,7 @@ export function buildRulesService(db, targetsService, eventTypesService) {
         return dictionary;
     }
 
-    async function getEventTypesDictionaryByIds(ids: string[]): Promise<{[key: string]: any }> {
+    async function getEventTypesDictionaryByIds(ids: ObjectId[]): Promise<{[key: string]: any }> {
         const eventTypes = await eventTypesService.getByIds(ids);
         return eventTypes.reduce(reduceToDictionary, {});
     }
@@ -44,13 +45,13 @@ export function buildRulesService(db, targetsService, eventTypesService) {
 
     async function toRuleDto(rule) {
         const { eventTypeId, targetId } = rule;
-        const eventTypes = await getEventTypesDictionaryByIds([eventTypeId.toHexString()]);
+        const eventTypes = await getEventTypesDictionaryByIds([eventTypeId]);
         const targets = await getTargetsDictionaryByIds([targetId.toHexString()]);
         return toDto(denormalizeRule(rule, eventTypes, targets));
     }
 
     async function toRulesDtos(rules: any[]) {
-        const eventTypesIds = [ ...new Set(rules.map(r => r.eventTypeId.toHexString())) ];
+        const eventTypesIds = [ ...new Set(rules.map(r => r.eventTypeId)) ];
         const targetsIds = [ ...new Set(rules.map(r => r.targetId.toHexString())) ];
         const eventTypes = await getEventTypesDictionaryByIds(eventTypesIds);
         const targets = await getTargetsDictionaryByIds(targetsIds);
@@ -115,7 +116,7 @@ export function buildRulesService(db, targetsService, eventTypesService) {
             }
             return toRuleDto(rule);
         },
-        async deleteById(id: string) {
+        async deleteById(id: string): Promise<void> {
             await collection.deleteOne({ _id: new ObjectId(id) });
         },
         async getByEventTypeId(eventTypeId: string) {

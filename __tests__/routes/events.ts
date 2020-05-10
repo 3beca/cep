@@ -27,6 +27,20 @@ describe('events', () => {
 
     describe('post an event', () => {
 
+        it('should return 400 when event type id is not a valid ObjectId', async () => {
+            const response = await server.inject({
+                method: 'POST',
+                url: '/events/invalid-object-id'
+            });
+            expect(response.statusCode).toBe(400);
+            expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+            expect(response.payload).toBe(JSON.stringify({
+                statusCode: 400,
+                error: 'Bad Request',
+                message: 'params event type id must be a valid ObjectId'
+            }));
+        });
+
         it('should return 404 when event type does not exists', async () => {
             const response = await server.inject({
                 method: 'POST',

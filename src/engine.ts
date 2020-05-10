@@ -4,13 +4,15 @@ import fetch from 'node-fetch';
 import { RulesExecutionsService } from './services/rules-executions-service';
 import { EventsService } from './services/events-service';
 import { Event } from './models/event';
+import { ObjectId } from 'mongodb';
+import { EventTypesService } from './services/event-types-service';
 
 export type Engine = {
-    processEvent(id: string, eventPayload: any, requestId: string): Promise<void>;
+    processEvent(eventTypeId: ObjectId, eventPayload: any, requestId: string): Promise<void>;
 }
 
 export function buildEngine(
-    eventTypesService,
+    eventTypesService: EventTypesService,
     rulesService,
     targetsService,
     eventsService: EventsService,
@@ -28,10 +30,10 @@ export function buildEngine(
     }
 
     return {
-        async processEvent(id: string, eventPayload, requestId: string): Promise<void> {
-            const eventType = await eventTypesService.getById(id);
+        async processEvent(eventTypeId: ObjectId, eventPayload, requestId: string): Promise<void> {
+            const eventType = await eventTypesService.getById(eventTypeId);
             if (!eventType) {
-                throw new NotFoundError(`Event type ${id} cannot found`);
+                throw new NotFoundError(`Event type ${eventTypeId} cannot found`);
             }
 
             const { id: eventId } = await createEvent(eventType, eventPayload, requestId);
