@@ -1,3 +1,5 @@
+import { Engine } from '../engine';
+
 const processEventSchema = {
     tags: ['event processing'],
     params: {
@@ -16,7 +18,7 @@ const processEventSchema = {
     }
 };
 
-export function buildEventsRoutes(engine) {
+export function buildEventsRoutes(engine: Engine) {
 
     async function processEvent(request, reply) {
         const { body, params, id: requestId } = request;

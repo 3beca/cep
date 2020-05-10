@@ -1,9 +1,9 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, Db } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 
-export function buildEventTypesService(db) {
+export function buildEventTypesService(db: Db) {
 
     const collection = db.collection('event-types');
     const beforeDeleteEventHandlers: ((id: string) => void)[] = [];

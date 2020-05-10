@@ -14,6 +14,8 @@ import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
 import { RulesExecutionsService } from './services/rules-executions-service';
+import { Engine } from './engine';
+import { EventsService } from './services/events-service';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -22,7 +24,9 @@ export type ServerOptions = {
 
 export function buildServer(options: ServerOptions,
 	eventTypesService, targetsService, rulesService,
-	eventsService, rulesExecutionsService: RulesExecutionsService, engine) {
+	eventsService: EventsService,
+	rulesExecutionsService: RulesExecutionsService,
+	engine: Engine) {
 
 	const app = fastify({
 		logger,

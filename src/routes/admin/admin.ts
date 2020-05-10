@@ -5,6 +5,7 @@ import packageInfo from '../../../package.json';
 import { buildEventsRoutes } from './events';
 import { RulesExecutionsService } from '../../services/rules-executions-service';
 import { buildRulesExecutionsRoutes } from './rules-executions';
+import { EventsService } from '../../services/events-service';
 
 const checkHealthSchema = {
     tags: ['system'],
@@ -31,7 +32,8 @@ const versionSchema = {
 
 export function buildAdminRoutes(
     eventTypesService, rulesService, targetsService,
-    rulesExecutionsService: RulesExecutionsService, eventsService) {
+    rulesExecutionsService: RulesExecutionsService,
+    eventsService: EventsService) {
 
     function checkHealth(request, reply) {
         reply.code(204).res.end();

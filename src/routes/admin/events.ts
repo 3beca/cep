@@ -1,28 +1,5 @@
 import { getNextLink, getPrevLink } from '../../utils/url';
-
-const ruleSchema = {
-    type: 'object',
-    properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        targetId: { type: 'string' }
-    }
-};
-
-const targetSchema = {
-    type: 'object',
-    properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        response: {
-            type: 'object',
-            properties: {
-                statusCode: { type: 'number' },
-                body: { type: 'object', additionalProperties: true }
-            }
-        }
-    }
-};
+import { EventsService } from '../../services/events-service';
 
 const eventSchema = {
     type: 'object',
@@ -32,9 +9,7 @@ const eventSchema = {
         eventTypeName: { type: 'string' },
         payload: { type: 'object', additionalProperties: true },
         requestId: { type: 'string' },
-        createdAt: { type: 'string' },
-        rules: { type: 'array', items: ruleSchema },
-        targets: { type: 'array', items: targetSchema }
+        createdAt: { type: 'string' }
     }
 };
 
@@ -60,7 +35,7 @@ const listSchema = {
     }
 };
 
-export function buildEventsRoutes(eventsService) {
+export function buildEventsRoutes(eventsService: EventsService) {
 
     async function list(request) {
         const { page, pageSize, eventTypeId } = request.query;
