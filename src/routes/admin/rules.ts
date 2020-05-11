@@ -85,8 +85,8 @@ const createSchema = {
         required: ['name', 'eventTypeId', 'targetId'],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            targetId: { type: 'string' },
-            eventTypeId: { type: 'string' },
+            targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
+            eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
             filters: { type: 'object' }
         }

@@ -412,6 +412,29 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'targetId\'' }));
             });
 
+
+            it('should return 400 when target id and/or event type id are not valid ObjectIds', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        filters: {
+                            a: 2
+                        },
+                        eventTypeId: 'abc',
+                        targetId: 'cbd'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/targetId should be a valid ObjectId, body/eventTypeId should be a valid ObjectId'
+                }));
+            });
+
             it('should return 400 when event type does not exists', async () => {
                 const nonExistingEventTypeId = new ObjectId().toHexString();
                 const target = await createTarget(server);
