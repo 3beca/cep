@@ -50,7 +50,7 @@
     "ajv-errors": "^1.0.1",
     "convict": "^6.0.0",
     "escape-string-regexp": "^4.0.0",
-    "fastify": "^2.14.0",
+    "fastify": "^2.14.1",
     "fastify-cors": "^3.0.3",
     "fastify-swagger": "^2.5.1",
     "geolib": "^3.2.1",
