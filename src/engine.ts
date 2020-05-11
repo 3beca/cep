@@ -44,9 +44,12 @@ export function buildEngine(
     }
 
     async function getTargetsDictionary(targetIds: ObjectId[]): Promise<{ [key: string]: Target }> {
-        const targets = targetIds.length > 0 ? await targetsService.getByIds(targetIds) : [];
+        if (targetIds.length === 0) {
+            return {};
+        }
+        const targets = await targetsService.getByIds(targetIds);
         return targets.reduce((previous, current) => {
-            previous[current.id.toString()] = current;
+            previous[current.id.toHexString()] = current;
             return previous;
         }, {});
     }
@@ -75,8 +78,8 @@ export function buildEngine(
             }
             const rulesThatMustInvokeTargets = matchResults.filter(r => r.match && !r.skip);
             if (rulesThatMustInvokeTargets.length > 0) {
-                const targetIds = [ ...new Set(rulesThatMustInvokeTargets.map(r => r.rule.targetId)) ];
-                const targets = getTargetsDictionary(targetIds);
+                const targetIds = rulesThatMustInvokeTargets.map(r => r.rule.targetId);
+                const targets = await getTargetsDictionary(targetIds);
                 await Promise.all(rulesThatMustInvokeTargets.map(async matchResult => {
                     const { rule } = matchResult;
                     const target = targets[rule.targetId.toHexString()];

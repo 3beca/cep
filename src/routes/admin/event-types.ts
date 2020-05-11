@@ -88,7 +88,7 @@ function toEventTypeResponse(eventType) {
 
 export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
 
-    async function list(request) {
+    async function list(request: FastifyRequest) {
         const { page, pageSize, search } = request.query;
         const eventTypes = await eventTypesService.list(page, pageSize, search);
         const results = eventTypes.map(toEventTypeResponse);
@@ -116,10 +116,10 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
         reply.status(204).send();
     }
 
-    async function create(request, reply) {
+    async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
         const { name } = request.body;
         const eventType = await eventTypesService.create({ name });
-        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${eventType.id}`);
+        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${eventType.id}`);
         reply.status(201).send(toEventTypeResponse(eventType));
     }
 

@@ -38,48 +38,11 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
-    function reduceToDictionary(dictionary, current) {
-        dictionary[current.id] = current;
-        return dictionary;
-    }
-
-    async function getEventTypesDictionaryByIds(ids: ObjectId[]): Promise<{[key: string]: any }> {
-        const eventTypes = await eventTypesService.getByIds(ids);
-        return eventTypes.reduce(reduceToDictionary, {});
-    }
-
-    async function getTargetsDictionaryByIds(ids: ObjectId[]): Promise<{[key: string]: any }> {
-        const targets = await targetsService.getByIds(ids);
-        return targets.reduce(reduceToDictionary, {});
-    }
-
-    async function toRuleDto(rule) {
-        const { eventTypeId, targetId } = rule;
-        const eventTypes = await getEventTypesDictionaryByIds([eventTypeId]);
-        const targets = await getTargetsDictionaryByIds([targetId]);
-        return toDto(denormalizeRule(rule, eventTypes, targets));
-    }
-
-    async function toRulesDtos(rules: Rule[]) {
-        const eventTypesIds = [ ...new Set(rules.map(r => r.eventTypeId)) ];
-        const targetsIds = [ ...new Set(rules.map(r => r.targetId)) ];
-        const eventTypes = await getEventTypesDictionaryByIds(eventTypesIds);
-        const targets = await getTargetsDictionaryByIds(targetsIds);
-        return rules.map(rule => denormalizeRule(rule, eventTypes, targets)).map(toDto);
-    }
-
-    function denormalizeRule(rule: Rule, eventTypes: {[key:string]: any}, targets: {[key:string]: any}) {
-        const { eventTypeId, targetId } = rule;
-        const { name: eventTypeName } = eventTypes[eventTypeId.toHexString()];
-        const { name: targetName } = targets[targetId.toHexString()];
-        return { ...rule, eventTypeName, targetName };
-    }
-
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const rules = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
-            return toRulesDtos(rules);
+            return rules.map(toDto);
         },
         async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
             const { filters, name, eventTypeId, targetId, skipOnConsecutivesMatches } = rule;
@@ -121,14 +84,14 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });
-            return toRuleDto(rule);
+            return toDto(rule);
         },
         async deleteById(id: ObjectId): Promise<void> {
             await collection.deleteOne({ _id: id });
         },
         async getByEventTypeId(eventTypeId: ObjectId): Promise<Rule[]> {
             const rules = await collection.find({ eventTypeId }).toArray();
-            return toRulesDtos(rules);
+            return rules.map(toDto);
         }
     };
 }

@@ -55,7 +55,7 @@ export function buildAdminRoutes(
         fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
         fastify.register(buildEventTypesRoutes(eventTypesService), { prefix: '/event-types' });
         fastify.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
-        fastify.register(buildRulesRoutes(rulesService), { prefix: '/rules' });
+        fastify.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
         fastify.register(buildEventsRoutes(eventsService), { prefix: '/events' });
         fastify.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
         next();

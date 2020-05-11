@@ -1,4 +1,4 @@
-import fastify from 'fastify';
+import fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
@@ -19,6 +19,7 @@ import { EventsService } from './services/events-service';
 import { EventTypesService } from './services/event-types-service';
 import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
+import { ServerResponse } from 'http';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -91,12 +92,12 @@ export function buildServer(options: ServerOptions,
 		rulesExecutionsService, eventsService), { prefix: '/admin' });
 	app.register(buildEventsRoutes(engine));
 
-	app.setNotFoundHandler(function(request, reply) {
+	app.setNotFoundHandler(function(request, reply: FastifyReply<ServerResponse>) {
 		// Default not found handler with preValidation and preHandler hooks
 		reply.code(404).send({ message: 'Resource not found' });
 	});
 
-	app.setErrorHandler((error, request, reply) => {
+	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
 			reply.status(404).send({ message: 'Resource not found' });
