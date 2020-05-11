@@ -17,6 +17,8 @@ import { RulesExecutionsService } from './services/rules-executions-service';
 import { Engine } from './engine';
 import { EventsService } from './services/events-service';
 import { EventTypesService } from './services/event-types-service';
+import { TargetsService } from './services/targets-service';
+import { RulesService } from './services/rules-services';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -25,7 +27,8 @@ export type ServerOptions = {
 
 export function buildServer(options: ServerOptions,
 	eventTypesService: EventTypesService,
-	targetsService, rulesService,
+	targetsService: TargetsService,
+	rulesService: RulesService,
 	eventsService: EventsService,
 	rulesExecutionsService: RulesExecutionsService,
 	engine: Engine) {

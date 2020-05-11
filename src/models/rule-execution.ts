@@ -1,14 +1,16 @@
+import { ObjectId } from 'mongodb';
+
 export type RuleExecution = {
-    id?: string;
-    eventTypeId: string;
+    id: ObjectId;
+    eventTypeId: ObjectId;
     eventTypeName: string;
-    eventId?: string;
+    eventId?: ObjectId;
     requestId: string;
-    ruleId: string;
+    ruleId: ObjectId;
     ruleName: string;
     match: boolean;
     skip: boolean;
-    targetId?: string;
+    targetId?: ObjectId;
     targetName?: string;
     targetSuccess?: boolean;
     targetStatusCode?: number;

@@ -1,5 +1,9 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
+import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import { ObjectId } from 'mongodb';
+import { ServerResponse } from 'http';
+import { TargetsService } from '../../services/targets-service';
 
 const targetschema = {
     type: 'object',
@@ -82,9 +86,9 @@ const createSchema = {
     }
 };
 
-export function buildTargetsRoutes(targetsService) {
+export function buildTargetsRoutes(targetsService: TargetsService) {
 
-    async function list(request) {
+    async function list(request: FastifyRequest) {
         const { page, pageSize, search } = request.query;
         const results = await targetsService.list(page, pageSize, search);
         return {
@@ -94,29 +98,31 @@ export function buildTargetsRoutes(targetsService) {
         };
     }
 
-    async function getById(request) {
+    async function getById(request: FastifyRequest) {
         const { id } = request.params;
-        const target = await targetsService.getById(id);
+        const targetId = ObjectId.createFromHexString(id);
+        const target = await targetsService.getById(targetId);
         if (!target) {
             throw new NotFoundError(`Target ${id} cannot be found`);
         }
         return target;
     }
 
-    async function deleteById(request, reply) {
+    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
         const { id } = request.params;
-        await targetsService.deleteById(id);
+        const targetId = ObjectId.createFromHexString(id);
+        await targetsService.deleteById(targetId);
         reply.status(204).send();
     }
 
-    async function create(request, reply) {
+    async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
         const { name, url } = request.body;
         const target = await targetsService.create({ name, url });
-        reply.header('Location', `${getExternalUrl(request.raw.originalUrl)}/${target.id}`);
+        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${target.id}`);
         reply.status(201).send(target);
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);

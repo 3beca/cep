@@ -1,6 +1,8 @@
+import { ObjectId } from 'mongodb';
+
 export type Event = {
-    id?: string;
-    eventTypeId: string;
+    id: ObjectId;
+    eventTypeId: ObjectId;
     eventTypeName: string;
     requestId: string;
     payload: any;

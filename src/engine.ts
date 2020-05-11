@@ -6,15 +6,29 @@ import { EventsService } from './services/events-service';
 import { Event } from './models/event';
 import { ObjectId } from 'mongodb';
 import { EventTypesService } from './services/event-types-service';
+import { TargetsService } from './services/targets-service';
+import { RulesService } from './services/rules-services';
+import { Rule } from './models/rule';
+import { Target } from './models/target';
 
 export type Engine = {
     processEvent(eventTypeId: ObjectId, eventPayload: any, requestId: string): Promise<void>;
 }
 
+type MatchResult = {
+    rule: Rule,
+    match: boolean,
+    skip: boolean,
+    targetId?: ObjectId,
+    targetName?: string,
+    targetSuccess?: boolean,
+    targetStatusCode?: number;
+}
+
 export function buildEngine(
     eventTypesService: EventTypesService,
-    rulesService,
-    targetsService,
+    rulesService: RulesService,
+    targetsService: TargetsService,
     eventsService: EventsService,
     rulesExecutionsService: RulesExecutionsService): Engine {
 
@@ -29,6 +43,14 @@ export function buildEngine(
         return eventsService.create(event);
     }
 
+    async function getTargetsDictionary(targetIds: ObjectId[]): Promise<{ [key: string]: Target }> {
+        const targets = targetIds.length > 0 ? await targetsService.getByIds(targetIds) : [];
+        return targets.reduce((previous, current) => {
+            previous[current.id.toString()] = current;
+            return previous;
+        }, {});
+    }
+
     return {
         async processEvent(eventTypeId: ObjectId, eventPayload, requestId: string): Promise<void> {
             const eventType = await eventTypesService.getById(eventTypeId);
@@ -38,10 +60,11 @@ export function buildEngine(
 
             const { id: eventId } = await createEvent(eventType, eventPayload, requestId);
 
-            const rules = await rulesService.getByEventTypeId(eventType.id);
-            const matchResults = rules.map(r => ({
+            const rules = await rulesService.getByEventTypeId(eventTypeId);
+            const matchResults: MatchResult[] = rules.map(r => ({
                 rule: r,
-                match: new Filter(r.filters).match(eventPayload)
+                match: new Filter(r.filters).match(eventPayload),
+                skip: false
             }));
             for (const matchResult of matchResults.filter(r => r.match)) {
                 const { rule } = matchResult;
@@ -53,19 +76,19 @@ export function buildEngine(
             const rulesThatMustInvokeTargets = matchResults.filter(r => r.match && !r.skip);
             if (rulesThatMustInvokeTargets.length > 0) {
                 const targetIds = [ ...new Set(rulesThatMustInvokeTargets.map(r => r.rule.targetId)) ];
-                const targets = targetIds.length > 0 ? await targetsService.getByIds(targetIds) : [];
+                const targets = getTargetsDictionary(targetIds);
                 await Promise.all(rulesThatMustInvokeTargets.map(async matchResult => {
                     const { rule } = matchResult;
-                    const target = targets.find(t => t.id === rule.targetId);
+                    const target = targets[rule.targetId.toHexString()];
                     const response = await fetch(target.url, {
                         method: 'POST',
                         body: JSON.stringify(eventPayload),
                         headers: {
                             'Content-Type': 'application/json',
                             'request-id': requestId,
-                            'X-Rule-Id': rule.id,
+                            'X-Rule-Id': rule.id.toHexString(),
                             'X-Rule-Name': rule.name,
-                            'X-Target-Id': target.id,
+                            'X-Target-Id': target.id.toHexString(),
                             'X-Target-Name': target.name
                         }
                     });

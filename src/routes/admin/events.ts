@@ -1,5 +1,7 @@
 import { getNextLink, getPrevLink } from '../../utils/url';
 import { EventsService } from '../../services/events-service';
+import { FastifyInstance, FastifyRequest } from 'fastify';
+import { toSafeObjectId } from '../../utils/dto';
 
 const eventSchema = {
     type: 'object',
@@ -37,9 +39,9 @@ const listSchema = {
 
 export function buildEventsRoutes(eventsService: EventsService) {
 
-    async function list(request) {
+    async function list(request: FastifyRequest) {
         const { page, pageSize, eventTypeId } = request.query;
-        const events = await eventsService.list(page, pageSize, eventTypeId);
+        const events = await eventsService.list(page, pageSize, toSafeObjectId(eventTypeId));
         const results = events;
         return {
             results,
@@ -48,7 +50,7 @@ export function buildEventsRoutes(eventsService: EventsService) {
         };
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         next();
     };

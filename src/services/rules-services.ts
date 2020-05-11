@@ -1,23 +1,33 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, Db } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventTypesService } from './event-types-service';
+import { TargetsService } from './targets-service';
+import { Rule } from '../models/rule';
 
-export function buildRulesService(db, targetsService, eventTypesService: EventTypesService) {
+export type RulesService = {
+    list(page: number, pageSize: number, search: string): Promise<Rule[]>;
+    create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
+    getById(id: ObjectId): Promise<Rule>;
+    deleteById(id: ObjectId): Promise<void>;
+    getByEventTypeId(eventTypeId: ObjectId): Promise<Rule[]>;
+}
+
+export function buildRulesService(db: Db, targetsService: TargetsService, eventTypesService: EventTypesService): RulesService {
 
     const collection = db.collection('rules');
 
-    targetsService.registerOnBeforeDelete(async id => {
-        const rules = await collection.find({ targetId: new ObjectId(id) }).toArray();
+    targetsService.registerOnBeforeDelete(async (targetId: ObjectId) => {
+        const rules = await collection.find({ targetId }).toArray();
         if (rules.length > 0) {
             throw new InvalidOperationError(`Target cannot be deleted as in use by rules [${rules.map(r => `"${r._id}"`).join(', ')}]`);
         }
     });
 
-    eventTypesService.registerOnBeforeDelete(async eventTypeId => {
+    eventTypesService.registerOnBeforeDelete(async (eventTypeId: ObjectId) => {
         const rules = await collection.find({ eventTypeId }).toArray();
         if (rules.length > 0) {
             throw new InvalidOperationError(`Event type cannot be deleted as in use by rules [${rules.map(r => `"${r._id}"`).join(', ')}]`);
@@ -38,7 +48,7 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
         return eventTypes.reduce(reduceToDictionary, {});
     }
 
-    async function getTargetsDictionaryByIds(ids: string[]): Promise<{[key: string]: any }> {
+    async function getTargetsDictionaryByIds(ids: ObjectId[]): Promise<{[key: string]: any }> {
         const targets = await targetsService.getByIds(ids);
         return targets.reduce(reduceToDictionary, {});
     }
@@ -46,19 +56,19 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
     async function toRuleDto(rule) {
         const { eventTypeId, targetId } = rule;
         const eventTypes = await getEventTypesDictionaryByIds([eventTypeId]);
-        const targets = await getTargetsDictionaryByIds([targetId.toHexString()]);
+        const targets = await getTargetsDictionaryByIds([targetId]);
         return toDto(denormalizeRule(rule, eventTypes, targets));
     }
 
-    async function toRulesDtos(rules: any[]) {
+    async function toRulesDtos(rules: Rule[]) {
         const eventTypesIds = [ ...new Set(rules.map(r => r.eventTypeId)) ];
-        const targetsIds = [ ...new Set(rules.map(r => r.targetId.toHexString())) ];
+        const targetsIds = [ ...new Set(rules.map(r => r.targetId)) ];
         const eventTypes = await getEventTypesDictionaryByIds(eventTypesIds);
         const targets = await getTargetsDictionaryByIds(targetsIds);
         return rules.map(rule => denormalizeRule(rule, eventTypes, targets)).map(toDto);
     }
 
-    function denormalizeRule(rule: any, eventTypes: {[key:string]: any}, targets: {[key:string]: any}) {
+    function denormalizeRule(rule: Rule, eventTypes: {[key:string]: any}, targets: {[key:string]: any}) {
         const { eventTypeId, targetId } = rule;
         const { name: eventTypeName } = eventTypes[eventTypeId.toHexString()];
         const { name: targetName } = targets[targetId.toHexString()];
@@ -66,12 +76,12 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
     }
 
     return {
-        async list(page: number, pageSize: number, search: string) {
+        async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const rules = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return toRulesDtos(rules);
         },
-        async create(rule) {
+        async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
             const { filters, name, eventTypeId, targetId, skipOnConsecutivesMatches } = rule;
 
             Filter.assertIsValid(filters);
@@ -86,8 +96,8 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
             }
             const ruleToCreate = {
                 name,
-                targetId: new ObjectId(targetId),
-                eventTypeId: new ObjectId(eventTypeId),
+                targetId,
+                eventTypeId,
                 filters,
                 skipOnConsecutivesMatches,
                 createdAt: new Date(),
@@ -95,10 +105,10 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
             };
             try {
                 const { insertedId } = await collection.insertOne(ruleToCreate);
-                return toRuleDto({
+                return {
                     ...ruleToCreate,
-                    id: insertedId.toString()
-                });
+                    id: insertedId
+                };
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });
@@ -109,18 +119,15 @@ export function buildRulesService(db, targetsService, eventTypesService: EventTy
                 throw error;
             }
         },
-        async getById(id: string) {
-            const rule = await collection.findOne({ _id: new ObjectId(id) });
-            if (!rule) {
-                return null;
-            }
+        async getById(id: ObjectId): Promise<Rule> {
+            const rule = await collection.findOne({ _id: id });
             return toRuleDto(rule);
         },
-        async deleteById(id: string): Promise<void> {
-            await collection.deleteOne({ _id: new ObjectId(id) });
+        async deleteById(id: ObjectId): Promise<void> {
+            await collection.deleteOne({ _id: id });
         },
-        async getByEventTypeId(eventTypeId: string) {
-            const rules = await collection.find({ eventTypeId: new ObjectId(eventTypeId) }).toArray();
+        async getByEventTypeId(eventTypeId: ObjectId): Promise<Rule[]> {
+            const rules = await collection.find({ eventTypeId }).toArray();
             return toRulesDtos(rules);
         }
     };

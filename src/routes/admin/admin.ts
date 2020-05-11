@@ -7,6 +7,10 @@ import { RulesExecutionsService } from '../../services/rules-executions-service'
 import { buildRulesExecutionsRoutes } from './rules-executions';
 import { EventsService } from '../../services/events-service';
 import { EventTypesService } from '../../services/event-types-service';
+import { TargetsService } from '../../services/targets-service';
+import { RulesService } from '../../services/rules-services';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { ServerResponse } from 'http';
 
 const checkHealthSchema = {
     tags: ['system'],
@@ -33,11 +37,12 @@ const versionSchema = {
 
 export function buildAdminRoutes(
     eventTypesService: EventTypesService,
-    rulesService, targetsService,
+    rulesService: RulesService,
+    targetsService: TargetsService,
     rulesExecutionsService: RulesExecutionsService,
     eventsService: EventsService) {
 
-    function checkHealth(request, reply) {
+    function checkHealth(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
         reply.code(204).res.end();
     }
 
@@ -45,7 +50,7 @@ export function buildAdminRoutes(
         return { version: packageInfo.version };
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/check-health', { ...opts, ...{ logLevel: 'warn', schema: checkHealthSchema } }, checkHealth);
         fastify.get('/version', { ...opts, ...{ logLevel: 'warn', schema: versionSchema } }, version);
         fastify.register(buildEventTypesRoutes(eventTypesService), { prefix: '/event-types' });

@@ -1,5 +1,7 @@
 import { getNextLink, getPrevLink } from '../../utils/url';
 import { RulesExecutionsService } from '../../services/rules-executions-service';
+import { toSafeObjectId } from '../../utils/dto';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 
 const ruleExecutionSchema = {
     type: 'object',
@@ -46,9 +48,11 @@ const listSchema = {
 
 export function buildRulesExecutionsRoutes(rulesExecutionsService: RulesExecutionsService) {
 
-    async function list(request) {
+    async function list(request: FastifyRequest) {
         const { page, pageSize, eventTypeId, ruleId } = request.query;
-        const events = await rulesExecutionsService.list(page, pageSize, eventTypeId, ruleId);
+        const events = await rulesExecutionsService.list(page, pageSize,
+            toSafeObjectId(eventTypeId),
+            toSafeObjectId(ruleId));
         const results = events;
         return {
             results,
@@ -57,7 +61,7 @@ export function buildRulesExecutionsRoutes(rulesExecutionsService: RulesExecutio
         };
     }
 
-    return function(fastify, opts, next) {
+    return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         next();
     };

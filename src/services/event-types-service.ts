@@ -2,12 +2,13 @@ import { ObjectId, Db } from 'mongodb';
 import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
+import { EventType } from '../models/event-type';
 
 export type EventTypesService = {
-    list(page: number, pageSize: number, search: string): Promise<any[]>;
-    create(eventType);
-    getById(id: ObjectId): Promise<any>;
-    getByIds(ids: ObjectId[]): Promise<any[]>;
+    list(page: number, pageSize: number, search: string): Promise<EventType[]>;
+    create(eventType: Pick<EventType, 'name'>): Promise<EventType>;
+    getById(id: ObjectId): Promise<EventType>;
+    getByIds(ids: ObjectId[]): Promise<EventType[]>;
     deleteById(id: ObjectId): Promise<void>;
     registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void;
 }
@@ -22,12 +23,12 @@ export function buildEventTypesService(db: Db): EventTypesService {
     }
 
     return {
-        async list(page: number, pageSize: number, search: string): Promise<any[]> {
+        async list(page: number, pageSize: number, search: string): Promise<EventType[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const eventTypes = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return eventTypes.map(toDto);
         },
-        async create(eventType) {
+        async create(eventType: Pick<EventType, 'name'>): Promise<EventType> {
             const eventTypeToCreate = {
                 ...eventType,
                 createdAt: new Date(),
@@ -35,7 +36,7 @@ export function buildEventTypesService(db: Db): EventTypesService {
             };
             try {
                 const { insertedId } = await collection.insertOne(eventTypeToCreate);
-                return { ...eventTypeToCreate, id: insertedId.toString() };
+                return { ...eventTypeToCreate, id: insertedId };
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingEventType = await collection.findOne({ name: eventType.name });
@@ -46,11 +47,11 @@ export function buildEventTypesService(db: Db): EventTypesService {
                 throw error;
             }
         },
-        async getById(id: ObjectId): Promise<any> {
+        async getById(id: ObjectId): Promise<EventType> {
             const eventType = await collection.findOne({ _id: id });
             return toDto(eventType);
         },
-        async getByIds(ids: ObjectId[]): Promise<any[]> {
+        async getByIds(ids: ObjectId[]): Promise<EventType[]> {
             const eventTypes = await collection.find({ _id: { $in: ids }}).toArray();
             return eventTypes.map(toDto);
         },
