@@ -88,7 +88,7 @@ describe('group', () => {
             types: ['string'],
             value: 20
         }, {
-            operator: '_stdDevSample',
+            operator: '_stdDevSamp',
             types: ['string'],
             value: 30
         }].forEach(testCase => {
@@ -117,7 +117,7 @@ describe('group', () => {
                 minQuantity: { '_min': '_quantity' },
                 maxQuantity: { '_max': '_quantity' },
                 stdDevPopQuantity: { '_stdDevPop': '_quantity' },
-                stdDevSampleQuantity: { '_stdDevSample': '_quantity' }
+                stdDevSampleQuantity: { '_stdDevSamp': '_quantity' }
             } as unknown as Group);
             expect(act).not.toThrow();
         });

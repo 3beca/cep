@@ -8,7 +8,7 @@ const operatorSupportedValueTypes = {
     '_max': ['string'],
     '_sum': ['string', 'number'],
     '_stdDevPop': ['string'],
-    '_stdDevSample': ['string']
+    '_stdDevSamp': ['string']
 };
 const supportedOperators = Object.keys(operatorSupportedValueTypes);
 
