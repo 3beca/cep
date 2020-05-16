@@ -18,11 +18,11 @@ export type OperatorStdDevPop = {
     _stdDevPop: string;
 };
 
-export type OperatorStdDevSample = {
-    _stdDevSample: string;
+export type OperatorStdDevSamp = {
+    _stdDevSamp: string;
 };
 
-export type Operator = OperatorAvg | OperatorMax | OperatorMin | OperatorSum | OperatorStdDevPop | OperatorStdDevSample;
+export type Operator = OperatorAvg | OperatorMax | OperatorMin | OperatorSum | OperatorStdDevPop | OperatorStdDevSamp;
 
 export type Group = {
     [key: string]: Operator

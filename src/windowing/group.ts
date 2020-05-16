@@ -62,3 +62,18 @@ export function assertIsValid(options: Group): void {
         assertIsValidOperator(key, options[key]);
     });
 }
+
+export function toMongo$Group(group: Group) {
+    const result = { _id: null };
+    const keys = Object.keys(group);
+    keys.forEach(key => {
+        const operator = group[key];
+        const operatorKey = Object.keys(operator)[0];
+        const operatorValue = operator[operatorKey];
+        const operatorValueType = typeof operatorValue;
+        const mongoOperator = {};
+        mongoOperator[`$${operatorKey.substr(1)}`] = operatorValueType === 'string' ? `$${operatorValue.substr(1)}` : operatorValue;
+        result[key] = mongoOperator;
+    });
+    return result;
+}

@@ -1,4 +1,4 @@
-import { assertIsValid } from '../../src/windowing/group';
+import { assertIsValid, toMongo$Group } from '../../src/windowing/group';
 import { Group } from '../../src/models/group';
 
 describe('group', () => {
@@ -105,7 +105,7 @@ describe('group', () => {
         it('should throw an error if grouping operator field value do not start with _ symbol', () => {
             const act = () => assertIsValid({
                 field: { '_avg': 'a' }
-            } as unknown as Group);
+            });
             expect(act).toThrow('Group field \'field\' operator value must start with \'_\' symbol');
         });
 
@@ -118,8 +118,34 @@ describe('group', () => {
                 maxQuantity: { '_max': '_quantity' },
                 stdDevPopQuantity: { '_stdDevPop': '_quantity' },
                 stdDevSampleQuantity: { '_stdDevSamp': '_quantity' }
-            } as unknown as Group);
+            });
             expect(act).not.toThrow();
+        });
+    });
+
+    describe('toMongo$Group', () => {
+
+        it('convert to valid mongodb $group operator', () => {
+            const group = {
+                avgPrice: { '_avg': '_price' },
+                count: { '_sum': 1 },
+                countQuantity: { '_sum': '_quantity' },
+                minQuantity: { '_min': '_quantity' },
+                maxQuantity: { '_max': '_quantity' },
+                stdDevPopQuantity: { '_stdDevPop': '_quantity' },
+                stdDevSampleQuantity: { '_stdDevSamp': '_quantity' }
+            };
+            const result = toMongo$Group(group);
+            expect(result).toStrictEqual({
+                _id: null,
+                avgPrice: { '$avg': '$price' },
+                count: { '$sum': 1 },
+                countQuantity: { '$sum': '$quantity' },
+                minQuantity: { '$min': '$quantity' },
+                maxQuantity: { '$max': '$quantity' },
+                stdDevPopQuantity: { '$stdDevPop': '$quantity' },
+                stdDevSampleQuantity: { '$stdDevSamp': '$quantity' }
+            });
         });
     });
 });
