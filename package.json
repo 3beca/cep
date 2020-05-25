@@ -53,7 +53,7 @@
     "fastify": "^2.14.1",
     "fastify-cors": "^3.0.3",
     "fastify-swagger": "^2.5.1",
-    "geolib": "^3.2.1",
+    "geolib": "^3.3.1",
     "make-promises-safe": "^5.1.0",
     "mongodb": "^3.5.7",
     "node-fetch": "^2.6.0"
