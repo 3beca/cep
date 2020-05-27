@@ -45,7 +45,7 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
             return rules.map(toDto);
         },
         async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
-            const { filters, name, eventTypeId, targetId, skipOnConsecutivesMatches } = rule;
+            const { filters, name, eventTypeId, targetId } = rule;
 
             Filter.assertIsValid(filters);
 
@@ -58,11 +58,7 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
                 throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
             }
             const ruleToCreate = {
-                name,
-                targetId,
-                eventTypeId,
-                filters,
-                skipOnConsecutivesMatches,
+                ...rule,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };

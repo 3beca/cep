@@ -21,7 +21,7 @@ export async function getAndSetupDatabase(client, databaseName) {
     await targets.createIndex({ name: 1 }, { unique: true });
     await rules.createIndex({ name: 1 }, { unique: true });
     await rules.createIndex({ targetId: 1 });
-    await rules.createIndex({ eventTypeId: 1 });
+    await rules.createIndex({ eventTypeId: 1, type: 1 });
     await events.createIndex({ createdAt: 1 }, { expireAfterSeconds: ninetyDays });
     await events.createIndex({ eventTypeId: 1, createdAt: 1 });
     await rulesExecutions.createIndex({ ruleId: 1, executedAt: 1 });

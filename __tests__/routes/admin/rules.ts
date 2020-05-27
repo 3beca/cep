@@ -35,6 +35,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: true,
                         targetId: target.id
@@ -108,6 +109,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -129,6 +131,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -150,6 +153,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -264,6 +268,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: false,
                         targetId: target.id
@@ -308,6 +313,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: undefined,
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -315,6 +321,42 @@ describe('admin', () => {
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'name\'' }));
+            });
+
+            it('should return 400 when type is undefined', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule name',
+                        type: undefined,
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'type\'' }));
+            });
+
+            it('should return 400 when type is not supported', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule name',
+                        type: 'unexisting rule type',
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/type should be equal to one of the allowed values' }));
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
@@ -325,6 +367,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a'.repeat(101),
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -342,6 +385,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: { _aa: 0 }
                         },
@@ -362,6 +406,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             '$a': 6
                         },
@@ -381,6 +426,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: 2
                         },
@@ -400,6 +446,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: 2
                         },
@@ -419,6 +466,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: 2
                         },
@@ -443,6 +491,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: 2
                         },
@@ -463,6 +512,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         filters: {
                             a: 2
                         },
@@ -483,6 +533,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id,
                         skipOnConsecutivesMatches: true,
@@ -513,6 +564,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -523,6 +575,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
+                        type: 'realTime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -579,6 +632,7 @@ describe('admin', () => {
                 url: '/admin/rules',
                 body: {
                     name,
+                    type: 'realTime',
                     eventTypeId: eventType.id,
                     targetId: target.id
                 }

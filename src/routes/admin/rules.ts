@@ -13,8 +13,9 @@ import { EventType } from '../../models/event-type';
 const ruleschema = {
     type: 'object',
     properties: {
-        name: { type: 'string' },
         id: { type: 'string' },
+        name: { type: 'string' },
+        type: { type: 'string', enum: ['realTime'] },
         targetId: { type: 'string' },
         eventTypeId: { type: 'string' },
         targetName: { type: 'string' },
@@ -82,9 +83,10 @@ const createSchema = {
     tags: ['rules'],
     body: {
         type: 'object',
-        required: ['name', 'eventTypeId', 'targetId'],
+        required: ['name', 'eventTypeId', 'targetId', 'type' ],
         properties: {
             name: { type: 'string', maxLength: 100 },
+            type: { type: 'string', enum: ['realTime'] },
             targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
@@ -166,9 +168,10 @@ export function buildRulesRoutes(
     }
 
     async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
-        const { name, filters, skipOnConsecutivesMatches, eventTypeId, targetId } = request.body;
+        const { name, filters, skipOnConsecutivesMatches, eventTypeId, targetId, type } = request.body;
         const ruleToCreate = {
             name,
+            type,
             filters,
             skipOnConsecutivesMatches,
             eventTypeId: ObjectId.createFromHexString(eventTypeId),
