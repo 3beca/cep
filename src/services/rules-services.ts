@@ -6,14 +6,14 @@ import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventTypesService } from './event-types-service';
 import { TargetsService } from './targets-service';
-import { Rule } from '../models/rule';
+import { Rule, RuleTypes } from '../models/rule';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
     create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
     getById(id: ObjectId): Promise<Rule>;
     deleteById(id: ObjectId): Promise<void>;
-    getByEventTypeId(eventTypeId: ObjectId): Promise<Rule[]>;
+    getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]>;
 }
 
 export function buildRulesService(db: Db, targetsService: TargetsService, eventTypesService: EventTypesService): RulesService {
@@ -85,8 +85,8 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         async deleteById(id: ObjectId): Promise<void> {
             await collection.deleteOne({ _id: id });
         },
-        async getByEventTypeId(eventTypeId: ObjectId): Promise<Rule[]> {
-            const rules = await collection.find({ eventTypeId }).toArray();
+        async getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]> {
+            const rules = await collection.find({ eventTypeId, type: { $in: types } }).toArray();
             return rules.map(toDto);
         }
     };
