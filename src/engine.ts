@@ -8,7 +8,7 @@ import { ObjectId } from 'mongodb';
 import { EventTypesService } from './services/event-types-service';
 import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
-import { Rule } from './models/rule';
+import { Rule, SlidingRule } from './models/rule';
 import { Target } from './models/target';
 
 export type Engine = {
@@ -23,6 +23,7 @@ type MatchResult = {
     targetName?: string,
     targetSuccess?: boolean,
     targetStatusCode?: number;
+    payload: any;
 }
 
 export function buildEngine(
@@ -54,6 +55,16 @@ export function buildEngine(
         }, {});
     }
 
+    async function getSlidingRuleMatchResult(rule: SlidingRule): Promise<MatchResult> {
+        const result = await eventsService.aggregate(rule.eventTypeId, rule.windowSize, rule.group);
+        return {
+            rule,
+            match: new Filter(rule.filters).match(result),
+            skip: false,
+            payload: result
+        };
+    }
+
     return {
         async processEvent(eventTypeId: ObjectId, eventPayload, requestId: string): Promise<void> {
             const eventType = await eventTypesService.getById(eventTypeId);
@@ -63,12 +74,20 @@ export function buildEngine(
 
             const { id: eventId } = await createEvent(eventType, eventPayload, requestId);
 
-            const rules = await rulesService.getByEventTypeId(eventTypeId, ['realtime']);
-            const matchResults: MatchResult[] = rules.map(r => ({
-                rule: r,
-                match: new Filter(r.filters).match(eventPayload),
-                skip: false
-            }));
+            const rules = await rulesService.getByEventTypeId(eventTypeId, ['realtime', 'sliding']);
+            const matchResults: MatchResult[] = [];
+            for (const rule of rules) {
+                if (rule.type === 'sliding') {
+                    matchResults.push(await getSlidingRuleMatchResult(rule));
+                } else {
+                    matchResults.push({
+                        rule,
+                        match: new Filter(rule.filters).match(eventPayload),
+                        skip: false,
+                        payload: eventPayload
+                    });
+                }
+            }
             for (const matchResult of matchResults.filter(r => r.match)) {
                 const { rule } = matchResult;
                 if (rule.skipOnConsecutivesMatches) {
@@ -85,7 +104,7 @@ export function buildEngine(
                     const target = targets[rule.targetId.toHexString()];
                     const response = await fetch(target.url, {
                         method: 'POST',
-                        body: JSON.stringify(eventPayload),
+                        body: JSON.stringify(matchResult.payload),
                         headers: {
                             'Content-Type': 'application/json',
                             'request-id': requestId,

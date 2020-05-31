@@ -63,7 +63,7 @@ export function assertIsValid(options: Group): void {
     });
 }
 
-export function toMongo$Group(group: Group) {
+export function toMongo$Group(group: Group, operatorValuePrefix: string = '') {
     const result = { _id: null };
     const keys = Object.keys(group);
     keys.forEach(key => {
@@ -72,7 +72,7 @@ export function toMongo$Group(group: Group) {
         const operatorValue = operator[operatorKey];
         const operatorValueType = typeof operatorValue;
         const mongoOperator = {};
-        mongoOperator[`$${operatorKey.substr(1)}`] = operatorValueType === 'string' ? `$${operatorValue.substr(1)}` : operatorValue;
+        mongoOperator[`$${operatorKey.substr(1)}`] = operatorValueType === 'string' ? `$${operatorValuePrefix}${operatorValue.substr(1)}` : operatorValue;
         result[key] = mongoOperator;
     });
     return result;

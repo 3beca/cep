@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { Group } from './group';
+import { WindowSize } from './window-size';
 
 export type RuleTypes = 'realtime' | 'sliding';
 
@@ -22,6 +23,7 @@ export type RealTimeRule = {
 export type SlidingRule = {
     type: 'sliding';
     group: Group;
+    windowSize: WindowSize;
 } & BaseRule;
 
 export type Rule = RealTimeRule | SlidingRule;
