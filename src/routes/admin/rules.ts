@@ -22,6 +22,14 @@ const ruleschema = {
         eventTypeName: { type: 'string' },
         skipOnConsecutivesMatches: { type: 'boolean' },
         filters: { type: 'object', additionalProperties: true },
+        group: { type: 'object', additionalProperties: true },
+        windowSize: {
+            type: 'object',
+            properties: {
+                unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
+                value: { type: 'integer' }
+            }
+        },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
@@ -91,14 +99,21 @@ const createSchema = {
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
             filters: { type: 'object' },
-            group: { type: 'object' }
+            group: { type: 'object' },
+            windowSize: {
+                type: 'object',
+                properties: {
+                    unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
+                    value: { type: 'integer' }
+                }
+            }
         },
         anyOf: [
             {
                 properties: {
                     type: { const: 'sliding' }
                 },
-                required: ['group']
+                required: ['group', 'windowSize']
             },
             {
                 properties: {
