@@ -449,7 +449,7 @@ describe('admin', () => {
             url: '/admin/rules',
             body: {
                 name: 'a rule',
-                type: 'realTime',
+                type: 'realtime',
                 eventTypeId,
                 targetId,
                 filters: {

@@ -63,7 +63,7 @@ export function buildEngine(
 
             const { id: eventId } = await createEvent(eventType, eventPayload, requestId);
 
-            const rules = await rulesService.getByEventTypeId(eventTypeId, ['realTime']);
+            const rules = await rulesService.getByEventTypeId(eventTypeId, ['realtime']);
             const matchResults: MatchResult[] = rules.map(r => ({
                 rule: r,
                 match: new Filter(r.filters).match(eventPayload),
