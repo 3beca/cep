@@ -1,15 +1,27 @@
 import { ObjectId } from 'mongodb';
+import { Group } from './group';
 
-export type RuleTypes = 'realtime';
+export type RuleTypes = 'realtime' | 'sliding';
 
-export type Rule = {
+type BaseRule = {
     id: ObjectId;
     name: string;
     type: RuleTypes;
     eventTypeId: ObjectId;
     targetId: ObjectId;
-    filters: any;
+    filters?: any;
     skipOnConsecutivesMatches: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
+
+export type RealTimeRule = {
+    type: 'realtime';
+} & BaseRule;
+
+export type SlidingRule = {
+    type: 'sliding';
+    group: Group;
+} & BaseRule;
+
+export type Rule = RealTimeRule | SlidingRule;

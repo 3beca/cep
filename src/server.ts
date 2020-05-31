@@ -20,6 +20,7 @@ import { EventTypesService } from './services/event-types-service';
 import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
 import { ServerResponse } from 'http';
+import GroupError from './windowing/group-error';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -111,6 +112,7 @@ export function buildServer(options: ServerOptions,
 		}
 		if (error instanceof FilterError ||
 			error instanceof InvalidOperationError ||
+			error instanceof GroupError ||
 			error.validation) {
 			request.log.info(error);
 			reply.status(400).send(error);

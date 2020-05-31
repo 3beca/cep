@@ -86,12 +86,26 @@ const createSchema = {
         required: ['name', 'eventTypeId', 'targetId', 'type' ],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            type: { type: 'string', enum: ['realtime'] },
+            type: { type: 'string', enum: ['realtime', 'sliding'] },
             targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
-            filters: { type: 'object' }
-        }
+            filters: { type: 'object' },
+            group: { type: 'object' }
+        },
+        anyOf: [
+            {
+                properties: {
+                    type: { const: 'sliding' }
+                },
+                required: ['group']
+            },
+            {
+                properties: {
+                    type: { const: 'realtime' }
+                }
+            }
+        ]
     },
     response: {
         201: ruleschema
@@ -168,12 +182,9 @@ export function buildRulesRoutes(
     }
 
     async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
-        const { name, filters, skipOnConsecutivesMatches, eventTypeId, targetId, type } = request.body;
+        const { eventTypeId, targetId } = request.body;
         const ruleToCreate = {
-            name,
-            type,
-            filters,
-            skipOnConsecutivesMatches,
+            ...request.body,
             eventTypeId: ObjectId.createFromHexString(eventTypeId),
             targetId: ObjectId.createFromHexString(targetId),
         };
