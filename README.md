@@ -62,7 +62,7 @@ Rules allow to create a relationship between event types and targets. On event p
 To create a rule we must provide an unique name, a target id, an event type id and a filter.
 
 ```
-curl -X POST "http://localhost:8888/admin/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
+curl -X POST "http://localhost:8888/admin/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
 ```
 
 ### Send event payload
