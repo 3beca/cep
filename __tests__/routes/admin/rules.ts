@@ -35,7 +35,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: true,
                         targetId: target.id
@@ -109,7 +109,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -131,7 +131,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -153,7 +153,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule ' + value,
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -268,7 +268,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: false,
                         targetId: target.id
@@ -313,7 +313,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: undefined,
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -367,7 +367,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a'.repeat(101),
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -385,7 +385,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: { _aa: 0 }
                         },
@@ -406,7 +406,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             '$a': 6
                         },
@@ -426,7 +426,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: 2
                         },
@@ -446,7 +446,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: 2
                         },
@@ -466,7 +466,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: 2
                         },
@@ -491,7 +491,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: 2
                         },
@@ -512,7 +512,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         filters: {
                             a: 2
                         },
@@ -533,7 +533,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'a rule',
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id,
                         skipOnConsecutivesMatches: true,
@@ -564,7 +564,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -575,7 +575,7 @@ describe('admin', () => {
                     url: '/admin/rules',
                     body: {
                         name: 'same name',
-                        type: 'realTime',
+                        type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
                     }
@@ -632,7 +632,7 @@ describe('admin', () => {
                 url: '/admin/rules',
                 body: {
                     name,
-                    type: 'realTime',
+                    type: 'realtime',
                     eventTypeId: eventType.id,
                     targetId: target.id
                 }

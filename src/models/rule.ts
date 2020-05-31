@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 
-export type RuleTypes = 'realTime';
+export type RuleTypes = 'realtime';
 
 export type Rule = {
     id: ObjectId;

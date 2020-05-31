@@ -15,7 +15,7 @@ const ruleschema = {
     properties: {
         id: { type: 'string' },
         name: { type: 'string' },
-        type: { type: 'string', enum: ['realTime'] },
+        type: { type: 'string', enum: ['realtime'] },
         targetId: { type: 'string' },
         eventTypeId: { type: 'string' },
         targetName: { type: 'string' },
@@ -86,7 +86,7 @@ const createSchema = {
         required: ['name', 'eventTypeId', 'targetId', 'type' ],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            type: { type: 'string', enum: ['realTime'] },
+            type: { type: 'string', enum: ['realtime'] },
             targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
