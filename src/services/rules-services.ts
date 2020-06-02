@@ -6,7 +6,8 @@ import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventTypesService } from './event-types-service';
 import { TargetsService } from './targets-service';
-import { Rule, RuleTypes } from '../models/rule';
+import { Rule, RuleTypes, SlidingRule } from '../models/rule';
+import { assertIsValid } from '../windowing/group';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
@@ -14,6 +15,10 @@ export type RulesService = {
     getById(id: ObjectId): Promise<Rule>;
     deleteById(id: ObjectId): Promise<void>;
     getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]>;
+}
+
+function isSlidingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rule is SlidingRule {
+    return rule.type === 'sliding';
 }
 
 export function buildRulesService(db: Db, targetsService: TargetsService, eventTypesService: EventTypesService): RulesService {
@@ -47,6 +52,9 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
             const { filters, name, eventTypeId, targetId } = rule;
 
+            if (isSlidingRule(rule)) {
+                assertIsValid(rule.group);
+            }
             Filter.assertIsValid(filters);
 
             const eventType = await eventTypesService.getById(eventTypeId);
@@ -67,7 +75,7 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
                 return {
                     ...ruleToCreate,
                     id: insertedId
-                };
+                } as Rule;
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });

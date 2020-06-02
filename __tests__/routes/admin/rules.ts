@@ -356,7 +356,11 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/type should be equal to one of the allowed values' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/type should be equal to one of the allowed values, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match some schema in anyOf'
+                }));
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
@@ -459,7 +463,6 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'targetId\'' }));
             });
 
-
             it('should return 400 when target id and/or event type id are not valid ObjectIds', async () => {
                 const response = await server.inject({
                     method: 'POST',
@@ -525,7 +528,147 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: `target with identifier ${nonExistingTargetId} does not exists` }));
             });
 
-            it('should return 201 with created rule when request is valid', async () => {
+            it('should return 400 when group is undefined in rule of type sliding', async () => {
+                const target = await createTarget(server);
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: undefined,
+                        windowSize: {
+                            unit: 'minute',
+                            value: 5
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'group\', body/type should be equal to constant, body should match some schema in anyOf'
+                }));
+            });
+
+            it('should return 400 when group is invalid in rule of type sliding', async () => {
+                const target = await createTarget(server);
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: {
+                            _id: 'invalid group'
+                        },
+                        windowSize: {
+                            unit: 'minute',
+                            value: 5
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'Group field \'_id\' contains reserved symbol \'_\''
+                }));
+            });
+
+            it('should return 400 when windowSize is undefined in rule of type sliding', async () => {
+                const target = await createTarget(server);
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: undefined,
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'windowSize\', body/type should be equal to constant, body should match some schema in anyOf'
+                }));
+            });
+
+            it('should return 400 when windowSize.unit is not supported in rule of type sliding', async () => {
+                const target = await createTarget(server);
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'day',
+                            value: 1
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/windowSize/unit should be equal to one of the allowed values'
+                }));
+            });
+
+            it('should return 400 when windowSize.value is not an integer in rule of type sliding', async () => {
+                const target = await createTarget(server);
+                const eventType = await createEventType(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: 5.5
+                        },
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/windowSize/value should be integer'
+                }));
+            });
+
+            it('should return 201 with created rule type realtime when request is valid', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
                 const response = await server.inject({
@@ -547,7 +690,49 @@ describe('admin', () => {
                 const rule = JSON.parse(response.payload);
                 expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
                 expect(rule.name).toBe('a rule');
+                expect(rule.type).toBe('realtime');
                 expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.eventTypeId).toBe(eventType.id);
+                expect(rule.eventTypeName).toBe(eventType.name);
+                expect(rule.targetId).toBe(target.id);
+                expect(rule.targetName).toBe(target.name);
+                expect(rule.skipOnConsecutivesMatches).toBe(true);
+                expect(ObjectId.isValid(rule.id)).toBe(true);
+            });
+
+            it('should return 201 with created rule type sliding when request is valid', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: 5
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
+                expect(rule.name).toBe('a rule');
+                expect(rule.type).toBe('sliding');
+                expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.group).toEqual({ count: { _sum: 1 }});
+                expect(rule.windowSize).toEqual({ unit: 'hour', value: 5 });
                 expect(rule.eventTypeId).toBe(eventType.id);
                 expect(rule.eventTypeName).toBe(eventType.name);
                 expect(rule.targetId).toBe(target.id);

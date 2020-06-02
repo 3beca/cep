@@ -22,6 +22,14 @@ const ruleschema = {
         eventTypeName: { type: 'string' },
         skipOnConsecutivesMatches: { type: 'boolean' },
         filters: { type: 'object', additionalProperties: true },
+        group: { type: 'object', additionalProperties: true },
+        windowSize: {
+            type: 'object',
+            properties: {
+                unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
+                value: { type: 'integer' }
+            }
+        },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
@@ -86,12 +94,33 @@ const createSchema = {
         required: ['name', 'eventTypeId', 'targetId', 'type' ],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            type: { type: 'string', enum: ['realtime'] },
+            type: { type: 'string', enum: ['realtime', 'sliding'] },
             targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
-            filters: { type: 'object' }
-        }
+            filters: { type: 'object' },
+            group: { type: 'object' },
+            windowSize: {
+                type: 'object',
+                properties: {
+                    unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
+                    value: { type: 'integer' }
+                }
+            }
+        },
+        anyOf: [
+            {
+                properties: {
+                    type: { const: 'sliding' }
+                },
+                required: ['group', 'windowSize']
+            },
+            {
+                properties: {
+                    type: { const: 'realtime' }
+                }
+            }
+        ]
     },
     response: {
         201: ruleschema
@@ -168,12 +197,9 @@ export function buildRulesRoutes(
     }
 
     async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
-        const { name, filters, skipOnConsecutivesMatches, eventTypeId, targetId, type } = request.body;
+        const { eventTypeId, targetId } = request.body;
         const ruleToCreate = {
-            name,
-            type,
-            filters,
-            skipOnConsecutivesMatches,
+            ...request.body,
             eventTypeId: ObjectId.createFromHexString(eventTypeId),
             targetId: ObjectId.createFromHexString(targetId),
         };

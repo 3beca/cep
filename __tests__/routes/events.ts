@@ -67,7 +67,7 @@ describe('events', () => {
         it('should not call target when event payload does not match rule filters', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org');
-            await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
+            await createRule(server, target.id, eventType.id, { filters: { value: 2 } });
 
             const scope = nock('http://example.org')
                 .post('/', { value: 2 })
@@ -87,7 +87,7 @@ describe('events', () => {
         it('should call target when event payload matches rule filters with request-id header and payload as body', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
-            const rule = await createRule(server, target.id, eventType.id, 'a rule', { value: 2 });
+            const rule = await createRule(server, target.id, eventType.id, { filters: { value: 2 }});
 
             const requestId = new ObjectId().toHexString();
             const scope = nock('http://example.org', {
@@ -118,8 +118,8 @@ describe('events', () => {
         it('should call target twice when event payload matches 2 rules filters', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
-            const rule1 = await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 });
-            const rule2 = await createRule(server, target.id, eventType.id, 'rule 2', { value: { _gt: 1 } });
+            const rule1 = await createRule(server, target.id, eventType.id, { name: 'rule 1', filters: { value: 2 }});
+            const rule2 = await createRule(server, target.id, eventType.id, { name: 'rule 2', filters: { value: { _gt: 1 } }});
 
             const scope1 = nock('http://example.org', {
                 reqheaders: {
@@ -158,8 +158,11 @@ describe('events', () => {
         it('should call target only on first matches when rule is created with skipOnConsecutivesMatches=true', async () => {
             const eventType = await createEventType(server);
             const target = await createTarget(server, 'http://example.org/');
-            const skipOnConsecutivesMatches = true;
-            const rule = await createRule(server, target.id, eventType.id, 'rule 1', { value: 2 }, skipOnConsecutivesMatches);
+            const rule = await createRule(server, target.id, eventType.id, {
+                name: 'rule 1',
+                filters: { value: 2 },
+                skipOnConsecutivesMatches: true
+            });
 
             const scope1 = nock('http://example.org', {
                 reqheaders: {
@@ -276,6 +279,157 @@ describe('events', () => {
         });
     });
 
+    it('should not call target when event payload does not match rule filters of type sliding', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+        await createRule(server, target.id, eventType.id, {
+            type: 'sliding',
+            group: { count: { _sum: 1 } },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            },
+            filters: { count: 2 }
+        });
+
+        const scope = nock('http://example.org')
+            .post('/', { count: 2 })
+            .reply(200);
+
+        const response = await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 5
+            }
+        });
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(false);
+    });
+
+    it('should call target when event payload matches rule filters of type sliding', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 5
+            }
+        });
+
+        await createRule(server, target.id, eventType.id, {
+            type: 'sliding',
+            group: { count: { _sum: 1 } },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            },
+            filters: { count: 2 }
+        });
+
+        const scope = nock('http://example.org')
+            .post('/', { count: 2 })
+            .reply(200);
+
+        const response = await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 5
+            }
+        });
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('should call target when event payload matches rule without filters of type sliding', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 5
+            }
+        });
+
+        await createRule(server, target.id, eventType.id, {
+            type: 'sliding',
+            group: { average: { _avg: '_value' } },
+            windowSize: {
+                unit: 'hour',
+                value: 3
+            }
+        });
+
+        const scope = nock('http://example.org')
+            .post('/', { average: 10 })
+            .reply(200);
+
+        const response = await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 15
+            }
+        });
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('should call target when event payload matches rule filters of type sliding with max', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 1
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 8
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 2
+            }
+        });
+
+        await createRule(server, target.id, eventType.id, {
+            type: 'sliding',
+            group: { maxValue: { _max: '_value' } },
+            windowSize: {
+                unit: 'second',
+                value: 30
+            }
+        });
+
+        const scope = nock('http://example.org')
+            .post('/', { maxValue: 8 })
+            .reply(200);
+
+        const response = await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 6
+            }
+        });
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
     async function createTarget(server, url = 'http://example.org') {
         const createResponse = await server.inject({
             method: 'POST',
@@ -290,17 +444,20 @@ describe('events', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId, name = 'a rule', filters: any = undefined, skipOnConsecutivesMatches = false) {
+    async function createRule(server, targetId, eventTypeId, rule = {}) {
+        const defaultRuleValues = {
+            name: 'a rule',
+            type: 'realtime',
+            skipOnConsecutivesMatches: false
+        };
         const createResponse = await server.inject({
             method: 'POST',
             url: '/admin/rules',
             body: {
-                name,
-                type: 'realtime',
+                ...defaultRuleValues,
                 eventTypeId,
                 targetId,
-                filters,
-                skipOnConsecutivesMatches
+                ...rule
             }
         });
         expect(createResponse.statusCode).toBe(201);
