@@ -15,7 +15,7 @@ const ruleschema = {
     properties: {
         id: { type: 'string' },
         name: { type: 'string' },
-        type: { type: 'string', enum: ['realtime'] },
+        type: { type: 'string', enum: ['realtime', 'sliding', 'tumbling'] },
         targetId: { type: 'string' },
         eventTypeId: { type: 'string' },
         targetName: { type: 'string' },
@@ -94,7 +94,7 @@ const createSchema = {
         required: ['name', 'eventTypeId', 'targetId', 'type' ],
         properties: {
             name: { type: 'string', maxLength: 100 },
-            type: { type: 'string', enum: ['realtime', 'sliding'] },
+            type: { type: 'string', enum: ['realtime', 'sliding', 'tumbling'] },
             targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
             skipOnConsecutivesMatches: { type: 'boolean' },
@@ -108,10 +108,16 @@ const createSchema = {
                 }
             }
         },
-        anyOf: [
+        oneOf: [
             {
                 properties: {
                     type: { const: 'sliding' }
+                },
+                required: ['group', 'windowSize']
+            },
+            {
+                properties: {
+                    type: { const: 'tumbling' }
                 },
                 required: ['group', 'windowSize']
             },
