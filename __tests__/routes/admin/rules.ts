@@ -874,6 +874,64 @@ describe('admin', () => {
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
+
+            it('should return 204 and unschedule rule execution when tumbling rule is delete', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const jobId = new ObjectId().toHexString();
+                let requestBody;
+                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: jobId
+                });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'minute',
+                            value: 1
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(scopeCreation.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '1 minute',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
+
+                const scopeDeletion = nock('http://localhost:8890')
+                    .delete(`/jobs/${jobId}`)
+                    .reply(204);
+
+                const deleteResponse = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(deleteResponse.statusCode).toBe(204);
+                expect(scopeDeletion.isDone()).toBe(true);
+            });
         });
 
         async function createRule(server, eventType, target, name = 'a rule') {

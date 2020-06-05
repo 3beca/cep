@@ -69,6 +69,10 @@ export function buildRulesService(db: Db,
         return job as Job;
     }
 
+    async function unScheduleRuleExecution(rule: TumblingRule): Promise<void> {
+        await schedulerService.delete(rule.jobId);
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -103,7 +107,9 @@ export function buildRulesService(db: Db,
                     id: insertedId
                 };
                 if (isTumblingRule(createdRule)) {
-                    await scheduleRuleExecution(createdRule);
+                    const { id: jobId } = await scheduleRuleExecution(createdRule);
+                    await collection.updateOne({ _id: insertedId }, { $set: { jobId } });
+                    createdRule.jobId = jobId;
                 }
                 return createdRule as Rule;
             } catch (error) {
@@ -121,6 +127,10 @@ export function buildRulesService(db: Db,
             return toDto(rule);
         },
         async deleteById(id: ObjectId): Promise<void> {
+            const rule = await this.getById(id);
+            if (rule && isTumblingRule(rule)) {
+                await unScheduleRuleExecution(rule);
+            }
             await collection.deleteOne({ _id: id });
         },
         async getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]> {

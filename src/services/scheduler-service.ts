@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 
 export type SchedulerService = {
     create(job: Omit<Job, 'id'>): Promise<Job>;
-    // delete(jobId: ObjectId): Promise<void>;
+    delete(jobId: ObjectId): Promise<void>;
 }
 
 export type SchedulerOptions = {
@@ -34,6 +34,14 @@ export function buildSchedulerService(options: SchedulerOptions): SchedulerServi
                 id: ObjectId.createFromHexString(id),
                 ...rest
             };
+        },
+        async delete(jobId: ObjectId): Promise<void> {
+            const response = await fetch(`${schedulerApiBaseUrl}/jobs/${jobId}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                throw new Error(response.statusText);
+            }
         }
     };
 }
