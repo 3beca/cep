@@ -100,18 +100,10 @@ export function buildRulesService(db: Db,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
+            let insertedId;
             try {
-                const { insertedId } = await collection.insertOne(ruleToCreate);
-                const createdRule = {
-                    ...ruleToCreate,
-                    id: insertedId
-                };
-                if (isTumblingRule(createdRule)) {
-                    const { id: jobId } = await scheduleRuleExecution(createdRule);
-                    await collection.updateOne({ _id: insertedId }, { $set: { jobId } });
-                    createdRule.jobId = jobId;
-                }
-                return createdRule as Rule;
+                const opResult = await collection.insertOne(ruleToCreate);
+                insertedId = opResult.insertedId;
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });
@@ -121,6 +113,23 @@ export function buildRulesService(db: Db,
                 }
                 throw error;
             }
+            const createdRule = {
+                ...ruleToCreate,
+                id: insertedId
+            };
+            if (isTumblingRule(createdRule)) {
+                let jobId;
+                try {
+                    const job = await scheduleRuleExecution(createdRule);
+                    jobId = job.id;
+                } catch (error) {
+                    await collection.deleteOne({ _id: insertedId });
+                    throw error;
+                }
+                await collection.updateOne({ _id: insertedId }, { $set: { jobId } });
+                createdRule.jobId = jobId;
+            }
+            return createdRule as Rule;
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });

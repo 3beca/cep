@@ -807,6 +807,44 @@ describe('admin', () => {
                 });
             });
 
+            it('should return 500 and do not create rule if scheduler service fail to schedule rule execution', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const scope = nock('http://localhost:8890').post('/jobs').reply(500, { error: 'failure' });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: 5
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(500);
+                expect(scope.isDone()).toBe(true);
+
+                const listResponse = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules'
+                });
+                expect(listResponse.statusCode).toBe(200);
+                const listResponseBody = JSON.parse(listResponse.payload);
+                expect(listResponseBody.results.length).toBe(0);
+            });
+
             it('should return 409 when try to create a rule with the same name', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
