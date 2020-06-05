@@ -971,6 +971,70 @@ describe('admin', () => {
                 expect(deleteResponse.statusCode).toBe(204);
                 expect(scopeDeletion.isDone()).toBe(true);
             });
+
+            it('should return 500 and do not delete the rule if an unexpected error happened while unschedule rule execution', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const jobId = new ObjectId().toHexString();
+                let requestBody;
+                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: jobId
+                });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'second',
+                            value: 10
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(scopeCreation.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '10 seconds',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
+
+                const scopeDeletion = nock('http://localhost:8890')
+                    .delete(`/jobs/${jobId}`)
+                    .reply(500, { error: 'unexpected failure' });
+
+                const deleteResponse = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(deleteResponse.statusCode).toBe(500);
+                expect(scopeDeletion.isDone()).toBe(true);
+
+                const getResponse = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(getResponse.statusCode).toBe(200);
+            });
         });
 
         async function createRule(server, eventType, target, name = 'a rule') {
