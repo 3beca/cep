@@ -24,6 +24,7 @@ describe('admin', () => {
     afterEach(async () => {
         await app.getDatabase().dropDatabase();
         await app.close();
+        nock.cleanAll();
     });
 
     describe('rules', () => {
