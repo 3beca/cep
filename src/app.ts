@@ -7,6 +7,7 @@ import { buildEngine } from './engine';
 import { buildEventsService } from './services/events-service';
 import { buildRulesExecutionsService } from './services/rules-executions-service';
 import { buildSchedulerService } from './services/scheduler-service';
+import { buildInternalServer } from './internal-server';
 
 export type AppOptions = {
     databaseUrl: string,
@@ -16,12 +17,12 @@ export type AppOptions = {
     scheduler: {
         protocol: string;
         host: string;
-        port: string;
+        port: number;
     },
     internalHttp: {
         protocol: string;
         host: string;
-        port: string;
+        port: number;
     }
 };
 
@@ -36,15 +37,20 @@ export async function buildApp(options: AppOptions) {
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
+    const internalServer = buildInternalServer();
     const server = buildServer({ trustProxy, enableCors },
         eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine);
     return {
         async close() {
             await server.close();
+            await internalServer;
             await dbClient.close();
         },
         getServer() {
             return server;
+        },
+        getInternalServer() {
+            return internalServer;
         },
         getDatabase() {
             return db;

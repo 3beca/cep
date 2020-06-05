@@ -72,7 +72,7 @@ export function buildServer(options: ServerOptions,
 				{ name: 'events', description: 'Processed events log related end-points' },
 				{ name: 'event processing', description: 'Event processing related end-points' }
 			],
-			host: config.externalHttp.host + (config.externalHttp.port ? ':' + config.externalHttp.port : ''),
+			host: `${config.externalHttp.host}:${config.externalHttp.port}`,
 			schemes: [config.externalHttp.protocol],
 			consumes: ['application/json'],
 			produces: ['application/json']

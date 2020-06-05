@@ -10,7 +10,7 @@ import { EventTypesService } from '../src/services/event-types-service';
 import { TargetsService } from '../src/services/targets-service';
 import { RulesService } from '../src/services/rules-services';
 
-describe('builServer', () => {
+describe('server', () => {
     let app;
     let server;
 

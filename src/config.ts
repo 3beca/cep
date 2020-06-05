@@ -36,8 +36,8 @@ const config = convict({
         },
         port: {
             doc: 'The external port.',
-            format: String,
-            default: '8888',
+            format: 'port',
+            default: 8888,
             env: 'EXTERNAL_HTTP_PORT',
         }
     },
@@ -56,8 +56,8 @@ const config = convict({
         },
         port: {
             doc: 'The internal port.',
-            format: String,
-            default: '8889',
+            format: 'port',
+            default: 8889,
             env: 'INTERNAL_HTTP_PORT',
         }
     },
@@ -76,8 +76,8 @@ const config = convict({
         },
         port: {
             doc: 'The tribeca scheduler service port.',
-            format: String,
-            default: '8890',
+            format: 'port',
+            default: 8890,
             env: 'TRIBECA_SCHEDULER_SERVICE_PORT',
         }
     },

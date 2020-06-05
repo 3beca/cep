@@ -10,7 +10,7 @@ export type SchedulerService = {
 export type SchedulerOptions = {
     protocol: string;
     host: string;
-    port: string;
+    port: number;
 };
 
 export function buildSchedulerService(options: SchedulerOptions): SchedulerService {

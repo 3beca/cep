@@ -13,9 +13,12 @@ async function main() {
 
     const options = { databaseUrl, databaseName, trustProxy, enableCors, scheduler, internalHttp };
     const app = await buildApp(options);
-    await app.getServer().listen(port, host);
 
-    logger.info('started cep service. Listening at port', port);
+    await app.getInternalServer().listen(internalHttp.port, host);
+    logger.info('started cep internal service. Listening at port', internalHttp.port);
+
+    await app.getServer().listen(port, host);
+    logger.info('started cep public service. Listening at port', port);
 
     process.on('SIGTERM', gracefulShutdown(app));
     process.on('SIGINT', gracefulShutdown(app));
