@@ -2,6 +2,7 @@ jest.mock('pino');
 import { buildApp } from '../../../src/app';
 import { ObjectId } from 'mongodb';
 import config from '../../../src/config';
+import nock from 'nock';
 
 describe('admin', () => {
     let app;
@@ -12,7 +13,9 @@ describe('admin', () => {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false
+            enableCors: false,
+            scheduler: config.scheduler,
+            internalHttp: config.internalHttp
         };
         app = await buildApp(options);
         server = app.getServer();
@@ -745,9 +748,17 @@ describe('admin', () => {
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 
-            it('should return 201 with created rule type tumbling when request is valid', async () => {
+            it('should return 201 with created rule type tumbling when request is valid and create job in scheduler service', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
+                let requestBody;
+                const scope = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: new ObjectId().toHexString()
+                });
+
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -784,6 +795,15 @@ describe('admin', () => {
                 expect(rule.targetName).toBe(target.name);
                 expect(rule.skipOnConsecutivesMatches).toBe(true);
                 expect(ObjectId.isValid(rule.id)).toBe(true);
+                expect(scope.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '5 hours',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
             });
 
             it('should return 409 when try to create a rule with the same name', async () => {

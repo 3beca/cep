@@ -6,8 +6,11 @@ import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventTypesService } from './event-types-service';
 import { TargetsService } from './targets-service';
-import { Rule, RuleTypes, SlidingRule } from '../models/rule';
+import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
+import { SchedulerService } from './scheduler-service';
+import { Job } from '../models/job';
+import { AppOptions } from '../app';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
@@ -21,8 +24,18 @@ function isSlidingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rule
     return rule.type === 'sliding';
 }
 
-export function buildRulesService(db: Db, targetsService: TargetsService, eventTypesService: EventTypesService): RulesService {
+function isTumblingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rule is TumblingRule {
+    return rule.type === 'tumbling';
+}
 
+export function buildRulesService(db: Db,
+    internalHttp: AppOptions['internalHttp'],
+    targetsService: TargetsService,
+    eventTypesService: EventTypesService,
+    schedulerService: SchedulerService): RulesService {
+
+    const { protocol, host, port } = internalHttp;
+    const internalHttpBaseUrl = `${protocol}://${host}:${port}`;
     const collection = db.collection('rules');
 
     targetsService.registerOnBeforeDelete(async (targetId: ObjectId) => {
@@ -43,6 +56,19 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
+    async function scheduleRuleExecution(rule: TumblingRule): Promise<Job> {
+        const { id, windowSize } = rule;
+        const job = await schedulerService.create({
+            type: 'every',
+            interval: `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`,
+            target: {
+                method: 'POST',
+                url: `${internalHttpBaseUrl}/execute-rule/${id}`
+            }
+        });
+        return job as Job;
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -52,7 +78,7 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
             const { filters, name, eventTypeId, targetId } = rule;
 
-            if (isSlidingRule(rule)) {
+            if (isSlidingRule(rule) || isTumblingRule(rule)) {
                 assertIsValid(rule.group);
             }
             Filter.assertIsValid(filters);
@@ -72,10 +98,14 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
             };
             try {
                 const { insertedId } = await collection.insertOne(ruleToCreate);
-                return {
+                const createdRule = {
                     ...ruleToCreate,
                     id: insertedId
-                } as Rule;
+                };
+                if (isTumblingRule(createdRule)) {
+                    await scheduleRuleExecution(createdRule);
+                }
+                return createdRule as Rule;
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });

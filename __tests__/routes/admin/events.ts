@@ -13,7 +13,9 @@ describe('admin', () => {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false
+            enableCors: false,
+            scheduler: config.scheduler,
+            internalHttp: config.internalHttp
         };
         app = await buildApp(options);
         server = app.getServer();

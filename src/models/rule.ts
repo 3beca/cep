@@ -30,6 +30,7 @@ export type TumblingRule = {
     type: 'tumbling';
     group: Group;
     windowSize: WindowSize;
+    jobId: ObjectId;
 } & BaseRule;
 
 export type Rule = RealTimeRule | SlidingRule | TumblingRule;

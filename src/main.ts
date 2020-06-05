@@ -7,11 +7,11 @@ import { buildApp } from './app';
 async function main() {
     const { port, host } = config.http;
     const { databaseUrl, databaseName } = config.mongodb;
-    const { trustProxy, enableCors } = config;
+    const { trustProxy, enableCors, scheduler, internalHttp } = config;
 
     logger.info('starting cep service');
 
-    const options = { databaseUrl, databaseName, trustProxy, enableCors };
+    const options = { databaseUrl, databaseName, trustProxy, enableCors, scheduler, internalHttp };
     const app = await buildApp(options);
     await app.getServer().listen(port, host);
 

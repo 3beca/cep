@@ -41,6 +41,46 @@ const config = convict({
             env: 'EXTERNAL_HTTP_PORT',
         }
     },
+    internalHttp: {
+        protocol: {
+            doc: 'The internal protocol.',
+            format: ['http', 'https'],
+            default: 'http',
+            env: 'INTERNAL_HTTP_PROTOCOL',
+        },
+        host: {
+            doc: 'The internal host.',
+            format: String,
+            default: 'localhost',
+            env: 'INTERNAL_HTTP_HOST',
+        },
+        port: {
+            doc: 'The internal port.',
+            format: String,
+            default: '8889',
+            env: 'INTERNAL_HTTP_PORT',
+        }
+    },
+    scheduler: {
+        protocol: {
+            doc: 'The tribeca scheduler service protocol.',
+            format: ['http', 'https'],
+            default: 'http',
+            env: 'TRIBECA_SCHEDULER_SERVICE_PROTOCOL',
+        },
+        host: {
+            doc: 'The tribeca scheduler service host.',
+            format: String,
+            default: 'localhost',
+            env: 'TRIBECA_SCHEDULER_SERVICE_HOST',
+        },
+        port: {
+            doc: 'The tribeca scheduler service port.',
+            format: String,
+            default: '8890',
+            env: 'TRIBECA_SCHEDULER_SERVICE_PORT',
+        }
+    },
     trustProxy: {
         doc: 'indicates if the application is served behind a reverse proxy.',
         format: Boolean,
