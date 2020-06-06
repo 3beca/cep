@@ -8,8 +8,10 @@ import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
 import { ServerResponse } from 'http';
+import { Engine } from './engine';
+import { buildExecuteRuleRoutes } from './routes/internal/execute-rule';
 
-export function buildInternalServer(): FastifyInstance {
+export function buildInternalServer(engine: Engine): FastifyInstance {
 
 	const app = fastify({
 		logger
@@ -48,6 +50,9 @@ export function buildInternalServer(): FastifyInstance {
 			produces: ['application/json']
 		}
 	});
+
+	// End points
+	app.register(buildExecuteRuleRoutes(engine));
 
 	app.setNotFoundHandler(function(request, reply: FastifyReply<ServerResponse>) {
 		// Default not found handler with preValidation and preHandler hooks

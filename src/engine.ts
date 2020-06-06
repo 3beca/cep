@@ -10,9 +10,11 @@ import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
 import { Rule, SlidingRule } from './models/rule';
 import { Target } from './models/target';
+import InvalidOperationError from './errors/invalid-operation-error';
 
 export type Engine = {
     processEvent(eventTypeId: ObjectId, eventPayload: any, requestId: string): Promise<void>;
+    executeRule(ruleId: ObjectId, requestId: string): Promise<void>;
 }
 
 type MatchResult = {
@@ -139,6 +141,15 @@ export function buildEngine(
                 targetSuccess: r.targetSuccess,
                 targetStatusCode: r.targetStatusCode
             })));
+        },
+        async executeRule(ruleId: ObjectId, requestId: string): Promise<void> {
+            const rule = await rulesService.getById(ruleId);
+            if (!rule) {
+                throw new NotFoundError(`Rule ${ruleId} cannot be found`);
+            }
+            if (rule.type !== 'tumbling') {
+                throw new InvalidOperationError(`Cannot execute rule of type '${rule.type}'. Only rule of type tumbling are supported.`);
+            }
         }
     };
 }

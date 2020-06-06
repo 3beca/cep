@@ -46,7 +46,7 @@ export async function buildApp(options: AppOptions): Promise<App> {
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
-    const internalServer = buildInternalServer();
+    const internalServer = buildInternalServer(engine);
     const server = buildServer({ trustProxy, enableCors },
         eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine);
     return {
