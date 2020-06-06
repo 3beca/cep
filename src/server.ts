@@ -1,4 +1,4 @@
-import fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
@@ -33,7 +33,7 @@ export function buildServer(options: ServerOptions,
 	rulesService: RulesService,
 	eventsService: EventsService,
 	rulesExecutionsService: RulesExecutionsService,
-	engine: Engine) {
+	engine: Engine): FastifyInstance {
 
 	const app = fastify({
 		logger,

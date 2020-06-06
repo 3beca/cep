@@ -8,6 +8,8 @@ import { buildEventsService } from './services/events-service';
 import { buildRulesExecutionsService } from './services/rules-executions-service';
 import { buildSchedulerService } from './services/scheduler-service';
 import { buildInternalServer } from './internal-server';
+import { FastifyInstance } from 'fastify';
+import { Db } from 'mongodb';
 
 export type AppOptions = {
     databaseUrl: string,
@@ -26,7 +28,14 @@ export type AppOptions = {
     }
 };
 
-export async function buildApp(options: AppOptions) {
+export type App = {
+    close(): Promise<void>;
+    getServer(): FastifyInstance;
+    getInternalServer(): FastifyInstance;
+    getDatabase(): Db
+}
+
+export async function buildApp(options: AppOptions): Promise<App> {
     const { databaseName, databaseUrl, trustProxy, enableCors, scheduler, internalHttp } = options;
     const dbClient = await connect(databaseUrl);
     const db = await getAndSetupDatabase(dbClient, databaseName);

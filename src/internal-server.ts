@@ -1,4 +1,4 @@
-import fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import config from './config';
@@ -9,7 +9,7 @@ import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
 import { ServerResponse } from 'http';
 
-export function buildInternalServer() {
+export function buildInternalServer(): FastifyInstance {
 
 	const app = fastify({
 		logger
