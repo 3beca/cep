@@ -44,7 +44,7 @@ describe('execute rule', () => {
     });
 
     it('should return 404 when rule does not exists', async () => {
-        const response = await server.inject({
+        const response = await internalServer.inject({
             method: 'POST',
             url: '/execute-rule/' + new ObjectId()
         });
@@ -69,6 +69,57 @@ describe('execute rule', () => {
             error: 'Bad Request',
             message: 'Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.'
         }));
+    });
+
+    it('should return 204 and call target when tumbling rule filter match', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
+            id: new ObjectId().toHexString()
+        });
+        const rule = await createRule(server, target.id, eventType.id, {
+            type: 'tumbling',
+            group: { average: { _avg: '_value' } },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            }
+        });
+        expect(scopeCreation.isDone()).toBe(true);
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 5
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 15
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 100
+            }
+        });
+
+        const scope = nock('http://example.org')
+            .post('/', { average: 40 })
+            .reply(200);
+
+        const response = await internalServer.inject({
+            method: 'POST',
+            url: '/execute-rule/' + rule.id
+        });
+
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
     });
 
     async function createTarget(server, url = 'http://example.org') {
