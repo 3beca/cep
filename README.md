@@ -11,7 +11,7 @@ A simple complex event processing system
 Clone the repo. Install dependencies:
 
 ```
-npm ci 
+npm ci
 ```
 
 After this is done, run the application in watch mode
@@ -23,9 +23,9 @@ npm run start-watch
 ## Introduction
 
 Cep is very simple. It is modeled in 3 main concepts:
-* Event Type: define a type of event where you can send event payload to a given url
-* Target: web hook urls to send event payload based on rule matching
-* Rule: a rule is created for an event type, with a filter that will be evaluated for each event payload received and a target that will be called whenever the filter matches the event payload
+* **Event Type**: define a type of event where you can send event payload to a given url
+* **Target**: web hook urls to send event payload based on rule matching
+* **Rule**: a rule is created for an event type, with a filter that will be evaluated for each event payload received and a target that will be called whenever the filter matches the event payload
 
 ### Create an Event Type
 
@@ -57,7 +57,12 @@ curl -X POST "http://localhost:8888/admin/targets/" -H "accept: application/json
 
 ### Create a Rule
 
-Rules allow to create a relationship between event types and targets. On event payload of a given type, each rule will be evaluated to determinate if the event payload match the rule filter or does not. If it matches, then the target url will be called with the event payload as request body.
+Rules allow to create a relationship between event types and targets.
+
+A rule can be of the following types:
+* **realtime**: on event payload of a given type, each rule will be evaluated to determinate if the event payload match the rule filter or does not. If it matches, then an http POST request will be done against the target url with the event payload as request body
+* **sliding**: on event payload of a given type, sliding rule evaluates a filter match based on an aggregation of a given time window. Aggregation operators supported are max, min, count, avg, stdDevPop, stdDevSample. If the rule matches, then an http POST request will be done against the target url with the aggregation result as request body
+* **tumbling**: as sliding rules, tumbling rules perform an aggregation of a given time window. However, in spite of realtime and slinding rules, tumbling rules got executed on a given time interval. This time interval matches the time window. If the rule matches, then an http POST request will be done against the target url with the aggregation result as request body
 
 To create a rule we must provide an unique name, a target id, an event type id and a filter.
 
