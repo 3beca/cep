@@ -44,6 +44,9 @@ export function buildEventsService(db: Db): EventsService {
                     $group: toMongo$Group(group, 'payload.')
                 }
             ]).toArray();
+            if (result.length === 0) {
+                return {};
+            }
             const { _id, ...rest } = result[0];
             return rest;
         }

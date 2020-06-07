@@ -71,6 +71,35 @@ describe('execute rule', () => {
         }));
     });
 
+    it('should return 204 and call target when tumbling rule has no events to process', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
+            id: new ObjectId().toHexString()
+        });
+        const rule = await createRule(server, target.id, eventType.id, {
+            type: 'tumbling',
+            group: { average: { _avg: '_value' } },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            }
+        });
+        expect(scopeCreation.isDone()).toBe(true);
+
+        const scope = nock('http://example.org')
+            .post('/', {})
+            .reply(200);
+
+        const response = await internalServer.inject({
+            method: 'POST',
+            url: '/execute-rule/' + rule.id
+        });
+
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
     it('should return 204 and call target when tumbling rule filter match', async () => {
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org');
