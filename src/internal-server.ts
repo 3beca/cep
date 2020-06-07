@@ -71,11 +71,7 @@ export function buildInternalServer(engine: Engine): FastifyInstance {
 			reply.status(400).send(error);
 			return;
 		}
-		if (error.statusCode && error.statusCode < 500) {
-			request.log.info(error);
-		} else {
-			request.log.error(error);
-		}
+		request.log.error(error);
 		reply.status(error.statusCode ?? 500).send(error);
 	});
 

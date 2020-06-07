@@ -12,7 +12,7 @@ function removeEndSlash(path: string): string {
 
 export function getExternalUrl(path: string | null): string {
     const { protocol, host, port } = externalHttp;
-    return `${protocol}://${host}${port ? ':' + port : ''}${path ? removeEndSlash(path) : ''}`;
+    return `${protocol}://${host}:${port}${path ? removeEndSlash(path) : ''}`;
 }
 
 function getPagedLink(path: string | null, page: number, pageSize: number, queryStrings: { [key:string]: string }): string {

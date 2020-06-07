@@ -55,6 +55,24 @@ export function buildEngine(
         }, {});
     }
 
+    async function getRulesMatchResults(rules: Rule[], event: Event) {
+        const matchResults: MatchResult[] = [];
+        for (const rule of rules) {
+            switch (rule.type) {
+                case 'sliding': {
+                    matchResults.push(await matchWindowingRule(rule));
+                    break;
+                }
+                case 'realtime':
+                default: {
+                    matchResults.push(await matchRealtimeRule(rule, event));
+                    break;
+                }
+            }
+        }
+        return matchResults;
+    }
+
     async function matchWindowingRule(rule: SlidingRule | TumblingRule): Promise<MatchResult> {
         const result = await eventsService.aggregate(rule.eventTypeId, rule.windowSize, rule.group);
         return {
@@ -74,7 +92,7 @@ export function buildEngine(
         });
     }
 
-    async function executeRules(matchResults: MatchResult[], eventType: EventType, requestId: string, event?: Event): Promise<void> {
+    async function executeRuleMatchResults(matchResults: MatchResult[], eventType: EventType, requestId: string, event?: Event): Promise<void> {
         for (const matchResult of matchResults.filter(r => r.match)) {
             const { rule } = matchResult;
             if (rule.skipOnConsecutivesMatches) {
@@ -136,21 +154,8 @@ export function buildEngine(
             }
             const event = await createEvent(eventType, eventPayload, requestId);
             const rules = await rulesService.getByEventTypeId(eventTypeId, ['realtime', 'sliding']);
-            const matchResults: MatchResult[] = [];
-            for (const rule of rules) {
-                switch (rule.type) {
-                    case 'sliding': {
-                        matchResults.push(await matchWindowingRule(rule));
-                        break;
-                    }
-                    case 'realtime':
-                    default: {
-                        matchResults.push(await matchRealtimeRule(rule, event));
-                        break;
-                    }
-                }
-            }
-            await executeRules(matchResults, eventType, requestId, event);
+            const matchResults = await getRulesMatchResults(rules, event);
+            await executeRuleMatchResults(matchResults, eventType, requestId, event);
         },
         async executeRule(ruleId: ObjectId, requestId: string): Promise<void> {
             const rule = await rulesService.getById(ruleId);
@@ -162,7 +167,7 @@ export function buildEngine(
             }
             const eventType = await eventTypesService.getById(rule.eventTypeId);
             const matchResult = await matchWindowingRule(rule);
-            await executeRules([matchResult], eventType, requestId);
+            await executeRuleMatchResults([matchResult], eventType, requestId);
         }
     };
 }
