@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 import { Group } from './group';
 import { WindowSize } from './window-size';
 
-export type RuleTypes = 'realtime' | 'sliding';
+export type RuleTypes = 'realtime' | 'sliding' | 'tumbling';
 
 type BaseRule = {
     id: ObjectId;
@@ -26,4 +26,11 @@ export type SlidingRule = {
     windowSize: WindowSize;
 } & BaseRule;
 
-export type Rule = RealTimeRule | SlidingRule;
+export type TumblingRule = {
+    type: 'tumbling';
+    group: Group;
+    windowSize: WindowSize;
+    jobId: ObjectId;
+} & BaseRule;
+
+export type Rule = RealTimeRule | SlidingRule | TumblingRule;

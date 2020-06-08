@@ -11,5 +11,8 @@ spec:
       targetPort: 3000
       nodePort: 30706
       name: tcp
+    - port: 3001
+      targetPort: 3001
+      name: tcp
   selector:
     run: tribeca-cep

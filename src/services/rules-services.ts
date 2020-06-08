@@ -6,8 +6,11 @@ import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventTypesService } from './event-types-service';
 import { TargetsService } from './targets-service';
-import { Rule, RuleTypes, SlidingRule } from '../models/rule';
+import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
+import { SchedulerService } from './scheduler-service';
+import { Job } from '../models/job';
+import { AppOptions } from '../app';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
@@ -21,8 +24,18 @@ function isSlidingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rule
     return rule.type === 'sliding';
 }
 
-export function buildRulesService(db: Db, targetsService: TargetsService, eventTypesService: EventTypesService): RulesService {
+function isTumblingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rule is TumblingRule {
+    return rule.type === 'tumbling';
+}
 
+export function buildRulesService(db: Db,
+    internalHttp: AppOptions['internalHttp'],
+    targetsService: TargetsService,
+    eventTypesService: EventTypesService,
+    schedulerService: SchedulerService): RulesService {
+
+    const { protocol, host, port } = internalHttp;
+    const internalHttpBaseUrl = `${protocol}://${host}:${port}`;
     const collection = db.collection('rules');
 
     targetsService.registerOnBeforeDelete(async (targetId: ObjectId) => {
@@ -43,6 +56,23 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
+    async function scheduleRuleExecution(rule: TumblingRule): Promise<Job> {
+        const { id, windowSize } = rule;
+        const job = await schedulerService.create({
+            type: 'every',
+            interval: `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`,
+            target: {
+                method: 'POST',
+                url: `${internalHttpBaseUrl}/execute-rule/${id}`
+            }
+        });
+        return job as Job;
+    }
+
+    async function unScheduleRuleExecution(rule: TumblingRule): Promise<void> {
+        await schedulerService.delete(rule.jobId);
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -52,7 +82,7 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
         async create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
             const { filters, name, eventTypeId, targetId } = rule;
 
-            if (isSlidingRule(rule)) {
+            if (isSlidingRule(rule) || isTumblingRule(rule)) {
                 assertIsValid(rule.group);
             }
             Filter.assertIsValid(filters);
@@ -70,12 +100,10 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
+            let insertedId;
             try {
-                const { insertedId } = await collection.insertOne(ruleToCreate);
-                return {
-                    ...ruleToCreate,
-                    id: insertedId
-                } as Rule;
+                const opResult = await collection.insertOne(ruleToCreate);
+                insertedId = opResult.insertedId;
             } catch (error) {
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });
@@ -85,12 +113,33 @@ export function buildRulesService(db: Db, targetsService: TargetsService, eventT
                 }
                 throw error;
             }
+            const createdRule = {
+                ...ruleToCreate,
+                id: insertedId
+            };
+            if (isTumblingRule(createdRule)) {
+                let jobId;
+                try {
+                    const job = await scheduleRuleExecution(createdRule);
+                    jobId = job.id;
+                } catch (error) {
+                    await collection.deleteOne({ _id: insertedId });
+                    throw error;
+                }
+                await collection.updateOne({ _id: insertedId }, { $set: { jobId } });
+                createdRule.jobId = jobId;
+            }
+            return createdRule as Rule;
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });
             return toDto(rule);
         },
         async deleteById(id: ObjectId): Promise<void> {
+            const rule = await this.getById(id);
+            if (rule && isTumblingRule(rule)) {
+                await unScheduleRuleExecution(rule);
+            }
             await collection.deleteOne({ _id: id });
         },
         async getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]> {

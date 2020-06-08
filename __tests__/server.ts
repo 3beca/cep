@@ -10,7 +10,7 @@ import { EventTypesService } from '../src/services/event-types-service';
 import { TargetsService } from '../src/services/targets-service';
 import { RulesService } from '../src/services/rules-services';
 
-describe('builServer', () => {
+describe('server', () => {
     let app;
     let server;
 
@@ -19,7 +19,9 @@ describe('builServer', () => {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false
+            enableCors: false,
+            scheduler: config.scheduler,
+            internalHttp: config.internalHttp
         };
         app = await buildApp(options);
         server = app.getServer();

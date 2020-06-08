@@ -2,6 +2,7 @@ jest.mock('pino');
 import { buildApp } from '../../../src/app';
 import { ObjectId } from 'mongodb';
 import config from '../../../src/config';
+import nock from 'nock';
 
 describe('admin', () => {
     let app;
@@ -12,7 +13,9 @@ describe('admin', () => {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false
+            enableCors: false,
+            scheduler: config.scheduler,
+            internalHttp: config.internalHttp
         };
         app = await buildApp(options);
         server = app.getServer();
@@ -21,6 +24,7 @@ describe('admin', () => {
     afterEach(async () => {
         await app.getDatabase().dropDatabase();
         await app.close();
+        nock.cleanAll();
     });
 
     describe('rules', () => {
@@ -359,7 +363,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/type should be equal to one of the allowed values, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match some schema in anyOf'
+                    message: 'body/type should be equal to one of the allowed values, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match exactly one schema in oneOf'
                 }));
             });
 
@@ -378,7 +382,11 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/name should NOT be longer than 100 characters' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/name should NOT be longer than 100 characters'
+                }));
             });
 
             it('should return 400 when filters is invalid', async () => {
@@ -551,7 +559,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body should have required property \'group\', body/type should be equal to constant, body should match some schema in anyOf'
+                    message: 'body should have required property \'group\', body should have required property \'group\', body/type should be equal to constant, body/type should be equal to constant, body should match exactly one schema in oneOf'
                 }));
             });
 
@@ -606,7 +614,7 @@ describe('admin', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body should have required property \'windowSize\', body/type should be equal to constant, body should match some schema in anyOf'
+                    message: 'body should have required property \'windowSize\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match exactly one schema in oneOf'
                 }));
             });
 
@@ -741,6 +749,102 @@ describe('admin', () => {
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 
+            it('should return 201 with created rule type tumbling when request is valid and create job in scheduler service', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                let requestBody;
+                const scope = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: new ObjectId().toHexString()
+                });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: 5
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
+                expect(rule.name).toBe('a rule');
+                expect(rule.type).toBe('tumbling');
+                expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.group).toEqual({ count: { _sum: 1 }});
+                expect(rule.windowSize).toEqual({ unit: 'hour', value: 5 });
+                expect(rule.eventTypeId).toBe(eventType.id);
+                expect(rule.eventTypeName).toBe(eventType.name);
+                expect(rule.targetId).toBe(target.id);
+                expect(rule.targetName).toBe(target.name);
+                expect(rule.skipOnConsecutivesMatches).toBe(true);
+                expect(ObjectId.isValid(rule.id)).toBe(true);
+                expect(scope.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '5 hours',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
+            });
+
+            it('should return 500 and do not create rule if scheduler service fail to schedule rule execution', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const scope = nock('http://localhost:8890').post('/jobs').reply(500, { error: 'failure' });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: 5
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(500);
+                expect(scope.isDone()).toBe(true);
+
+                const listResponse = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules'
+                });
+                expect(listResponse.statusCode).toBe(200);
+                const listResponseBody = JSON.parse(listResponse.payload);
+                expect(listResponseBody.results.length).toBe(0);
+            });
+
             it('should return 409 when try to create a rule with the same name', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
@@ -808,6 +912,128 @@ describe('admin', () => {
                     url: '/admin/rules/' + createdRule.id
                 });
                 expect(getResponse.statusCode).toBe(404);
+            });
+
+            it('should return 204 and unschedule rule execution when tumbling rule is delete', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const jobId = new ObjectId().toHexString();
+                let requestBody;
+                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: jobId
+                });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'minute',
+                            value: 1
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(scopeCreation.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '1 minute',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
+
+                const scopeDeletion = nock('http://localhost:8890')
+                    .delete(`/jobs/${jobId}`)
+                    .reply(204);
+
+                const deleteResponse = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(deleteResponse.statusCode).toBe(204);
+                expect(scopeDeletion.isDone()).toBe(true);
+            });
+
+            it('should return 500 and do not delete the rule if an unexpected error happened while unschedule rule execution', async () => {
+                const eventType = await createEventType(server);
+                const target = await createTarget(server);
+                const jobId = new ObjectId().toHexString();
+                let requestBody;
+                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
+                    requestBody = body;
+                    return body;
+                }).reply(201, {
+                    id: jobId
+                });
+
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'tumbling',
+                        eventTypeId: eventType.id,
+                        targetId: target.id,
+                        skipOnConsecutivesMatches: true,
+                        filters: {
+                            value: 8
+                        },
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'second',
+                            value: 10
+                        }
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const rule = JSON.parse(response.payload);
+                expect(scopeCreation.isDone()).toBe(true);
+                expect(requestBody).toEqual({
+                    type: 'every',
+                    interval: '10 seconds',
+                    target: {
+                        method: 'POST',
+                        url: 'http://localhost:8889/execute-rule/' + rule.id
+                    }
+                });
+
+                const scopeDeletion = nock('http://localhost:8890')
+                    .delete(`/jobs/${jobId}`)
+                    .reply(500, { error: 'unexpected failure' });
+
+                const deleteResponse = await server.inject({
+                    method: 'DELETE',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(deleteResponse.statusCode).toBe(500);
+                expect(scopeDeletion.isDone()).toBe(true);
+
+                const getResponse = await server.inject({
+                    method: 'GET',
+                    url: '/admin/rules/' + rule.id
+                });
+                expect(getResponse.statusCode).toBe(200);
             });
         });
 

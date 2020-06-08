@@ -5,7 +5,7 @@
   "main": "build/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "cd build && node main.js",
+    "start": "node build/src/main.js",
     "start-dev": "cd src && ts-node main.ts --inspect=0.0.0.0:9229",
     "start-watch": "nodemon -L src/main.ts --inspect=0.0.0.0:9229 --exec ts-node",
     "lint": "eslint . --ext .ts",

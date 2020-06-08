@@ -25,12 +25,22 @@ services:
     ports:
       - 27017:27017
   cep:
+    container_name: 'cep.local'
     image: francescorivola/tribeca-cep:latest
     environment:
       - MONGODB_URL=mongodb://cep-mongodb:27017
       - HTTP_HOST=0.0.0.0
+      - TRIBECA_SCHEDULER_SERVICE_HOST=scheduler.local
+      - TRIBECA_SCHEDULER_SERVICE_PORT=8888
+      - INTERNAL_HTTP_HOST=cep.local
     ports:
       - "8888:8888"
+  scheduler:
+    container_name: 'scheduler.local'
+    image: francescorivola/tribeca-scheduler:latest
+    environment:
+      - MONGODB_URL=mongodb://cep-mongodb:27017
+      - HTTP_HOST=0.0.0.0
 volumes:
   cep-grafana-storage:
   cep-graphite-storage:

@@ -1,5 +1,5 @@
 import GroupError from './group-error';
-import { Group, Operator } from '../models/group';
+import { Group, Operator, OperatorSum } from '../models/group';
 
 const reseveredSymbols = ['.', '$', '_'];
 const operatorSupportedValueTypes = {
@@ -76,4 +76,15 @@ export function toMongo$Group(group: Group, operatorValuePrefix: string = '') {
         result[key] = mongoOperator;
     });
     return result;
+}
+
+export function getEmptyGroupResult(group: Group): object {
+    return Object.keys(group).reduce((result: object, key: string): object => {
+        if ((group[key] as OperatorSum)._sum) {
+            result[key] = 0;
+        } else {
+            result[key] = null;
+        }
+        return result;
+    }, {});
 }

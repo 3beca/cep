@@ -51,6 +51,10 @@ spec:
           value: "{{ .Values.deployment.env.externalHttpHost }}"
         - name: EXTERNAL_HTTP_PORT
           value: "443"
+        - name: INTERNAL_HTTP_HOST
+          value: "tribeca-cep"
+        - name: INTERNAL_HTTP_PORT
+          value: "3001"
         - name: TRUST_PROXY
           value: "true"
         - name: ENABLE_CORS
