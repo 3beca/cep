@@ -79,7 +79,14 @@ describe('execute rule', () => {
         });
         const rule = await createRule(server, target.id, eventType.id, {
             type: 'tumbling',
-            group: { average: { _avg: '_value' } },
+            group: {
+                average: { _avg: '_value' },
+                count: { _sum: 1 },
+                max: { _max: '_value' },
+                min: { _min: '_value' },
+                stdDevPop: { _stdDevPop: '_value' },
+                stdDevSamp: { _stdDevSamp: '_value' }
+            },
             windowSize: {
                 unit: 'minute',
                 value: 1
@@ -88,7 +95,146 @@ describe('execute rule', () => {
         expect(scopeCreation.isDone()).toBe(true);
 
         const scope = nock('http://example.org')
-            .post('/', {})
+            .post('/', {
+                average: null,
+                count: 0,
+                max: null,
+                min: null,
+                stdDevPop: null,
+                stdDevSamp: null
+            })
+            .reply(200);
+
+        const response = await internalServer.inject({
+            method: 'POST',
+            url: '/execute-rule/' + rule.id
+        });
+
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('should return 204 and call target when tumbling rule has events without field to process', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
+            id: new ObjectId().toHexString()
+        });
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                otherValue: 5
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                otherValue: 15
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                otherValue: 100
+            }
+        });
+
+        const rule = await createRule(server, target.id, eventType.id, {
+            type: 'tumbling',
+            group: {
+                average: { _avg: '_value' },
+                count: { _sum: 1 },
+                max: { _max: '_value' },
+                min: { _min: '_value' },
+                stdDevPop: { _stdDevPop: '_value' },
+                stdDevSamp: { _stdDevSamp: '_value' }
+            },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            }
+        });
+        expect(scopeCreation.isDone()).toBe(true);
+
+        const scope = nock('http://example.org')
+            .post('/', {
+                average: null,
+                count: 3,
+                max: null,
+                min: null,
+                stdDevPop: null,
+                stdDevSamp: null
+            })
+            .reply(200);
+
+        const response = await internalServer.inject({
+            method: 'POST',
+            url: '/execute-rule/' + rule.id
+        });
+
+        expect(response.statusCode).toBe(204);
+        expect(scope.isDone()).toBe(true);
+    });
+
+    it('should return 204 and call target when tumbling rule has some events without field to process', async () => {
+        const eventType = await createEventType(server);
+        const target = await createTarget(server, 'http://example.org');
+        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
+            id: new ObjectId().toHexString()
+        });
+
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                otherValue: 5
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                value: 15
+            }
+        });
+        await server.inject({
+            method: 'POST',
+            url: '/events/' + eventType.id,
+            body: {
+                otherValue: 100
+            }
+        });
+
+        const rule = await createRule(server, target.id, eventType.id, {
+            type: 'tumbling',
+            group: {
+                average: { _avg: '_value' },
+                count: { _sum: 1 },
+                max: { _max: '_value' },
+                min: { _min: '_value' },
+                stdDevPop: { _stdDevPop: '_value' },
+                stdDevSamp: { _stdDevSamp: '_value' }
+            },
+            windowSize: {
+                unit: 'minute',
+                value: 1
+            }
+        });
+        expect(scopeCreation.isDone()).toBe(true);
+
+        const scope = nock('http://example.org')
+            .post('/', {
+                average: 15,
+                count: 3,
+                max: 15,
+                min: 15,
+                stdDevPop: 0,
+                stdDevSamp: null
+            })
             .reply(200);
 
         const response = await internalServer.inject({
@@ -108,6 +254,7 @@ describe('execute rule', () => {
         });
         const rule = await createRule(server, target.id, eventType.id, {
             type: 'tumbling',
+            filters: { average: 40 },
             group: { average: { _avg: '_value' } },
             windowSize: {
                 unit: 'minute',

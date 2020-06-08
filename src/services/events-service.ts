@@ -3,7 +3,7 @@ import { ObjectId, Db } from 'mongodb';
 import { Event } from '../models/event';
 import { Group } from '../models/group';
 import { WindowSize } from '../models/window-size';
-import { toMongo$Group } from '../windowing/group';
+import { toMongo$Group, getEmptyGroupResult } from '../windowing/group';
 import { convertWindowSizeToDateTime } from '../windowing/window-size';
 
 export type EventsService = {
@@ -45,7 +45,7 @@ export function buildEventsService(db: Db): EventsService {
                 }
             ]).toArray();
             if (result.length === 0) {
-                return {};
+                return getEmptyGroupResult(group);
             }
             const { _id, ...rest } = result[0];
             return rest;
