@@ -77,7 +77,7 @@ const createSchema = {
             name: { type: 'string', maxLength: 100 },
             url: {
                 type: 'string',
-                format: 'url'
+                format: 'uri'
             }
         }
     },

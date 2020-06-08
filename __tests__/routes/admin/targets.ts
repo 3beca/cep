@@ -305,7 +305,7 @@ describe('admin', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/url should match format "url"' }));
+                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/url should match format "uri"' }));
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
@@ -337,6 +337,24 @@ describe('admin', () => {
                 expect(response.headers.location).toBe(`http://localhost:8888/admin/targets/${target.id}`);
                 expect(target.name).toBe('a target');
                 expect(target.url).toBe('http://example.org');
+                expect(ObjectId.isValid(target.id)).toBe(true);
+            });
+
+            it('should return 201 with created target when url host is a top-level domain ony', async () => {
+                const response = await server.inject({
+                    method: 'POST',
+                    url: '/admin/targets',
+                    body: {
+                        name: 'a target',
+                        url: 'http://example'
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const target = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:8888/admin/targets/${target.id}`);
+                expect(target.name).toBe('a target');
+                expect(target.url).toBe('http://example');
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
