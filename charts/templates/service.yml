@@ -14,5 +14,9 @@ spec:
     - port: 3001
       targetPort: 3001
       name: tcp-internal
+    - port: 3002
+      targetPort: 3002
+      nodePort: 30800
+      name: tcp-metrics
   selector:
     run: tribeca-cep

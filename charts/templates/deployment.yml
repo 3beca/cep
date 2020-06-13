@@ -55,6 +55,10 @@ spec:
           value: "tribeca-cep"
         - name: INTERNAL_HTTP_PORT
           value: "3001"
+        - name: METRICS_HTTP_HOST
+          value: "0.0.0.0"
+        - name: METRICS_HTTP_PORT
+          value: "3002"
         - name: TRUST_PROXY
           value: "true"
         - name: ENABLE_CORS
