@@ -7,12 +7,15 @@ import { buildApp } from './app';
 async function main() {
     const { port, host } = config.http;
     const { databaseUrl, databaseName } = config.mongodb;
-    const { trustProxy, enableCors, scheduler, internalHttp } = config;
+    const { trustProxy, enableCors, scheduler, internalHttp, metricsHttp } = config;
 
     logger.info('starting cep service');
 
     const options = { databaseUrl, databaseName, trustProxy, enableCors, scheduler, internalHttp };
     const app = await buildApp(options);
+
+    await app.getMetricsServer().listen(metricsHttp.port, metricsHttp.host);
+    logger.info('started cep metrics service. Listening at port', metricsHttp.port);
 
     await app.getInternalServer().listen(internalHttp.port, host);
     logger.info('started cep internal service. Listening at port', internalHttp.port);
