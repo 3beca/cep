@@ -13,5 +13,5 @@ export function buildMetrics(): Metrics {
         metrics(): string {
             return register.metrics();
         }
-    }
+    };
 }
