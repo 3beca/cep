@@ -1,13 +1,15 @@
 import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import logger from './logger';
 import { ServerResponse } from 'http';
+import { Metrics } from './metrics';
 
-export function buildMetricsServer(): FastifyInstance {
+export function buildMetricsServer(metrics: Metrics): FastifyInstance {
 
 	const app = fastify({ logger });
 
     app.get('/metrics', { logLevel: 'warn' }, (request, reply) => {
-        reply.type('text/plain').send('metrics');
+		const data = metrics.metrics();
+        reply.type('text/plain').send(data);
     });
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {

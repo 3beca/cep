@@ -11,6 +11,7 @@ import { buildInternalServer } from './internal-server';
 import { FastifyInstance } from 'fastify';
 import { Db } from 'mongodb';
 import { buildMetricsServer } from './metrics-server';
+import { buildMetrics } from './metrics';
 
 export type AppOptions = {
     databaseUrl: string,
@@ -41,6 +42,7 @@ export async function buildApp(options: AppOptions): Promise<App> {
     const { databaseName, databaseUrl, trustProxy, enableCors, scheduler, internalHttp } = options;
     const dbClient = await connect(databaseUrl);
     const db = await getAndSetupDatabase(dbClient, databaseName);
+    const metrics = buildMetrics();
     const eventTypesService = buildEventTypesService(db);
     const targetsService = buildTargetsService(db);
     const schedulerService = buildSchedulerService(scheduler);
@@ -48,7 +50,7 @@ export async function buildApp(options: AppOptions): Promise<App> {
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
-    const metricsServer = buildMetricsServer();
+    const metricsServer = buildMetricsServer(metrics);
     const internalServer = buildInternalServer(engine);
     const server = buildServer({ trustProxy, enableCors },
         eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine);
