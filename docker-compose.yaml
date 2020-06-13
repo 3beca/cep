@@ -6,16 +6,6 @@ services:
       - 3000:3000
     volumes:
       - cep-grafana-storage:/var/lib/grafana
-  cep-graphite:
-    image: graphiteapp/graphite-statsd
-    ports:
-      - "80:80"
-      - "2003-2004:2003-2004"
-      - "2023-2024:2023-2024"
-      - "8125:8125/udp"
-      - "8126:8126"
-    volumes:
-      - cep-graphite-storage:/opt/graphite/storage
   cep-mongodb:
     image: mongo:4.2.0
     environment:
@@ -32,6 +22,7 @@ services:
       - TRIBECA_SCHEDULER_SERVICE_HOST=scheduler
       - TRIBECA_SCHEDULER_SERVICE_PORT=8888
       - INTERNAL_HTTP_HOST=cep
+      - METRICS_HTTP_HOST=0.0.0.0
     ports:
       - "8888:8888"
   scheduler:
@@ -41,5 +32,4 @@ services:
       - HTTP_HOST=0.0.0.0
 volumes:
   cep-grafana-storage:
-  cep-graphite-storage:
   cep-mongodb-storage:

@@ -61,6 +61,20 @@ const config = convict({
             env: 'INTERNAL_HTTP_PORT',
         }
     },
+    metricsHttp: {
+        host: {
+            doc: 'The metrics host.',
+            format: String,
+            default: 'localhost',
+            env: 'METRICS_HTTP_HOST',
+        },
+        port: {
+            doc: 'The metrics port.',
+            format: 'port',
+            default: 8890,
+            env: 'METRICS_HTTP_PORT',
+        }
+    },
     scheduler: {
         protocol: {
             doc: 'The tribeca scheduler service protocol.',
