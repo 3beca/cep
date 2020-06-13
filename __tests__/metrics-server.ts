@@ -29,12 +29,9 @@ describe('metrics server', () => {
         const response = await metricsServer.inject({
             method: 'GET',
             url: '/metrics'
-          });
-          expect(response.statusCode).toBe(200);
-          expect(response.headers['content-type']).toBe('text/plain');
-          const payloadLines = response.payload.split('\n');
-          expect(payloadLines.length).toBe(136);
-          // expect(response.payload).toBe('metrics');
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.headers['content-type']).toBe('text/plain');
     });
 
     it('should return 500 when unhandled errors happened', async () => {
