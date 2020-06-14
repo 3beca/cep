@@ -10,6 +10,7 @@ import FilterError from './filters/filter-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { buildAdminRoutes } from './routes/admin/admin';
 import fastifyCors from 'fastify-cors';
+import fastifyMetrics from './plugins/fastify-metrics';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -21,6 +22,7 @@ import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
 import { ServerResponse } from 'http';
 import GroupError from './windowing/group-error';
+import { Metrics } from './metrics';
 
 export type ServerOptions = {
 	trustProxy: boolean;
@@ -33,7 +35,8 @@ export function buildServer(options: ServerOptions,
 	rulesService: RulesService,
 	eventsService: EventsService,
 	rulesExecutionsService: RulesExecutionsService,
-	engine: Engine): FastifyInstance {
+	engine: Engine,
+	metrics: Metrics): FastifyInstance {
 
 	const app = fastify({
 		logger,
@@ -78,6 +81,8 @@ export function buildServer(options: ServerOptions,
 			produces: ['application/json']
 		}
 	});
+
+	app.register(fastifyMetrics, { register: metrics.getRegister(), prefix: 'cep_server_' });
 
 	if (options.enableCors) {
 		app.register(fastifyCors, {

@@ -51,9 +51,9 @@ export async function buildApp(options: AppOptions): Promise<App> {
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
     const metricsServer = buildMetricsServer(metrics);
-    const internalServer = buildInternalServer(engine);
+    const internalServer = buildInternalServer(engine, metrics);
     const server = buildServer({ trustProxy, enableCors },
-        eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine);
+        eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, engine, metrics);
     return {
         async close() {
             await server.close();

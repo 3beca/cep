@@ -9,6 +9,7 @@ import { EventsService } from '../src/services/events-service';
 import { EventTypesService } from '../src/services/event-types-service';
 import { TargetsService } from '../src/services/targets-service';
 import { RulesService } from '../src/services/rules-services';
+import { buildMetrics } from '../src/metrics';
 
 describe('server', () => {
     let app;
@@ -116,7 +117,8 @@ describe('server', () => {
             null as unknown as RulesService,
             null as unknown as EventsService,
             null as unknown as RulesExecutionsService,
-            null as unknown as Engine);
+            null as unknown as Engine,
+            buildMetrics());
         server.register(
             function(fastify, opts, next) {
                 fastify.get('/', async (request, reply) => {

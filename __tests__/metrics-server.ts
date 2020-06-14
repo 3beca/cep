@@ -1,11 +1,12 @@
 jest.mock('pino');
 import config from '../src/config';
 import { ObjectId } from 'bson';
-import { buildApp } from '../src/app';
+import { buildApp, App } from '../src/app';
+import { FastifyInstance } from 'fastify';
 
 describe('metrics server', () => {
-    let app;
-    let metricsServer;
+    let app: App;
+    let metricsServer: FastifyInstance;
 
     beforeEach(async () => {
         const options = {
@@ -37,7 +38,7 @@ describe('metrics server', () => {
     it('should return 500 when unhandled errors happened', async () => {
         metricsServer.register(
             function(fastify, opts, next) {
-                fastify.get('/', opts, async () => {
+                fastify.get('/', {}, async () => {
                     throw new Error('Something bad');
                 });
                 next();
