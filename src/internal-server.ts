@@ -1,6 +1,7 @@
 import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
+import fastifyMetrics from './plugins/fastify-metrics';
 import config from './config';
 import NotFoundError from './errors/not-found-error';
 import InvalidOperationError from './errors/invalid-operation-error';
@@ -10,8 +11,9 @@ import Ajv from 'ajv';
 import { ServerResponse } from 'http';
 import { Engine } from './engine';
 import { buildExecuteRuleRoutes } from './routes/internal/execute-rule';
+import { Metrics } from './metrics';
 
-export function buildInternalServer(engine: Engine): FastifyInstance {
+export function buildInternalServer(engine: Engine, metrics: Metrics): FastifyInstance {
 
 	const app = fastify({
 		logger
@@ -50,6 +52,8 @@ export function buildInternalServer(engine: Engine): FastifyInstance {
 			produces: ['application/json']
 		}
 	});
+
+	app.register(fastifyMetrics, { register: metrics.getRegister(), prefix: 'cep_internal_server_' });
 
 	// End points
 	app.register(buildExecuteRuleRoutes(engine));
