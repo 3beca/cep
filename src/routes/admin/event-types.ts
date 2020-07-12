@@ -1,7 +1,7 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyReply, FastifyInstance, FastifyRequest } from 'fastify';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { ObjectId } from 'mongodb';
 import { EventTypesService } from '../../services/event-types-service';
 
@@ -88,7 +88,7 @@ function toEventTypeResponse(eventType) {
 
 export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
 
-    async function list(request: FastifyRequest) {
+    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
         const { page, pageSize, search } = request.query;
         const eventTypes = await eventTypesService.list(page, pageSize, search);
         const results = eventTypes.map(toEventTypeResponse);
@@ -99,7 +99,7 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
         };
     }
 
-    async function getById(request: FastifyRequest) {
+    async function getById(request: FastifyRequest<{ Params: { id: string } }>) {
         const { id } = request.params;
         const eventTypeId = ObjectId.createFromHexString(id);
         const eventType = await eventTypesService.getById(eventTypeId);
@@ -109,17 +109,17 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
         return toEventTypeResponse(eventType);
     }
 
-    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
+    async function deleteById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { id } = request.params;
         const eventTypeId = ObjectId.createFromHexString(id);
         await eventTypesService.deleteById(eventTypeId);
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
+    async function create(request: FastifyRequest<{ Body: { name: string }}>, reply: FastifyReply<Server>) {
         const { name } = request.body;
         const eventType = await eventTypesService.create({ name });
-        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${eventType.id}`);
+        reply.header('Location', `${getExternalUrl(request.url)}/${eventType.id}`);
         reply.status(201).send(toEventTypeResponse(eventType));
     }
 

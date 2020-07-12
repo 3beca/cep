@@ -27,7 +27,7 @@ describe('admin', () => {
         nock.cleanAll();
     });
 
-    describe.only('rules-executions', () => {
+    describe('rules-executions', () => {
 
         it('should return an empty list of rules executions when no rules have been executed', async () => {
             const response = await server.inject({

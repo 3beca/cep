@@ -1,6 +1,6 @@
 import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import logger from './logger';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { Metrics } from './metrics';
 
 export function buildMetricsServer(metrics: Metrics): FastifyInstance {
@@ -12,7 +12,7 @@ export function buildMetricsServer(metrics: Metrics): FastifyInstance {
         reply.type('text/plain').send(data);
     });
 
-	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		request.log.error(error);
 		reply.status(500).send(error);
 	});

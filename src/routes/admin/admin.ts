@@ -10,7 +10,7 @@ import { EventTypesService } from '../../services/event-types-service';
 import { TargetsService } from '../../services/targets-service';
 import { RulesService } from '../../services/rules-services';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 
 const checkHealthSchema = {
     tags: ['system'],
@@ -42,8 +42,8 @@ export function buildAdminRoutes(
     rulesExecutionsService: RulesExecutionsService,
     eventsService: EventsService) {
 
-    function checkHealth(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
-        reply.code(204).res.end();
+    function checkHealth(request: FastifyRequest, reply: FastifyReply<Server>) {
+        reply.code(204).send();
     }
 
     async function version() {
