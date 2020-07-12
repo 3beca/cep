@@ -39,7 +39,7 @@ const listSchema = {
 
 export function buildEventsRoutes(eventsService: EventsService) {
 
-    async function list(request: FastifyRequest) {
+    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, eventTypeId: string } }>) {
         const { page, pageSize, eventTypeId } = request.query;
         const events = await eventsService.list(page, pageSize, toSafeObjectId(eventTypeId));
         const results = events;

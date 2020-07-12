@@ -1,6 +1,6 @@
 import { Engine } from '../../engine';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { ObjectId } from 'mongodb';
 
 const executeRuleSchema = {
@@ -25,7 +25,7 @@ const executeRuleSchema = {
 
 export function buildExecuteRuleRoutes(engine: Engine) {
 
-    async function executeRule(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
+    async function executeRule(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { params, id: requestId } = request;
         const { id } = params;
         const ruleId = ObjectId.createFromHexString(id);

@@ -1,6 +1,6 @@
 import { Engine } from '../engine';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { ObjectId } from 'mongodb';
 
 const processEventSchema = {
@@ -25,7 +25,7 @@ const processEventSchema = {
 
 export function buildEventsRoutes(engine: Engine) {
 
-    async function processEvent(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
+    async function processEvent(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { body, params, id: requestId } = request;
         const { id } = params;
         const eventTypeId = ObjectId.createFromHexString(id);

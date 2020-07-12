@@ -48,7 +48,7 @@ const listSchema = {
 
 export function buildRulesExecutionsRoutes(rulesExecutionsService: RulesExecutionsService) {
 
-    async function list(request: FastifyRequest) {
+    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, eventTypeId: string, ruleId: string } }>) {
         const { page, pageSize, eventTypeId, ruleId } = request.query;
         const events = await rulesExecutionsService.list(page, pageSize,
             toSafeObjectId(eventTypeId),

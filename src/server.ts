@@ -10,7 +10,7 @@ import FilterError from './filters/filter-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { buildAdminRoutes } from './routes/admin/admin';
 import fastifyCors from 'fastify-cors';
-import fastifyMetrics from './plugins/fastify-metrics';
+import fastifyMetrics from 'fastify-metrics';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -20,7 +20,7 @@ import { EventsService } from './services/events-service';
 import { EventTypesService } from './services/event-types-service';
 import { TargetsService } from './services/targets-service';
 import { RulesService } from './services/rules-services';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import GroupError from './windowing/group-error';
 import { Metrics } from './metrics';
 
@@ -52,7 +52,7 @@ export function buildServer(options: ServerOptions,
 		jsonPointers: true
 	});
 	AjvErrors(ajv);
-	app.setSchemaCompiler(schema => ajv.compile(schema));
+	app.setValidatorCompiler(schema => ajv.compile(schema));
 
 	app.register(fastifySwagger, {
 		routePrefix: '/documentation',
@@ -82,7 +82,11 @@ export function buildServer(options: ServerOptions,
 		}
 	});
 
-	app.register(fastifyMetrics, { register: metrics.getRegister(), prefix: 'cep_server_' });
+	app.register(fastifyMetrics, {
+		enableDefaultMetrics: false,
+		register: metrics.getRegister(),
+		prefix: 'cep_server_'
+	});
 
 	if (options.enableCors) {
 		app.register(fastifyCors, {
@@ -98,12 +102,12 @@ export function buildServer(options: ServerOptions,
 		rulesExecutionsService, eventsService), { prefix: '/admin' });
 	app.register(buildEventsRoutes(engine));
 
-	app.setNotFoundHandler(function(request, reply: FastifyReply<ServerResponse>) {
+	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks
 		reply.code(404).send({ message: 'Resource not found' });
 	});
 
-	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
 			reply.status(404).send({ message: 'Resource not found' });

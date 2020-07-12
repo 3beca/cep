@@ -2,7 +2,7 @@ import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { ObjectId } from 'mongodb';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { TargetsService } from '../../services/targets-service';
 
 const targetschema = {
@@ -88,7 +88,7 @@ const createSchema = {
 
 export function buildTargetsRoutes(targetsService: TargetsService) {
 
-    async function list(request: FastifyRequest) {
+    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
         const { page, pageSize, search } = request.query;
         const results = await targetsService.list(page, pageSize, search);
         return {
@@ -98,7 +98,7 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         };
     }
 
-    async function getById(request: FastifyRequest) {
+    async function getById(request: FastifyRequest<{ Params: { id: string } }>) {
         const { id } = request.params;
         const targetId = ObjectId.createFromHexString(id);
         const target = await targetsService.getById(targetId);
@@ -108,14 +108,14 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         return target;
     }
 
-    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>): Promise<void> {
+    async function deleteById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { id } = request.params;
         const targetId = ObjectId.createFromHexString(id);
         await targetsService.deleteById(targetId);
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
+    async function create(request: FastifyRequest<{ Body: { name:string, url: string} }>, reply: FastifyReply<Server>) {
         const { name, url } = request.body;
         const target = await targetsService.create({ name, url });
         reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${target.id}`);

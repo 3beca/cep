@@ -1,10 +1,10 @@
 import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { ObjectId } from 'mongodb';
 import { RulesService } from '../../services/rules-services';
-import { Rule } from '../../models/rule';
+import { Rule, RuleTypes } from '../../models/rule';
 import { TargetsService } from '../../services/targets-service';
 import { EventTypesService } from '../../services/event-types-service';
 import { Target } from '../../models/target';
@@ -175,7 +175,7 @@ export function buildRulesRoutes(
         return { ...rule, eventTypeName, targetName };
     }
 
-    async function list(request: FastifyRequest) {
+    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
         const { page, pageSize, search } = request.query;
         const results = await rulesService.list(page, pageSize, search);
         return {
@@ -185,7 +185,7 @@ export function buildRulesRoutes(
         };
     }
 
-    async function getById(request: FastifyRequest) {
+    async function getById(request: FastifyRequest<{ Params: { id: string } }>) {
         const { id } = request.params;
         const ruleId = ObjectId.createFromHexString(id);
         const rule = await rulesService.getById(ruleId);
@@ -195,14 +195,21 @@ export function buildRulesRoutes(
         return await toRuleDto(rule);
     }
 
-    async function deleteById(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
+    async function deleteById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>) {
         const { id } = request.params;
         const ruleId = ObjectId.createFromHexString(id);
         await rulesService.deleteById(ruleId);
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest, reply: FastifyReply<ServerResponse>) {
+    async function create(request: FastifyRequest<{ Body: {
+        eventTypeId: string,
+        targetId: string,
+        name: string,
+        filters: any,
+        skipOnConsecutivesMatches: boolean,
+        type: RuleTypes,
+    } }>, reply: FastifyReply<Server>) {
         const { eventTypeId, targetId } = request.body;
         const ruleToCreate = {
             ...request.body,

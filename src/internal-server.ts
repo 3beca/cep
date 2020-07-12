@@ -1,14 +1,14 @@
 import fastify, { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
-import fastifyMetrics from './plugins/fastify-metrics';
+import fastifyMetrics from 'fastify-metrics';
 import config from './config';
 import NotFoundError from './errors/not-found-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
-import { ServerResponse } from 'http';
+import { Server } from 'http';
 import { Engine } from './engine';
 import { buildExecuteRuleRoutes } from './routes/internal/execute-rule';
 import { Metrics } from './metrics';
@@ -28,7 +28,7 @@ export function buildInternalServer(engine: Engine, metrics: Metrics): FastifyIn
 		jsonPointers: true
 	});
 	AjvErrors(ajv);
-	app.setSchemaCompiler(schema => ajv.compile(schema));
+	app.setValidatorCompiler(schema => ajv.compile(schema));
 
 	app.register(fastifySwagger, {
 		routePrefix: '/documentation',
@@ -53,17 +53,21 @@ export function buildInternalServer(engine: Engine, metrics: Metrics): FastifyIn
 		}
 	});
 
-	app.register(fastifyMetrics, { register: metrics.getRegister(), prefix: 'cep_internal_server_' });
+	app.register(fastifyMetrics, {
+		enableDefaultMetrics: false,
+		register: metrics.getRegister(),
+		prefix: 'cep_internal_server_'
+	});
 
 	// End points
 	app.register(buildExecuteRuleRoutes(engine));
 
-	app.setNotFoundHandler(function(request, reply: FastifyReply<ServerResponse>) {
+	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks
 		reply.code(404).send({ message: 'Resource not found' });
 	});
 
-	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<ServerResponse>) => {
+	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
 			reply.status(404).send({ message: 'Resource not found' });
