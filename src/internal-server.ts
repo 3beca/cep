@@ -28,7 +28,7 @@ export function buildInternalServer(engine: Engine, metrics: Metrics): FastifyIn
 		jsonPointers: true
 	});
 	AjvErrors(ajv);
-	app.setValidatorCompiler(schema => ajv.compile(schema));
+	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
 	app.register(fastifySwagger, {
 		routePrefix: '/documentation',

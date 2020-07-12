@@ -217,7 +217,7 @@ export function buildRulesRoutes(
             targetId: ObjectId.createFromHexString(targetId),
         };
         const rule = await rulesService.create(ruleToCreate);
-        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${rule.id}`);
+        reply.header('Location', `${getExternalUrl(request.url)}/${rule.id}`);
         reply.status(201).send(await toRuleDto(rule));
     }
 

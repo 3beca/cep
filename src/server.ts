@@ -52,7 +52,7 @@ export function buildServer(options: ServerOptions,
 		jsonPointers: true
 	});
 	AjvErrors(ajv);
-	app.setValidatorCompiler(schema => ajv.compile(schema));
+	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
 	app.register(fastifySwagger, {
 		routePrefix: '/documentation',
@@ -115,7 +115,7 @@ export function buildServer(options: ServerOptions,
 		}
 		if (error instanceof ConflictError) {
 			request.log.info(error);
-			reply.header('Location', getExternalUrl(`${(request.raw as any).originalUrl}/${error.id}`));
+			reply.header('Location', getExternalUrl(`${request.url}/${error.id}`));
 			reply.status(409).send({ message: error.message });
 			return;
 		}

@@ -119,7 +119,7 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
     async function create(request: FastifyRequest<{ Body: { name: string }}>, reply: FastifyReply<Server>) {
         const { name } = request.body;
         const eventType = await eventTypesService.create({ name });
-        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${eventType.id}`);
+        reply.header('Location', `${getExternalUrl(request.url)}/${eventType.id}`);
         reply.status(201).send(toEventTypeResponse(eventType));
     }
 

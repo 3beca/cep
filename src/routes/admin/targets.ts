@@ -118,7 +118,7 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
     async function create(request: FastifyRequest<{ Body: { name:string, url: string} }>, reply: FastifyReply<Server>) {
         const { name, url } = request.body;
         const target = await targetsService.create({ name, url });
-        reply.header('Location', `${getExternalUrl((request.raw as any).originalUrl)}/${target.id}`);
+        reply.header('Location', `${getExternalUrl(request.url)}/${target.id}`);
         reply.status(201).send(target);
     }
 
