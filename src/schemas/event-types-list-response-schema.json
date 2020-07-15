@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "properties": {
+        "results": {
+            "type": "array",
+            "items": {
+                "$ref": "./event-types-get-response-schema.json"
+            }
+        },
+        "next": { "type": "string" },
+        "prev": { "type": "string" }
+    },
+    "additionalProperties": false,
+    "required": ["results"]
+}

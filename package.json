@@ -4,6 +4,7 @@
   "description": "A simple complex event processing system",
   "main": "build/main.js",
   "scripts": {
+    "compile-schemas": "rm -rf src/types && json2ts -i src/schemas --cwd src/schemas -o src/types",
     "build": "tsc -p tsconfig.json",
     "start": "node build/src/main.js",
     "start-dev": "cd src && ts-node main.ts --inspect=0.0.0.0:9229",
@@ -39,6 +40,7 @@
     "eslint": "^6.8.0",
     "eslint-plugin-filenames": "^1.3.2",
     "jest": "^25.5.4",
+    "json-schema-to-typescript": "^9.1.1",
     "nock": "^13.0.2",
     "nodemon": "^2.0.4",
     "ts-jest": "^25.5.1",

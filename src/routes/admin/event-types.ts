@@ -4,63 +4,37 @@ import { FastifyReply, FastifyInstance, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import { ObjectId } from 'mongodb';
 import { EventTypesService } from '../../services/event-types-service';
-
-const eventTypeSchema = {
-    type: 'object',
-    properties: {
-        name: { type: 'string' },
-        id: { type: 'string' },
-        url: { type: 'string' },
-        createdAt: { type: 'string' },
-        updatedAt: { type: 'string' }
-    }
-};
+import listQuerystringSchema from '../../schemas/list-querystring-schema.json';
+import { ListQuerystringSchema as ListQuerystringSchemaInterface } from '../../types/list-querystring-schema';
+import eventTypeListResponseSchema from '../../schemas/event-types-list-response-schema.json';
+import { EventTypesListResponseSchema as EventTypesListResponseSchemaInterface } from '../../types/event-types-list-response-schema';
+import eventTypesGetResponseSchema from '../../schemas/event-types-get-response-schema.json';
+import { EventTypesGetResponseSchema as EventTypesGetResponseSchemaInterface } from '../../types/event-types-get-response-schema';
+import { EventType } from '../../models/event-type';
+import idParamsSchema from '../../schemas/id-params-schema.json';
+import { IdParamsSchema as IdParamsSchemaInterface } from '../../types/id-params-schema';
+import eventTypesCreateBodyRequestSchema from '../../schemas/event-types-create-body-request-schema.json';
+import { EventTypesCreateBodyRequestSchema as EventTypesCreateBodyRequestSchemaInterface } from '../../types/event-types-create-body-request-schema';
 
 const listSchema = {
     tags: ['event types'],
-    querystring: {
-        page: { type: 'integer', minimum: 1, default: 1 },
-        pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-        search: { type: 'string' }
-    },
+    querystring: listQuerystringSchema,
     response: {
-        200: {
-            type: 'object',
-            properties: {
-                results: {
-                    type: 'array',
-                    items: eventTypeSchema
-                },
-                next: { type: 'string' },
-                prev: { type: 'string' }
-            }
-        }
+        200: eventTypeListResponseSchema
     }
-};
-
-const eventTypeIdParam = {
-    type: 'object',
-    properties: {
-      id: {
-        type: 'string',
-        description: 'event type identifier',
-        pattern: '^[a-f0-9]{24}$'
-      }
-    },
-    errorMessage: 'event type id must be a valid ObjectId'
 };
 
 const getSchema = {
     tags: ['event types'],
-    params: eventTypeIdParam,
+    params: idParamsSchema,
     response: {
-        200: eventTypeSchema
+        200: eventTypesGetResponseSchema
     }
 };
 
 const deleteSchema = {
     tags: ['event types'],
-    params: eventTypeIdParam,
+    params: idParamsSchema,
     response: {
         204: {
             type: 'object'
@@ -70,25 +44,26 @@ const deleteSchema = {
 
 const createSchema = {
     tags: ['event types'],
-    body: {
-        type: 'object',
-        required: ['name'],
-        properties: {
-            name: { type: 'string', maxLength: 100 }
-        }
-    },
+    body: eventTypesCreateBodyRequestSchema,
     response: {
-        201: eventTypeSchema
+        201: eventTypesGetResponseSchema
     }
 };
 
-function toEventTypeResponse(eventType) {
-    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
+function toEventTypeResponse(eventType: EventType): EventTypesGetResponseSchemaInterface {
+    const { id, name, createdAt, updatedAt } = eventType;
+    return {
+        id: id.toHexString(),
+        name,
+        createdAt: createdAt.toISOString(),
+        updatedAt: updatedAt.toISOString(),
+        url: `${getExternalUrl('/events')}/${eventType.id}`
+    };
 }
 
 export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
 
-    async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
+    async function list(request: FastifyRequest<{ Querystring: ListQuerystringSchemaInterface }>): Promise<EventTypesListResponseSchemaInterface> {
         const { page, pageSize, search } = request.query;
         const eventTypes = await eventTypesService.list(page, pageSize, search);
         const results = eventTypes.map(toEventTypeResponse);
@@ -99,7 +74,7 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
         };
     }
 
-    async function getById(request: FastifyRequest<{ Params: { id: string } }>) {
+    async function getById(request: FastifyRequest<{ Params: IdParamsSchemaInterface }>): Promise<EventTypesGetResponseSchemaInterface> {
         const { id } = request.params;
         const eventTypeId = ObjectId.createFromHexString(id);
         const eventType = await eventTypesService.getById(eventTypeId);
@@ -109,18 +84,19 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
         return toEventTypeResponse(eventType);
     }
 
-    async function deleteById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
+    async function deleteById(request: FastifyRequest<{ Params: IdParamsSchemaInterface }>, reply: FastifyReply<Server>): Promise<void> {
         const { id } = request.params;
         const eventTypeId = ObjectId.createFromHexString(id);
         await eventTypesService.deleteById(eventTypeId);
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest<{ Body: { name: string }}>, reply: FastifyReply<Server>) {
+    async function create(request: FastifyRequest<{ Body: EventTypesCreateBodyRequestSchemaInterface>, reply: FastifyReply<Server>): Promise<EventTypesGetResponseSchemaInterface> {
         const { name } = request.body;
         const eventType = await eventTypesService.create({ name });
         reply.header('Location', `${getExternalUrl(request.url)}/${eventType.id}`);
-        reply.status(201).send(toEventTypeResponse(eventType));
+        reply.status(201);
+        return toEventTypeResponse(eventType);
     }
 
     return function(fastify: FastifyInstance, opts, next) {

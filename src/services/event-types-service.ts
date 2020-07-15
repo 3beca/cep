@@ -5,7 +5,7 @@ import escapeStringRegexp from 'escape-string-regexp';
 import { EventType } from '../models/event-type';
 
 export type EventTypesService = {
-    list(page: number, pageSize: number, search: string): Promise<EventType[]>;
+    list(page: number, pageSize: number, search?: string): Promise<EventType[]>;
     create(eventType: Pick<EventType, 'name'>): Promise<EventType>;
     getById(id: ObjectId): Promise<EventType>;
     getByIds(ids: ObjectId[]): Promise<EventType[]>;
@@ -23,7 +23,7 @@ export function buildEventTypesService(db: Db): EventTypesService {
     }
 
     return {
-        async list(page: number, pageSize: number, search: string): Promise<EventType[]> {
+        async list(page: number, pageSize: number, search?: string): Promise<EventType[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const eventTypes = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return eventTypes.map(toDto);

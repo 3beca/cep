@@ -1,0 +1,13 @@
+{
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "identifier",
+        "pattern": "^[a-f0-9]{24}$"
+      }
+    },
+    "errorMessage": "id must be a valid ObjectId",
+    "additionalProperties": false,
+    "required": ["id"]
+}
