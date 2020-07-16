@@ -7,38 +7,62 @@ const config = convict({
         default: 'development',
         env: 'NODE_ENV'
     },
-    http: {
+    eventProcessingHttp: {
         host: {
-            doc: 'The host ip address to bind.',
+            doc: 'The host ip address to bind the event processsing http api.',
             format: String,
             default: 'localhost',
-            env: 'HTTP_HOST',
+            env: 'CEP_EVENT_PROCESSING_HTTP_HOST',
         },
         port: {
-            doc: 'The port to bind.',
+            doc: 'The port to bind the event processing http api.',
             format: 'port',
             default: 8888,
-            env: 'HTTP_PORT',
+            env: 'CEP_EVENT_PROCESSING_HTTP_PORT',
+        },
+        enableSwagger: {
+            doc: 'It indicates if Swagger UI is enabled for the event processing http api.',
+            format: Boolean,
+            default: false,
+            env: 'CEP_EVENT_PROCESSING_HTTP_ENABLE_SWAGGER'
+        },
+        trustProxy: {
+            doc: 'It indicates if the event processing http api is served behind a trusted proxy.',
+            format: Boolean,
+            default: false,
+            env: 'CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY',
         }
     },
-    externalHttp: {
-        protocol: {
-            doc: 'The external protocol.',
-            format: ['http', 'https'],
-            default: 'http',
-            env: 'EXTERNAL_HTTP_PROTOCOL',
-        },
+    adminHttp: {
         host: {
-            doc: 'The external host.',
+            doc: 'The host ip address to bind the admin http api.',
             format: String,
             default: 'localhost',
-            env: 'EXTERNAL_HTTP_HOST',
+            env: 'CEP_ADMIN_HTTP_HOST',
         },
         port: {
-            doc: 'The external port.',
+            doc: 'The port to bind the admin http api.',
             format: 'port',
             default: 8888,
-            env: 'EXTERNAL_HTTP_PORT',
+            env: 'CEP_ADMIN_HTTP_PORT',
+        },
+        trustProxy: {
+            doc: 'It indicates if the admin http api is served behind a trusted proxy.',
+            format: Boolean,
+            default: false,
+            env: 'CEP_ADMIN_HTTP_TRUST_PROXY',
+        },
+        enableCors: {
+            doc: 'It indicates if cors requests are enabled for the admin http api.',
+            format: Boolean,
+            default: false,
+            env: 'CEP_ADMIN_HTTP_ENABLE_CORS'
+        },
+        enableSwagger: {
+            doc: 'It indicates if Swagger UI is enabled for the admin http api.',
+            format: Boolean,
+            default: false,
+            env: 'CEP_ADMIN_HTTP_ENABLE_SWAGGER'
         }
     },
     internalHttp: {
@@ -63,16 +87,16 @@ const config = convict({
     },
     metricsHttp: {
         host: {
-            doc: 'The metrics host.',
+            doc: 'The host ip address to bind the metrics http api.',
             format: String,
             default: 'localhost',
-            env: 'METRICS_HTTP_HOST',
+            env: 'CEP_METRICS_HTTP_HOST',
         },
         port: {
-            doc: 'The metrics port.',
+            doc: 'The port to bind the metrics http api.',
             format: 'port',
             default: 8890,
-            env: 'METRICS_HTTP_PORT',
+            env: 'CEP_METRICS_HTTP_PORT',
         }
     },
     scheduler: {
@@ -95,32 +119,20 @@ const config = convict({
             env: 'TRIBECA_SCHEDULER_SERVICE_PORT',
         }
     },
-    trustProxy: {
-        doc: 'indicates if the application is served behind a reverse proxy.',
-        format: Boolean,
-        default: false,
-        env: 'TRUST_PROXY',
-    },
-    enableCors: {
-        doc: 'indicates if the application supports cors requests.',
-        format: Boolean,
-        default: false,
-        env: 'ENABLE_CORS'
-    },
     mongodb: {
         databaseUrl: {
-            doc: 'Mongodb connection string url.',
+            doc: 'The MongoDB connection string url.',
             format: String,
             default: 'mongodb://localhost:27017',
-            env: 'MONGODB_URL',
+            env: 'CEP_MONGODB_URL',
         },
         databaseName: {
-            doc: 'Mongodb database name.',
+            doc: 'The MongoDB database name.',
             format: String,
             default: 'tribeca-cep',
-            env: 'MONGODB_DATABASE_NAME'
+            env: 'CEP_MONGODB_DATABASE_NAME'
         }
-    },
+    }
 });
 
 config.validate({ allowed: 'strict' });
