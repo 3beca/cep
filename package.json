@@ -46,6 +46,7 @@
     "typescript": "^3.9.6"
   },
   "dependencies": {
+    "agenda": "^3.1.0",
     "ajv": "^6.12.3",
     "ajv-errors": "^1.0.1",
     "convict": "^6.0.0",
