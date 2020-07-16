@@ -18,7 +18,7 @@
   },
 
   "rules": {
-    "filenames/match-regex": [2, "^([a-z][a-z0-9]*)(-[a-z0-9]+)*(.test)?$", false],
+    "filenames/match-regex": [2, "^([a-z][a-z0-9]*)(-[a-z0-9]+)*(.spec)?$", false],
     "filenames/no-index": 2,
     "filenames/match-exported": 0,
     "block-scoped-var": [0],
@@ -56,7 +56,7 @@
     "no-caller": [2],
     "no-catch-shadow": [2],
     "no-cond-assign": [2],
-    "no-console": [0],
+    "no-console": [2],
     "no-constant-condition": [1],
     "no-continue": [2],
     "no-control-regex": [2],

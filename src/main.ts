@@ -28,6 +28,6 @@ async function main() {
 }
 
 main().catch(error => {
-    console.error('error while starting up', error);
+    logger.error('error while starting up', error);
     process.exit(1);
 });
