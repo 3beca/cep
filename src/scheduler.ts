@@ -43,7 +43,9 @@ export function buildScheduler(db: Db): Scheduler {
             return jobHandlers[name];
         },
         async scheduleJob(interval: string, name: string, data: JobData): Promise<ObjectId> {
-            const job = await agenda.every(interval, name, data);
+            const job = agenda.create(name, data);
+            job.repeatEvery(interval);
+            await job.save();
             return job.attrs._id;
         },
         async cancelJob(id: ObjectId): Promise<void> {
