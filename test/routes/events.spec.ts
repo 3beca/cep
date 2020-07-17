@@ -13,9 +13,7 @@ describe('events', () => {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false,
-            scheduler: config.scheduler,
-            internalHttp: config.internalHttp
+            enableCors: false
         };
         app = await buildApp(options);
         server = app.getServer();
