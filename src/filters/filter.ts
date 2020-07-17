@@ -39,7 +39,7 @@ function assertKeyDoesNotContainSymbol(key: string, symbol: string): void {
 
 function matchFilter(data, filterField, filterOperator) {
     const dataValue = getObjectByKey(data, filterField);
-    if (!dataValue) {
+    if (dataValue === undefined || dataValue === null) {
         return false;
     }
 
