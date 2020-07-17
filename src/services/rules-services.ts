@@ -8,9 +8,7 @@ import { EventTypesService } from './event-types-service';
 import { TargetsService } from './targets-service';
 import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
-import { SchedulerService } from './scheduler-service';
-import { Job } from '../models/job';
-import { AppOptions } from '../app';
+import { Scheduler } from '../scheduler';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
@@ -29,13 +27,10 @@ function isTumblingRule(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): rul
 }
 
 export function buildRulesService(db: Db,
-    internalHttp: AppOptions['internalHttp'],
     targetsService: TargetsService,
     eventTypesService: EventTypesService,
-    schedulerService: SchedulerService): RulesService {
+    scheduler: Scheduler): RulesService {
 
-    const { protocol, host, port } = internalHttp;
-    const internalHttpBaseUrl = `${protocol}://${host}:${port}`;
     const collection = db.collection('rules');
 
     targetsService.registerOnBeforeDelete(async (targetId: ObjectId) => {
@@ -56,21 +51,15 @@ export function buildRulesService(db: Db,
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
-    async function scheduleRuleExecution(rule: TumblingRule): Promise<Job> {
+    async function scheduleRuleExecution(rule: TumblingRule): Promise<ObjectId> {
         const { id, windowSize } = rule;
-        const job = await schedulerService.create({
-            type: 'every',
-            interval: `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`,
-            target: {
-                method: 'POST',
-                url: `${internalHttpBaseUrl}/execute-rule/${id}`
-            }
-        });
-        return job as Job;
+        const when = `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`;
+        const jobId = await scheduler.scheduleJob(when, 'execute-rule', { ruleId: id });
+        return jobId;
     }
 
     async function unScheduleRuleExecution(rule: TumblingRule): Promise<void> {
-        await schedulerService.delete(rule.jobId);
+        await scheduler.cancelJob(rule.jobId);
     }
 
     return {
@@ -120,8 +109,7 @@ export function buildRulesService(db: Db,
             if (isTumblingRule(createdRule)) {
                 let jobId;
                 try {
-                    const job = await scheduleRuleExecution(createdRule);
-                    jobId = job.id;
+                    jobId = await scheduleRuleExecution(createdRule);
                 } catch (error) {
                     await collection.deleteOne({ _id: insertedId });
                     throw error;
