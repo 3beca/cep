@@ -1,9 +1,9 @@
 import Agenda, { JobAttributesData, Job } from 'agenda';
 import { Db, ObjectId } from 'mongodb';
 import * as os from 'os';
-import logger from './logger';
 import { JobHandler } from './jobs-handlers/job-handler';
 import { JobData } from './jobs-handlers/job-data';
+import logger from './logger';
 
 export type Scheduler = {
     start(): Promise<void>;
@@ -12,6 +12,7 @@ export type Scheduler = {
     getJobHandler(name: string): JobHandler;
     scheduleJob(interval: string, name: string, data: JobData): Promise<ObjectId>;
     cancelJob(id: ObjectId): Promise<void>;
+    onJobComplete(fn: (id: ObjectId, name: string, data: JobData) => void): void;
 }
 
 export function buildScheduler(db: Db): Scheduler {
@@ -50,6 +51,11 @@ export function buildScheduler(db: Db): Scheduler {
         },
         async cancelJob(id: ObjectId): Promise<void> {
             await agenda.cancel({ _id: id });
+        },
+        onJobComplete(fn: (id: ObjectId, name: string, data: JobData) => void): void {
+            agenda.on('complete', (job: Job) => {
+                fn(job.attrs._id, job.attrs.name, job.attrs.data);
+            });
         }
     };
 }

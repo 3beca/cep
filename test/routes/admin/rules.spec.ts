@@ -3,6 +3,7 @@ import { buildApp, App } from '../../../src/app';
 import { ObjectId } from 'mongodb';
 import config from '../../../src/config';
 import { Scheduler } from '../../../src/scheduler';
+import nock from 'nock';
 
 describe('admin', () => {
     let app: App;
@@ -26,6 +27,7 @@ describe('admin', () => {
         await app.getDatabase().dropDatabase();
         await app.close();
         jest.clearAllMocks();
+        nock.cleanAll();
     });
 
     describe('rules', () => {
@@ -750,11 +752,13 @@ describe('admin', () => {
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 
-            it('should return 201 with created rule type tumbling when request is valid and schedule rule execution', async () => {
+            it('should return 201 with created rule type tumbling when request is valid and schedule rule execution, finally rule execution start within a second', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
                 scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
-
+                const targetScope = nock('https://example.org')
+                    .post('/', { count: 0 })
+                    .reply(200);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -764,15 +768,13 @@ describe('admin', () => {
                         eventTypeId: eventType.id,
                         targetId: target.id,
                         skipOnConsecutivesMatches: true,
-                        filters: {
-                            value: 8
-                        },
+                        filters: { count: 0 },
                         group: {
                             count: { _sum: 1 }
                         },
                         windowSize: {
-                            unit: 'hour',
-                            value: 5
+                            unit: 'second',
+                            value: 1
                         }
                     }
                 });
@@ -782,9 +784,9 @@ describe('admin', () => {
                 expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
                 expect(rule.name).toBe('a rule');
                 expect(rule.type).toBe('tumbling');
-                expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.filters).toEqual({ count: 0 });
                 expect(rule.group).toEqual({ count: { _sum: 1 }});
-                expect(rule.windowSize).toEqual({ unit: 'hour', value: 5 });
+                expect(rule.windowSize).toEqual({ unit: 'second', value: 1 });
                 expect(rule.eventTypeId).toBe(eventType.id);
                 expect(rule.eventTypeName).toBe(eventType.name);
                 expect(rule.targetId).toBe(target.id);
@@ -793,7 +795,16 @@ describe('admin', () => {
                 expect(ObjectId.isValid(rule.id)).toBe(true);
                 const ruleId = ObjectId.createFromHexString(rule.id);
                 expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
-                expect(scheduler.scheduleJob).toHaveBeenCalledWith('5 hours', 'execute-rule', { ruleId });
+                expect(scheduler.scheduleJob).toHaveBeenCalledWith('1 second', 'execute-rule', { ruleId });
+
+                await new Promise(resolve => {
+                    scheduler.onJobComplete((id, name, data) => {
+                        expect(name).toBe('execute-rule');
+                        expect(data.ruleId).toStrictEqual(ruleId);
+                        resolve();
+                    });
+                });
+                expect(targetScope.isDone()).toBe(true);
             });
 
             it('should return 500 and do not create rule if fail to schedule rule execution', async () => {
