@@ -1,4 +1,4 @@
-import Agenda, { JobAttributesData } from 'agenda';
+import Agenda, { JobAttributesData, Job } from 'agenda';
 import { Db, ObjectId } from 'mongodb';
 import * as os from 'os';
 import logger from './logger';
@@ -10,7 +10,7 @@ export type Scheduler = {
     stop(): Promise<void>;
     setJobHandler(name: string, jobHandler: JobHandler): void;
     getJobHandler(name: string): JobHandler;
-    scheduleJob(when: string, name: string, data: JobData): Promise<ObjectId>;
+    scheduleJob(interval: string, name: string, data: JobData): Promise<ObjectId>;
     cancelJob(id: ObjectId): Promise<void>;
 }
 
@@ -30,8 +30,8 @@ export function buildScheduler(db: Db): Scheduler {
         },
         setJobHandler(name: string, jobHandler: JobHandler): void {
             jobHandlers[name] = jobHandler;
-            agenda.define(name, (jobData: JobAttributesData, done: (err?: Error) => void) => {
-                jobHandler(jobData)
+            agenda.define(name, (job: Job<JobAttributesData>, done: (err?: Error) => void) => {
+                jobHandler(job.attrs.data)
                     .then(() => done())
                     .catch(error => {
                         logger.error(error);
@@ -42,8 +42,8 @@ export function buildScheduler(db: Db): Scheduler {
         getJobHandler(name: string): JobHandler {
             return jobHandlers[name];
         },
-        async scheduleJob(when: string, name: string, data: JobData): Promise<ObjectId> {
-            const job = await agenda.schedule(when, name, data);
+        async scheduleJob(interval: string, name: string, data: JobData): Promise<ObjectId> {
+            const job = await agenda.every(interval, name, data);
             return job.attrs._id;
         },
         async cancelJob(id: ObjectId): Promise<void> {
