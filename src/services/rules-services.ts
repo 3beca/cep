@@ -51,15 +51,14 @@ export function buildRulesService(db: Db,
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
-    async function scheduleRuleExecution(rule: TumblingRule): Promise<ObjectId> {
-        const { id, windowSize } = rule;
-        const when = `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`;
-        const jobId = await scheduler.scheduleJob(when, 'execute-rule', { ruleId: id });
-        return jobId;
+    function scheduleRuleExecution(rule: TumblingRule): Promise<ObjectId> {
+        const { id: ruleId, windowSize } = rule;
+        const interval = `${windowSize.value} ${windowSize.unit}${windowSize.value > 1 ? 's' : ''}`;
+        return scheduler.scheduleJob(interval, 'execute-rule', { ruleId });
     }
 
-    async function unScheduleRuleExecution(rule: TumblingRule): Promise<void> {
-        await scheduler.cancelJob(rule.jobId);
+    function unScheduleRuleExecution(rule: TumblingRule): Promise<void> {
+        return scheduler.cancelJob(rule.jobId);
     }
 
     return {
