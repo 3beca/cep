@@ -33,10 +33,10 @@ describe('execute rule job handler', () => {
 
     it('should throw NotFoundError when rule does not exists', async () => {
         expect.assertions(2);
-        const ruleId = new ObjectId;
+        const ruleId = new ObjectId();
         try {
             await executeRuleJobHandler({ ruleId });
-        } catch(error) {
+        } catch (error) {
             expect(error instanceof NotFoundError).toBe(true);
             expect(error.message).toBe(`Rule ${ruleId} cannot be found`);
         }
@@ -50,9 +50,9 @@ describe('execute rule job handler', () => {
         const ruleId = ObjectId.createFromHexString(rule.id);
         try {
             await executeRuleJobHandler({ ruleId });
-        } catch(error) {
+        } catch (error) {
             expect(error instanceof InvalidOperationError).toBe(true);
-            expect(error.message).toBe(`Cannot execute rule of type 'realtime'. Only rule of type tumbling are supported.`);
+            expect(error.message).toBe('Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.');
         }
     });
 
