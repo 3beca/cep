@@ -1,29 +1,32 @@
 jest.mock('pino');
-import { buildApp } from '../../../src/app';
+import { buildApp, App } from '../../../src/app';
 import { ObjectId } from 'mongodb';
 import config from '../../../src/config';
+import { Scheduler } from '../../../src/scheduler';
 import nock from 'nock';
 
 describe('admin', () => {
-    let app;
+    let app: App;
     let server;
+    let scheduler: Scheduler;
 
     beforeEach(async () => {
         const options = {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false,
-            scheduler: config.scheduler,
-            internalHttp: config.internalHttp
+            enableCors: false
         };
         app = await buildApp(options);
         server = app.getServer();
+        scheduler = app.getScheduler();
+        await scheduler.start();
     });
 
     afterEach(async () => {
         await app.getDatabase().dropDatabase();
         await app.close();
+        jest.clearAllMocks();
         nock.cleanAll();
     });
 
@@ -749,17 +752,13 @@ describe('admin', () => {
                 expect(ObjectId.isValid(rule.id)).toBe(true);
             });
 
-            it('should return 201 with created rule type tumbling when request is valid and create job in scheduler service', async () => {
+            it('should return 201 with created rule type tumbling when request is valid and schedule rule execution, finally rule execution start within a second', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
-                let requestBody;
-                const scope = nock('http://localhost:8890').post('/jobs', function(body) {
-                    requestBody = body;
-                    return body;
-                }).reply(201, {
-                    id: new ObjectId().toHexString()
-                });
-
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                const targetScope = nock('https://example.org')
+                    .post('/', { count: 0 })
+                    .reply(200);
                 const response = await server.inject({
                     method: 'POST',
                     url: '/admin/rules',
@@ -769,15 +768,13 @@ describe('admin', () => {
                         eventTypeId: eventType.id,
                         targetId: target.id,
                         skipOnConsecutivesMatches: true,
-                        filters: {
-                            value: 8
-                        },
+                        filters: { count: 0 },
                         group: {
                             count: { _sum: 1 }
                         },
                         windowSize: {
-                            unit: 'hour',
-                            value: 5
+                            unit: 'second',
+                            value: 1
                         }
                     }
                 });
@@ -787,30 +784,33 @@ describe('admin', () => {
                 expect(response.headers.location).toBe(`http://localhost:8888/admin/rules/${rule.id}`);
                 expect(rule.name).toBe('a rule');
                 expect(rule.type).toBe('tumbling');
-                expect(rule.filters).toEqual({ value: 8 });
+                expect(rule.filters).toEqual({ count: 0 });
                 expect(rule.group).toEqual({ count: { _sum: 1 }});
-                expect(rule.windowSize).toEqual({ unit: 'hour', value: 5 });
+                expect(rule.windowSize).toEqual({ unit: 'second', value: 1 });
                 expect(rule.eventTypeId).toBe(eventType.id);
                 expect(rule.eventTypeName).toBe(eventType.name);
                 expect(rule.targetId).toBe(target.id);
                 expect(rule.targetName).toBe(target.name);
                 expect(rule.skipOnConsecutivesMatches).toBe(true);
                 expect(ObjectId.isValid(rule.id)).toBe(true);
-                expect(scope.isDone()).toBe(true);
-                expect(requestBody).toEqual({
-                    type: 'every',
-                    interval: '5 hours',
-                    target: {
-                        method: 'POST',
-                        url: 'http://localhost:8889/execute-rule/' + rule.id
-                    }
+                const ruleId = ObjectId.createFromHexString(rule.id);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.scheduleJob).toHaveBeenCalledWith('1 second', 'execute-rule', { ruleId });
+
+                await new Promise(resolve => {
+                    scheduler.onJobComplete((id, name, data) => {
+                        expect(name).toBe('execute-rule');
+                        expect(data.ruleId).toStrictEqual(ruleId);
+                        resolve();
+                    });
                 });
+                expect(targetScope.isDone()).toBe(true);
             });
 
-            it('should return 500 and do not create rule if scheduler service fail to schedule rule execution', async () => {
+            it('should return 500 and do not create rule if fail to schedule rule execution', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
-                const scope = nock('http://localhost:8890').post('/jobs').reply(500, { error: 'failure' });
+                scheduler.scheduleJob = jest.fn(() => Promise.reject(new Error('ups, bad luck')));
 
                 const response = await server.inject({
                     method: 'POST',
@@ -834,7 +834,6 @@ describe('admin', () => {
                     }
                 });
                 expect(response.statusCode).toBe(500);
-                expect(scope.isDone()).toBe(true);
 
                 const listResponse = await server.inject({
                     method: 'GET',
@@ -843,6 +842,7 @@ describe('admin', () => {
                 expect(listResponse.statusCode).toBe(200);
                 const listResponseBody = JSON.parse(listResponse.payload);
                 expect(listResponseBody.results.length).toBe(0);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
             });
 
             it('should return 409 when try to create a rule with the same name', async () => {
@@ -917,14 +917,8 @@ describe('admin', () => {
             it('should return 204 and unschedule rule execution when tumbling rule is delete', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
-                const jobId = new ObjectId().toHexString();
-                let requestBody;
-                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
-                    requestBody = body;
-                    return body;
-                }).reply(201, {
-                    id: jobId
-                });
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                scheduler.cancelJob = jest.fn(scheduler.cancelJob);
 
                 const response = await server.inject({
                     method: 'POST',
@@ -950,39 +944,24 @@ describe('admin', () => {
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const rule = JSON.parse(response.payload);
-                expect(scopeCreation.isDone()).toBe(true);
-                expect(requestBody).toEqual({
-                    type: 'every',
-                    interval: '1 minute',
-                    target: {
-                        method: 'POST',
-                        url: 'http://localhost:8889/execute-rule/' + rule.id
-                    }
-                });
-
-                const scopeDeletion = nock('http://localhost:8890')
-                    .delete(`/jobs/${jobId}`)
-                    .reply(204);
+                const ruleId = ObjectId.createFromHexString(rule.id);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.scheduleJob).toHaveBeenCalledWith('1 minute', 'execute-rule', { ruleId });
+                const jobId = await (scheduler.scheduleJob as jest.Mock).mock.results[0].value;
 
                 const deleteResponse = await server.inject({
                     method: 'DELETE',
                     url: '/admin/rules/' + rule.id
                 });
                 expect(deleteResponse.statusCode).toBe(204);
-                expect(scopeDeletion.isDone()).toBe(true);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.cancelJob).toHaveBeenCalledWith(jobId);
             });
 
             it('should return 500 and do not delete the rule if an unexpected error happened while unschedule rule execution', async () => {
                 const eventType = await createEventType(server);
                 const target = await createTarget(server);
-                const jobId = new ObjectId().toHexString();
-                let requestBody;
-                const scopeCreation = nock('http://localhost:8890').post('/jobs', function(body) {
-                    requestBody = body;
-                    return body;
-                }).reply(201, {
-                    id: jobId
-                });
+                scheduler.cancelJob = jest.fn(() => Promise.reject(new Error('ups, bad luck')));
 
                 const response = await server.inject({
                     method: 'POST',
@@ -1008,32 +987,19 @@ describe('admin', () => {
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const rule = JSON.parse(response.payload);
-                expect(scopeCreation.isDone()).toBe(true);
-                expect(requestBody).toEqual({
-                    type: 'every',
-                    interval: '10 seconds',
-                    target: {
-                        method: 'POST',
-                        url: 'http://localhost:8889/execute-rule/' + rule.id
-                    }
-                });
-
-                const scopeDeletion = nock('http://localhost:8890')
-                    .delete(`/jobs/${jobId}`)
-                    .reply(500, { error: 'unexpected failure' });
 
                 const deleteResponse = await server.inject({
                     method: 'DELETE',
                     url: '/admin/rules/' + rule.id
                 });
                 expect(deleteResponse.statusCode).toBe(500);
-                expect(scopeDeletion.isDone()).toBe(true);
 
                 const getResponse = await server.inject({
                     method: 'GET',
                     url: '/admin/rules/' + rule.id
                 });
                 expect(getResponse.statusCode).toBe(200);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
             });
         });
 

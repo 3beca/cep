@@ -187,6 +187,16 @@ describe('Filter', () => {
             expect(result).toBe(true);
         });
 
+        it('should return true when equal filter matches the data field value and this is 0', () => {
+            const data = { count: 0 },
+                filters = { count: 0 },
+                filter = new Filter(filters);
+
+            const result = filter.match(data);
+
+            expect(result).toBe(true);
+        });
+
         it('should return false when equal filter does not match the data field value', () => {
             const data = { level: 10 },
                 filters = { level: 11 },
