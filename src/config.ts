@@ -65,26 +65,6 @@ const config = convict({
             env: 'CEP_ADMIN_HTTP_ENABLE_SWAGGER'
         }
     },
-    internalHttp: {
-        protocol: {
-            doc: 'The internal protocol.',
-            format: ['http', 'https'],
-            default: 'http',
-            env: 'INTERNAL_HTTP_PROTOCOL',
-        },
-        host: {
-            doc: 'The internal host.',
-            format: String,
-            default: 'localhost',
-            env: 'INTERNAL_HTTP_HOST',
-        },
-        port: {
-            doc: 'The internal port.',
-            format: 'port',
-            default: 8889,
-            env: 'INTERNAL_HTTP_PORT',
-        }
-    },
     metricsHttp: {
         host: {
             doc: 'The host ip address to bind the metrics http api.',
@@ -99,28 +79,8 @@ const config = convict({
             env: 'CEP_METRICS_HTTP_PORT',
         }
     },
-    scheduler: {
-        protocol: {
-            doc: 'The tribeca scheduler service protocol.',
-            format: ['http', 'https'],
-            default: 'http',
-            env: 'TRIBECA_SCHEDULER_SERVICE_PROTOCOL',
-        },
-        host: {
-            doc: 'The tribeca scheduler service host.',
-            format: String,
-            default: 'localhost',
-            env: 'TRIBECA_SCHEDULER_SERVICE_HOST',
-        },
-        port: {
-            doc: 'The tribeca scheduler service port.',
-            format: 'port',
-            default: 8890,
-            env: 'TRIBECA_SCHEDULER_SERVICE_PORT',
-        }
-    },
     mongodb: {
-        databaseUrl: {
+        url: {
             doc: 'The MongoDB connection string url.',
             format: String,
             default: 'mongodb://localhost:27017',

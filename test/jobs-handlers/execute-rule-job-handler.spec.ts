@@ -1,26 +1,28 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import nock from 'nock';
-import config from '../../../src/config';
-import { buildApp } from '../../../src/app';
+import config from '../../src/config';
+import { buildApp, App } from '../../src/app';
+import { JobHandler } from '../../src/jobs-handlers/job-handler';
+import NotFoundError from '../../src/errors/not-found-error';
+import InvalidOperationError from '../../src/errors/invalid-operation-error';
 
-describe('execute rule', () => {
-    let app;
+describe('execute rule job handler', () => {
+    let app: App;
     let server;
-    let internalServer;
+    let executeRuleJobHandler: JobHandler;
 
     beforeEach(async () => {
         const options = {
             databaseName: `test-${new ObjectId()}`,
             databaseUrl: config.mongodb.databaseUrl,
             trustProxy: false,
-            enableCors: false,
-            scheduler: config.scheduler,
-            internalHttp: config.internalHttp
+            enableCors: false
         };
         app = await buildApp(options);
         server = app.getServer();
-        internalServer = app.getInternalServer();
+        const scheduler = app.getScheduler();
+        executeRuleJobHandler = scheduler.getJobHandler('execute-rule');
     });
 
     afterEach(async () => {
@@ -29,54 +31,34 @@ describe('execute rule', () => {
         nock.cleanAll();
     });
 
-    it('should return 400 when rule id is not a valid ObjectId', async () => {
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/invalid-object-id'
-        });
-        expect(response.statusCode).toBe(400);
-        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(response.payload).toBe(JSON.stringify({
-            statusCode: 400,
-            error: 'Bad Request',
-            message: 'params rule id must be a valid ObjectId'
-        }));
+    it('should throw NotFoundError when rule does not exists', async () => {
+        expect.assertions(2);
+        const ruleId = new ObjectId();
+        try {
+            await executeRuleJobHandler({ ruleId });
+        } catch (error) {
+            expect(error instanceof NotFoundError).toBe(true);
+            expect(error.message).toBe(`Rule ${ruleId} cannot be found`);
+        }
     });
 
-    it('should return 404 when rule does not exists', async () => {
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + new ObjectId()
-        });
-        expect(response.statusCode).toBe(404);
-        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
-    });
-
-    it('should return 400 when rule is not of type tumbling', async () => {
+    it('should throw InvalidOperationError when rule is not of type tumbling', async () => {
+        expect.assertions(8);
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org/');
         const rule = await createRule(server, target.id, eventType.id, { filters: { value: 2 }});
-
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + rule.id
-        });
-        expect(response.statusCode).toBe(400);
-        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(response.payload).toBe(JSON.stringify({
-            statusCode: 400,
-            error: 'Bad Request',
-            message: 'Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.'
-        }));
+        const ruleId = ObjectId.createFromHexString(rule.id);
+        try {
+            await executeRuleJobHandler({ ruleId });
+        } catch (error) {
+            expect(error instanceof InvalidOperationError).toBe(true);
+            expect(error.message).toBe('Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.');
+        }
     });
 
-    it('should return 204 and call target when tumbling rule has no events to process', async () => {
+    it('should call target when tumbling rule has no events to process', async () => {
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org');
-        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
-            id: new ObjectId().toHexString()
-        });
         const rule = await createRule(server, target.id, eventType.id, {
             type: 'tumbling',
             group: {
@@ -92,7 +74,7 @@ describe('execute rule', () => {
                 value: 1
             }
         });
-        expect(scopeCreation.isDone()).toBe(true);
+        const ruleId = ObjectId.createFromHexString(rule.id);
 
         const scope = nock('http://example.org')
             .post('/', {
@@ -105,21 +87,13 @@ describe('execute rule', () => {
             })
             .reply(200);
 
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + rule.id
-        });
-
-        expect(response.statusCode).toBe(204);
+        await executeRuleJobHandler({ ruleId });
         expect(scope.isDone()).toBe(true);
     });
 
-    it('should return 204 and call target when tumbling rule has events without field to process', async () => {
+    it('should call target when tumbling rule has events without field to process', async () => {
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org');
-        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
-            id: new ObjectId().toHexString()
-        });
 
         await server.inject({
             method: 'POST',
@@ -158,7 +132,7 @@ describe('execute rule', () => {
                 value: 1
             }
         });
-        expect(scopeCreation.isDone()).toBe(true);
+        const ruleId = ObjectId.createFromHexString(rule.id);
 
         const scope = nock('http://example.org')
             .post('/', {
@@ -171,21 +145,14 @@ describe('execute rule', () => {
             })
             .reply(200);
 
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + rule.id
-        });
+        await executeRuleJobHandler({ ruleId });
 
-        expect(response.statusCode).toBe(204);
         expect(scope.isDone()).toBe(true);
     });
 
-    it('should return 204 and call target when tumbling rule has some events without field to process', async () => {
+    it('should call target when tumbling rule has some events without field to process', async () => {
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org');
-        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
-            id: new ObjectId().toHexString()
-        });
 
         await server.inject({
             method: 'POST',
@@ -224,7 +191,7 @@ describe('execute rule', () => {
                 value: 1
             }
         });
-        expect(scopeCreation.isDone()).toBe(true);
+        const ruleId = ObjectId.createFromHexString(rule.id);
 
         const scope = nock('http://example.org')
             .post('/', {
@@ -237,21 +204,14 @@ describe('execute rule', () => {
             })
             .reply(200);
 
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + rule.id
-        });
+        await executeRuleJobHandler({ ruleId });
 
-        expect(response.statusCode).toBe(204);
         expect(scope.isDone()).toBe(true);
     });
 
-    it('should return 204 and call target when tumbling rule filter match', async () => {
+    it('should call target when tumbling rule filter match', async () => {
         const eventType = await createEventType(server);
         const target = await createTarget(server, 'http://example.org');
-        const scopeCreation = nock('http://localhost:8890').post('/jobs').reply(201, {
-            id: new ObjectId().toHexString()
-        });
         const rule = await createRule(server, target.id, eventType.id, {
             type: 'tumbling',
             filters: { average: 40 },
@@ -261,7 +221,7 @@ describe('execute rule', () => {
                 value: 1
             }
         });
-        expect(scopeCreation.isDone()).toBe(true);
+        const ruleId = ObjectId.createFromHexString(rule.id);
 
         await server.inject({
             method: 'POST',
@@ -289,12 +249,8 @@ describe('execute rule', () => {
             .post('/', { average: 40 })
             .reply(200);
 
-        const response = await internalServer.inject({
-            method: 'POST',
-            url: '/execute-rule/' + rule.id
-        });
+        await executeRuleJobHandler({ ruleId });
 
-        expect(response.statusCode).toBe(204);
         expect(scope.isDone()).toBe(true);
     });
 

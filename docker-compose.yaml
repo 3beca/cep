@@ -30,17 +30,9 @@ services:
     environment:
       - MONGODB_URL=mongodb://mongodb:27017
       - HTTP_HOST=0.0.0.0
-      - TRIBECA_SCHEDULER_SERVICE_HOST=scheduler
-      - TRIBECA_SCHEDULER_SERVICE_PORT=8888
-      - INTERNAL_HTTP_HOST=cep
       - METRICS_HTTP_HOST=0.0.0.0
     ports:
       - "8888:8888"
-  scheduler:
-    image: francescorivola/tribeca-scheduler:latest
-    environment:
-      - MONGODB_URL=mongodb://mongodb:27017
-      - HTTP_HOST=0.0.0.0
 volumes:
   grafana-storage:
   prometheus-storage:
