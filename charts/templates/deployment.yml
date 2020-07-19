@@ -20,14 +20,14 @@ spec:
         image: {{ .Values.image }}      
         readinessProbe:
           httpGet:
-            path: /admin/check-health
+            path: /check-health
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5       
         livenessProbe:
           exec:
           httpGet:
-            path: /admin/check-health
+            path: /check-health
             port: 3000               
           initialDelaySeconds: 15
           periodSeconds: 5

@@ -1,4 +1,4 @@
-import config from './config';
+import { buildAppConfig } from './config';
 import gracefulShutdown from './graceful-shutdown';
 import 'make-promises-safe';
 import logger from './logger';
@@ -7,6 +7,7 @@ import { buildApp } from './app';
 async function main() {
     logger.info('starting cep service');
 
+    const config = buildAppConfig();
     const { adminHttp, metricsHttp, eventProcessingHttp } = config;
     const app = await buildApp(config);
 

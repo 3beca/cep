@@ -1,22 +1,25 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import nock from 'nock';
-import config from '../../src/config';
-import { buildApp } from '../../src/app';
+import { buildAppConfig } from '../../src/config';
+import { buildApp, App } from '../../src/app';
 
-describe('events', () => {
-    let app;
-    let server;
+describe('event processing', () => {
+    let app: App;
+    let adminServer;
+    let eventProcessingServer;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildAppConfig();
+        app = await buildApp({
+            ...config,
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
+        eventProcessingServer = app.getEventProcessingServer();
     });
 
     afterEach(async () => {
@@ -28,7 +31,7 @@ describe('events', () => {
     describe('post an event', () => {
 
         it('should return 400 when event type id is not a valid ObjectId', async () => {
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/invalid-object-id'
             });
@@ -42,7 +45,7 @@ describe('events', () => {
         });
 
         it('should return 404 when event type does not exists', async () => {
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + new ObjectId()
             });
@@ -52,9 +55,9 @@ describe('events', () => {
         });
 
         it('should return 204 when event type exists', async () => {
-            const eventType = await createEventType(server);
+            const eventType = await createEventType(adminServer);
 
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 body: {
@@ -65,15 +68,15 @@ describe('events', () => {
         });
 
         it('should not call target when event payload does not match rule filters', async () => {
-            const eventType = await createEventType(server);
-            const target = await createTarget(server, 'http://example.org');
-            await createRule(server, target.id, eventType.id, { filters: { value: 2 } });
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org');
+            await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 } });
 
             const scope = nock('http://example.org')
                 .post('/', { value: 2 })
                 .reply(200);
 
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 body: {
@@ -85,9 +88,9 @@ describe('events', () => {
         });
 
         it('should call target when event payload matches rule filters with request-id header and payload as body', async () => {
-            const eventType = await createEventType(server);
-            const target = await createTarget(server, 'http://example.org/');
-            const rule = await createRule(server, target.id, eventType.id, { filters: { value: 2 }});
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/');
+            const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
 
             const requestId = new ObjectId().toHexString();
             const scope = nock('http://example.org', {
@@ -101,7 +104,7 @@ describe('events', () => {
                 .post('/', { value: 2 })
                 .reply(200);
 
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -116,10 +119,10 @@ describe('events', () => {
         });
 
         it('should call target twice when event payload matches 2 rules filters', async () => {
-            const eventType = await createEventType(server);
-            const target = await createTarget(server, 'http://example.org/');
-            const rule1 = await createRule(server, target.id, eventType.id, { name: 'rule 1', filters: { value: 2 }});
-            const rule2 = await createRule(server, target.id, eventType.id, { name: 'rule 2', filters: { value: { _gt: 1 } }});
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/');
+            const rule1 = await createRule(adminServer, target.id, eventType.id, { name: 'rule 1', filters: { value: 2 }});
+            const rule2 = await createRule(adminServer, target.id, eventType.id, { name: 'rule 2', filters: { value: { _gt: 1 } }});
 
             const scope1 = nock('http://example.org', {
                 reqheaders: {
@@ -143,7 +146,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            const response = await server.inject({
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 body: {
@@ -156,9 +159,9 @@ describe('events', () => {
         });
 
         it('should call target only on first matches when rule is created with skipOnConsecutivesMatches=true', async () => {
-            const eventType = await createEventType(server);
-            const target = await createTarget(server, 'http://example.org/');
-            const rule = await createRule(server, target.id, eventType.id, {
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/');
+            const rule = await createRule(adminServer, target.id, eventType.id, {
                 name: 'rule 1',
                 filters: { value: 2 },
                 skipOnConsecutivesMatches: true
@@ -176,7 +179,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            await server.inject({
+            await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -197,7 +200,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            await server.inject({
+            await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -218,7 +221,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            await server.inject({
+            await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -243,7 +246,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            await server.inject({
+            await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -264,7 +267,7 @@ describe('events', () => {
                 .once()
                 .reply(200);
 
-            await server.inject({
+            await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventType.id,
                 headers: {
@@ -280,9 +283,9 @@ describe('events', () => {
     });
 
     it('should not call target when event payload does not match rule filters of type sliding', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
-        await createRule(server, target.id, eventType.id, {
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
+        await createRule(adminServer, target.id, eventType.id, {
             type: 'sliding',
             group: { count: { _sum: 1 } },
             windowSize: {
@@ -296,7 +299,7 @@ describe('events', () => {
             .post('/', { count: 2 })
             .reply(200);
 
-        const response = await server.inject({
+        const response = await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -308,10 +311,10 @@ describe('events', () => {
     });
 
     it('should call target when event payload matches rule filters of type sliding', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -319,7 +322,7 @@ describe('events', () => {
             }
         });
 
-        await createRule(server, target.id, eventType.id, {
+        await createRule(adminServer, target.id, eventType.id, {
             type: 'sliding',
             group: { count: { _sum: 1 } },
             windowSize: {
@@ -333,7 +336,7 @@ describe('events', () => {
             .post('/', { count: 2 })
             .reply(200);
 
-        const response = await server.inject({
+        const response = await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -345,10 +348,10 @@ describe('events', () => {
     });
 
     it('should call target when event payload matches rule without filters of type sliding', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -356,7 +359,7 @@ describe('events', () => {
             }
         });
 
-        await createRule(server, target.id, eventType.id, {
+        await createRule(adminServer, target.id, eventType.id, {
             type: 'sliding',
             group: { average: { _avg: '_value' } },
             windowSize: {
@@ -369,7 +372,7 @@ describe('events', () => {
             .post('/', { average: 10 })
             .reply(200);
 
-        const response = await server.inject({
+        const response = await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -381,24 +384,24 @@ describe('events', () => {
     });
 
     it('should call target when event payload matches rule filters of type sliding with max', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 value: 1
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 value: 8
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -406,7 +409,7 @@ describe('events', () => {
             }
         });
 
-        await createRule(server, target.id, eventType.id, {
+        await createRule(adminServer, target.id, eventType.id, {
             type: 'sliding',
             group: { maxValue: { _max: '_value' } },
             windowSize: {
@@ -419,7 +422,7 @@ describe('events', () => {
             .post('/', { maxValue: 8 })
             .reply(200);
 
-        const response = await server.inject({
+        const response = await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -430,10 +433,10 @@ describe('events', () => {
         expect(scope.isDone()).toBe(true);
     });
 
-    async function createTarget(server, url = 'http://example.org') {
-        const createResponse = await server.inject({
+    async function createTarget(adminServer, url = 'http://example.org') {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/targets',
+            url: '/targets',
             body: {
                 name: 'a target',
                 url
@@ -444,15 +447,15 @@ describe('events', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId, rule = {}) {
+    async function createRule(adminServer, targetId, eventTypeId, rule = {}) {
         const defaultRuleValues = {
             name: 'a rule',
             type: 'realtime',
             skipOnConsecutivesMatches: false
         };
-        const createResponse = await server.inject({
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/rules',
+            url: '/rules',
             body: {
                 ...defaultRuleValues,
                 eventTypeId,
@@ -465,10 +468,10 @@ describe('events', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createEventType(server) {
-        const createResponse = await server.inject({
+    async function createEventType(adminServer) {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/event-types',
+            url: '/event-types',
             body: {
                 name: 'an event type'
             }

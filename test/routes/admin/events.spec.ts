@@ -1,22 +1,26 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
-import config from '../../../src/config';
-import { buildApp } from '../../../src/app';
+import { buildAppConfig } from '../../../src/config';
+import { buildApp, App } from '../../../src/app';
 import nock from 'nock';
+import { FastifyInstance } from 'fastify';
 
 describe('admin', () => {
-    let app;
-    let server;
+    let app: App;
+    let adminServer: FastifyInstance;
+    let eventProcessingServer: FastifyInstance;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildAppConfig();
+        app = await buildApp({
+            ...config,
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
+        eventProcessingServer = app.getEventProcessingServer();
     });
 
     afterEach(async () => {
@@ -28,9 +32,9 @@ describe('admin', () => {
     describe('events', () => {
 
         it('should return an empty list of events when no events have been processed', async () => {
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/events'
+                url: '/events'
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -41,14 +45,14 @@ describe('admin', () => {
         });
 
         it('should return a list of the processed events', async () => {
-            const eventType = await createEventType(server);
+            const eventType = await createEventType(adminServer);
 
-            await processEvent(server, eventType.id, { value: 8 });
-            await processEvent(server, eventType.id, { value: 7 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 8 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 7 });
 
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/events'
+                url: '/events'
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -69,9 +73,9 @@ describe('admin', () => {
         });
 
         it('should return 400 bad request when events are filtered by an invalid eventTypeId', async () => {
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/events?eventTypeId=invalid-object-id-here'
+                url: '/events?eventTypeId=invalid-object-id-here'
             });
             expect(response.statusCode).toBe(400);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -79,15 +83,15 @@ describe('admin', () => {
         });
 
         it('should return a list of the processed events filtered by eventTypeId', async () => {
-            const eventType1 = await createEventType(server);
-            const eventType2 = await createEventType(server);
+            const eventType1 = await createEventType(adminServer);
+            const eventType2 = await createEventType(adminServer);
 
-            await processEvent(server, eventType1.id, { value: 8 });
-            await processEvent(server, eventType2.id, { value: 7 });
+            await processEvent(eventProcessingServer, eventType1.id, { value: 8 });
+            await processEvent(eventProcessingServer, eventType2.id, { value: 7 });
 
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/events?eventTypeId=' + eventType1.id
+                url: '/events?eventTypeId=' + eventType1.id
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -102,7 +106,7 @@ describe('admin', () => {
             expect(listResponse.prev).toBe(undefined);
         });
 
-        async function processEvent(server, eventTypeId, eventPayload) {
+        async function processEvent(server, eventTypeId: string, eventPayload: any) {
             const response = await server.inject({
                 method: 'POST',
                 url: '/events/' + eventTypeId,
@@ -111,10 +115,10 @@ describe('admin', () => {
             expect(response.statusCode).toBe(204);
         }
 
-        async function createEventType(server) {
-            const createResponse = await server.inject({
+        async function createEventType(adminServer) {
+            const createResponse = await adminServer.inject({
                 method: 'POST',
-                url: '/admin/event-types',
+                url: '/event-types',
                 body: {
                     name: 'an event type ' + new ObjectId().toHexString()
                 }

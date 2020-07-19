@@ -26,14 +26,10 @@ import { buildRulesRoutes } from './routes/admin/rules';
 import { buildRulesExecutionsRoutes } from './routes/admin/rules-executions';
 import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
+import { AppConfig } from './config';
 
-export type ServerOptions = {
-	trustProxy: boolean;
-	enableCors: boolean;
-	enableSwagger: boolean;
-};
-
-export function buildAdminServer(options: ServerOptions,
+export function buildAdminServer(
+	config: AppConfig['adminHttp'],
 	eventTypesService: EventTypesService,
 	targetsService: TargetsService,
 	rulesService: RulesService,
@@ -41,9 +37,11 @@ export function buildAdminServer(options: ServerOptions,
 	rulesExecutionsService: RulesExecutionsService,
 	metrics: Metrics): FastifyInstance {
 
+	const { trustProxy, enableCors, enableSwagger } = config;
+
 	const app = fastify({
 		logger,
-		trustProxy: options.trustProxy
+		trustProxy
 	});
 
 	const ajv = new Ajv({
@@ -57,7 +55,7 @@ export function buildAdminServer(options: ServerOptions,
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
-	if (options.enableSwagger) {
+	if (enableSwagger) {
 		app.register(fastifySwagger, {
 			routePrefix: '/documentation',
 			exposeRoute: true,
@@ -90,7 +88,7 @@ export function buildAdminServer(options: ServerOptions,
 		prefix: 'cep_admin_server_'
 	});
 
-	if (options.enableCors) {
+	if (enableCors) {
 		app.register(fastifyCors, {
 			origin: true,
 			methods: ['GET', 'POST', 'DELETE', 'PUT' ],

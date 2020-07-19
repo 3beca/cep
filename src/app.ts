@@ -13,13 +13,7 @@ import { buildMetrics } from './metrics';
 import { buildScheduler, Scheduler } from './scheduler';
 import buildExecuteRuleJobHandler from './jobs-handlers/execute-rule-job-handler';
 import { buildEventProcessingServer } from './event-processing-server';
-
-export type AppOptions = {
-    databaseUrl: string,
-    databaseName: string,
-    trustProxy: boolean,
-    enableCors: boolean
-};
+import { AppConfig } from './config';
 
 export type App = {
     close(): Promise<void>;
@@ -30,10 +24,9 @@ export type App = {
     getScheduler(): Scheduler;
 }
 
-export async function buildApp(options: AppOptions): Promise<App> {
-    const { databaseName, databaseUrl, trustProxy, enableCors } = options;
-    const dbClient = await connect(databaseUrl);
-    const db = await getAndSetupDatabase(dbClient, databaseName);
+export async function buildApp(config: AppConfig): Promise<App> {
+    const dbClient = await connect(config.mongodb.url);
+    const db = await getAndSetupDatabase(dbClient, config.mongodb.databaseName);
     const metrics = buildMetrics();
     const scheduler = buildScheduler(db);
     const eventTypesService = buildEventTypesService(db);
@@ -43,9 +36,9 @@ export async function buildApp(options: AppOptions): Promise<App> {
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
     const metricsServer = buildMetricsServer(metrics);
-    const adminServer = buildAdminServer({ trustProxy, enableCors },
+    const adminServer = buildAdminServer(config.adminHttp,
         eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, metrics);
-    const eventProcessingServer = buildEventProcessingServer({}, engine, metrics);
+    const eventProcessingServer = buildEventProcessingServer(config.eventProcessingHttp, engine, metrics);
     scheduler.setJobHandler('execute-rule', buildExecuteRuleJobHandler(engine));
     return {
         async close() {

@@ -1,22 +1,25 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
-import config from '../../../src/config';
-import { buildApp } from '../../../src/app';
+import { buildAppConfig } from '../../../src/config';
+import { buildApp, App } from '../../../src/app';
 import nock from 'nock';
 
 describe('admin', () => {
-    let app;
-    let server;
+    let app: App;
+    let adminServer;
+    let eventProcessingServer;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildAppConfig();
+        app = await buildApp({
+            ...config,
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
+        eventProcessingServer = app.getEventProcessingServer();
     });
 
     afterEach(async () => {
@@ -28,9 +31,9 @@ describe('admin', () => {
     describe('rules-executions', () => {
 
         it('should return an empty list of rules executions when no rules have been executed', async () => {
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions'
+                url: '/rules-executions'
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -41,9 +44,9 @@ describe('admin', () => {
         });
 
         it('should return 400 bad request when filtered by an invalid eventTypeId', async () => {
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions?eventTypeId=invalid-object-id-here'
+                url: '/rules-executions?eventTypeId=invalid-object-id-here'
             });
             expect(response.statusCode).toBe(400);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -51,19 +54,19 @@ describe('admin', () => {
         });
 
         it('should return a list of rules executions filtered by eventTypeId', async () => {
-            const eventType1 = await createEventType(server);
-            const eventType2 = await createEventType(server);
-            const target1 = await createTarget(server, 'http://example.org');
-            const target2 = await createTarget(server, 'http://example.com');
-            const rule1 = await createRule(server, target1.id, eventType1.id, 'rule 1', { value: 2 });
-            await createRule(server, target2.id, eventType2.id, 'rule 2', { value: 2 });
+            const eventType1 = await createEventType(adminServer);
+            const eventType2 = await createEventType(adminServer);
+            const target1 = await createTarget(adminServer, 'http://example.org');
+            const target2 = await createTarget(adminServer, 'http://example.com');
+            const rule1 = await createRule(adminServer, target1.id, eventType1.id, 'rule 1', { value: 2 });
+            await createRule(adminServer, target2.id, eventType2.id, 'rule 2', { value: 2 });
 
-            await processEvent(server, eventType1.id, { value: 8 });
-            await processEvent(server, eventType2.id, { value: 7 });
+            await processEvent(eventProcessingServer, eventType1.id, { value: 8 });
+            await processEvent(eventProcessingServer, eventType2.id, { value: 7 });
 
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions?eventTypeId=' + eventType1.id
+                url: '/rules-executions?eventTypeId=' + eventType1.id
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -81,9 +84,9 @@ describe('admin', () => {
         });
 
         it('should return 400 bad request when filtered by an invalid ruleId', async () => {
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions?ruleId=invalid-object-id-here'
+                url: '/rules-executions?ruleId=invalid-object-id-here'
             });
             expect(response.statusCode).toBe(400);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -91,19 +94,19 @@ describe('admin', () => {
         });
 
         it('should return a list of rules executions filtered by ruleId', async () => {
-            const eventType1 = await createEventType(server);
-            const eventType2 = await createEventType(server);
-            const target1 = await createTarget(server, 'http://example.org');
-            const target2 = await createTarget(server, 'http://example.com');
-            const rule1 = await createRule(server, target1.id, eventType1.id, 'rule 1', { value: 2 });
-            await createRule(server, target2.id, eventType2.id, 'rule 2', { value: 2 });
+            const eventType1 = await createEventType(adminServer);
+            const eventType2 = await createEventType(adminServer);
+            const target1 = await createTarget(adminServer, 'http://example.org');
+            const target2 = await createTarget(adminServer, 'http://example.com');
+            const rule1 = await createRule(adminServer, target1.id, eventType1.id, 'rule 1', { value: 2 });
+            await createRule(adminServer, target2.id, eventType2.id, 'rule 2', { value: 2 });
 
-            await processEvent(server, eventType1.id, { value: 8 });
-            await processEvent(server, eventType2.id, { value: 7 });
+            await processEvent(eventProcessingServer, eventType1.id, { value: 8 });
+            await processEvent(eventProcessingServer, eventType2.id, { value: 7 });
 
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions?ruleId=' + rule1.id
+                url: '/rules-executions?ruleId=' + rule1.id
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -121,11 +124,11 @@ describe('admin', () => {
         });
 
         it('should return a list of rules executions', async () => {
-            const eventType = await createEventType(server);
-            const target1 = await createTarget(server, 'https://target1.com');
-            const target2 = await createTarget(server, 'https://target2.com');
-            const rule1 = await createRule(server, target1.id, eventType.id, 'rule 1', { value: 2 });
-            const rule2 = await createRule(server, target2.id, eventType.id, 'rule 2', { value: { _lt: 3 } }, true);
+            const eventType = await createEventType(adminServer);
+            const target1 = await createTarget(adminServer, 'https://target1.com');
+            const target2 = await createTarget(adminServer, 'https://target2.com');
+            const rule1 = await createRule(adminServer, target1.id, eventType.id, 'rule 1', { value: 2 });
+            const rule2 = await createRule(adminServer, target2.id, eventType.id, 'rule 2', { value: { _lt: 3 } }, true);
 
             const scope2 = nock('https://target1.com')
                 .post('/', { value: 2 })
@@ -140,14 +143,14 @@ describe('admin', () => {
                 .once()
                 .reply(202, { success: true });
 
-            await processEvent(server, eventType.id, { value: 8 });
-            await processEvent(server, eventType.id, { value: 2 });
-            await processEvent(server, eventType.id, { value: 2 });
-            await processEvent(server, eventType.id, { value: 9 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 8 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 2 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 2 });
+            await processEvent(eventProcessingServer, eventType.id, { value: 9 });
 
-            const response = await server.inject({
+            const response = await adminServer.inject({
                 method: 'GET',
-                url: '/admin/rules-executions'
+                url: '/rules-executions'
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -214,8 +217,8 @@ describe('admin', () => {
             expect(scope2.isDone()).toBe(true);
         });
 
-        async function processEvent(server, eventTypeId, eventPayload) {
-            const response = await server.inject({
+        async function processEvent(eventProcessingServer, eventTypeId, eventPayload) {
+            const response = await eventProcessingServer.inject({
                 method: 'POST',
                 url: '/events/' + eventTypeId,
                 body: eventPayload
@@ -223,10 +226,10 @@ describe('admin', () => {
             expect(response.statusCode).toBe(204);
         }
 
-        async function createTarget(server, url = 'http://example.org') {
-            const createResponse = await server.inject({
+        async function createTarget(adminServer, url = 'http://example.org') {
+            const createResponse = await adminServer.inject({
                 method: 'POST',
-                url: '/admin/targets',
+                url: '/targets',
                 body: {
                     name: 'a target ' + new ObjectId().toHexString(),
                     url
@@ -237,10 +240,10 @@ describe('admin', () => {
             return JSON.parse(createResponse.payload);
         }
 
-        async function createRule(server, targetId, eventTypeId, name = 'a rule', filters: any = undefined, skipOnConsecutivesMatches: boolean = false) {
-            const createResponse = await server.inject({
+        async function createRule(adminServer, targetId, eventTypeId, name = 'a rule', filters: any = undefined, skipOnConsecutivesMatches: boolean = false) {
+            const createResponse = await adminServer.inject({
                 method: 'POST',
-                url: '/admin/rules',
+                url: '/rules',
                 body: {
                     name,
                     type: 'realtime',
@@ -255,10 +258,10 @@ describe('admin', () => {
             return JSON.parse(createResponse.payload);
         }
 
-        async function createEventType(server) {
-            const createResponse = await server.inject({
+        async function createEventType(adminServer) {
+            const createResponse = await adminServer.inject({
                 method: 'POST',
-                url: '/admin/event-types',
+                url: '/event-types',
                 body: {
                     name: 'an event type ' + new ObjectId().toHexString()
                 }

@@ -1,29 +1,35 @@
 jest.mock('pino');
-import config from '../src/config';
 import { ObjectId } from 'bson';
-import { buildApp } from '../src/app';
-import { buildServer } from '../src/server';
+import { buildApp, App } from '../src/app';
+import { buildAdminServer } from '../src/admin-server';
 import { RulesExecutionsService } from '../src/services/rules-executions-service';
-import { Engine } from '../src/engine';
 import { EventsService } from '../src/services/events-service';
 import { EventTypesService } from '../src/services/event-types-service';
 import { TargetsService } from '../src/services/targets-service';
 import { RulesService } from '../src/services/rules-services';
 import { buildMetrics } from '../src/metrics';
+import { buildAppConfig } from '../src/config';
 
 describe('server', () => {
-    let app;
-    let server;
+    let app: App;
+    let adminServer;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildAppConfig();
+        app = await buildApp({
+            ...config,
+            adminHttp: {
+                ...config.adminHttp,
+                trustProxy: false,
+                enableCors: false,
+                enableSwagger: true
+            },
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
     });
 
     afterEach(async () => {
@@ -32,7 +38,7 @@ describe('server', () => {
     });
 
     it('should return 404 for no existing endpoint', async () => {
-      const response = await server.inject({
+      const response = await adminServer.inject({
           method: 'GET',
           url: '/not-existing-route'
         });
@@ -42,7 +48,7 @@ describe('server', () => {
     });
 
     it('should return 200 for swagger endpoint', async () => {
-        const response = await server.inject({
+        const response = await adminServer.inject({
           method: 'GET',
           url: '/documentation/static/index.html'
         });
@@ -50,8 +56,29 @@ describe('server', () => {
         expect(response.headers['content-type']).toBe('text/html; charset=UTF-8');
     });
 
+    it('should return 404 for swagger endpoint when swagger is not enabled', async () => {
+        const adminServer = buildAdminServer({
+                trustProxy: false,
+                enableCors: true,
+                enableSwagger: false,
+                host: '',
+                port: 0
+            },
+            null as unknown as EventTypesService,
+            null as unknown as TargetsService,
+            null as unknown as RulesService,
+            null as unknown as EventsService,
+            null as unknown as RulesExecutionsService,
+            buildMetrics());
+        const response = await adminServer.inject({
+          method: 'GET',
+          url: '/documentation/static/index.html'
+        });
+        expect(response.statusCode).toBe(404);
+    });
+
     it('should return 200 for swagger json endpoint', async () => {
-        const response = await server.inject({
+        const response = await adminServer.inject({
           method: 'GET',
           url: '/documentation/json'
         });
@@ -59,8 +86,29 @@ describe('server', () => {
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
     });
 
+    it('should return 404 for swagger json endpoint when swagger is not enabled', async () => {
+        const adminServer = buildAdminServer({
+                trustProxy: false,
+                enableCors: true,
+                enableSwagger: false,
+                host: '',
+                port: 0
+            },
+            null as unknown as EventTypesService,
+            null as unknown as TargetsService,
+            null as unknown as RulesService,
+            null as unknown as EventsService,
+            null as unknown as RulesExecutionsService,
+            buildMetrics());
+        const response = await adminServer.inject({
+          method: 'GET',
+          url: '/documentation/json'
+        });
+        expect(response.statusCode).toBe(404);
+    });
+
     it('should return 500 when unhandled errors happened', async () => {
-        server.register(
+        adminServer.register(
             function(fastify, opts, next) {
                 fastify.get('/', opts, async () => {
                     throw new Error('Something bad');
@@ -69,7 +117,7 @@ describe('server', () => {
             }, { prefix: '/error' }
         );
 
-        const response = await server.inject({
+        const response = await adminServer.inject({
             method: 'GET',
             url: '/error'
         });
@@ -79,7 +127,7 @@ describe('server', () => {
     });
 
     it('should return 404 when CORS preflight request but cors is not enabled', async () => {
-        server.register(
+        adminServer.register(
             function(fastify, opts, next) {
                 fastify.get('/', async (request, reply) => {
                     reply.status(200).send({ success: true });
@@ -88,7 +136,7 @@ describe('server', () => {
             }, { prefix: '/cors' }
         );
 
-        const responseOptions = await server.inject({
+        const responseOptions = await adminServer.inject({
             method: 'OPTIONS',
             url: '/cors'
         });
@@ -96,7 +144,7 @@ describe('server', () => {
         expect(responseOptions.statusCode).toBe(404);
         expect(responseOptions.headers['content-type']).toBe('application/json; charset=utf-8');
 
-        const responseGet = await server.inject({
+        const responseGet = await adminServer.inject({
             method: 'GET',
             url: '/cors',
             headers: {
@@ -109,15 +157,20 @@ describe('server', () => {
     });
 
     it('should return 204 when CORS preflight request and cors is enabled', async () => {
-        const server = buildServer({ trustProxy: false, enableCors: true },
+        const adminServer = buildAdminServer({
+                trustProxy: false,
+                enableCors: true,
+                enableSwagger: false,
+                host: '',
+                port: 0
+            },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
             null as unknown as RulesService,
             null as unknown as EventsService,
             null as unknown as RulesExecutionsService,
-            null as unknown as Engine,
             buildMetrics());
-        server.register(
+        adminServer.register(
             function(fastify, opts, next) {
                 fastify.get('/', async (request, reply) => {
                     reply.status(200).send({ success: true });
@@ -126,14 +179,14 @@ describe('server', () => {
             }, { prefix: '/cors' }
         );
 
-        const responseOptions = await server.inject({
+        const responseOptions = await adminServer.inject({
             method: 'OPTIONS',
             url: '/cors'
         });
 
         expect(responseOptions.statusCode).toBe(204);
 
-        const responseGet = await server.inject({
+        const responseGet = await adminServer.inject({
             method: 'GET',
             url: '/cors',
             headers: {

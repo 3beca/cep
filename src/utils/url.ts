@@ -1,8 +1,5 @@
-import config from '../config';
 import * as url from 'url';
 import { FastifyRequest } from 'fastify';
-
-const { externalHttp } = config;
 
 function removeEndSlash(path: string): string {
     if (path[path.length - 1] === '/') {
@@ -12,7 +9,8 @@ function removeEndSlash(path: string): string {
 }
 
 export function getExternalUrl(path: string | null): string {
-    const { protocol, host, port } = externalHttp;
+    // TODO: implement this.
+    const { protocol, host, port } = { protocol: 'http', host: 'localhost', port: 8888 };
     return `${protocol}://${host}:${port}${path ? removeEndSlash(path) : ''}`;
 }
 

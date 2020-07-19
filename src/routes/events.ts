@@ -34,7 +34,7 @@ export function buildEventProcessingRoutes(engine: Engine) {
     }
 
     return function(fastify: FastifyInstance, opts, next) {
-        fastify.post('/events/:id', { ...opts, schema: processEventSchema }, processEvent);
+        fastify.post('/:id', { ...opts, schema: processEventSchema }, processEvent);
         next();
     };
 }

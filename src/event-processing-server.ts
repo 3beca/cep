@@ -10,20 +10,18 @@ import { Server } from 'http';
 import { Metrics } from './metrics';
 import { Engine } from './engine';
 import { buildEventProcessingRoutes } from './routes/events';
+import { AppConfig } from './config';
 
-export type ServerOptions = {
-	trustProxy: boolean;
-	enableCors: boolean;
-	enableSwagger: boolean;
-};
-
-export function buildEventProcessingServer(options: ServerOptions,
+export function buildEventProcessingServer(
+	config: AppConfig['eventProcessingHttp'],
 	engine: Engine,
 	metrics: Metrics): FastifyInstance {
 
+	const { trustProxy, enableSwagger } = config;
+
 	const app = fastify({
 		logger,
-		trustProxy: options.trustProxy
+		trustProxy
 	});
 
 	const ajv = new Ajv({
@@ -37,7 +35,7 @@ export function buildEventProcessingServer(options: ServerOptions,
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
-	if (options.enableSwagger) {
+	if (enableSwagger) {
 		app.register(fastifySwagger, {
 			routePrefix: '/documentation',
 			exposeRoute: true,
@@ -78,6 +76,11 @@ export function buildEventProcessingServer(options: ServerOptions,
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
 			reply.status(404).send({ message: 'Resource not found' });
+			return;
+		}
+		if (error.validation) {
+			request.log.info(error);
+			reply.status(400).send(error);
 			return;
 		}
 		if (error.statusCode && error.statusCode < 500) {

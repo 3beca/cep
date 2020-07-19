@@ -1,26 +1,29 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import nock from 'nock';
-import config from '../../src/config';
 import { buildApp, App } from '../../src/app';
 import { JobHandler } from '../../src/jobs-handlers/job-handler';
 import NotFoundError from '../../src/errors/not-found-error';
 import InvalidOperationError from '../../src/errors/invalid-operation-error';
+import { buildAppConfig } from '../../src/config';
 
 describe('execute rule job handler', () => {
     let app: App;
-    let server;
+    let adminServer;
+    let eventProcessingServer;
     let executeRuleJobHandler: JobHandler;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildAppConfig();
+        app = await buildApp({
+            ...config,
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
+        eventProcessingServer = app.getEventProcessingServer();
         const scheduler = app.getScheduler();
         executeRuleJobHandler = scheduler.getJobHandler('execute-rule');
     });
@@ -44,9 +47,9 @@ describe('execute rule job handler', () => {
 
     it('should throw InvalidOperationError when rule is not of type tumbling', async () => {
         expect.assertions(8);
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org/');
-        const rule = await createRule(server, target.id, eventType.id, { filters: { value: 2 }});
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org/');
+        const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
         const ruleId = ObjectId.createFromHexString(rule.id);
         try {
             await executeRuleJobHandler({ ruleId });
@@ -57,9 +60,9 @@ describe('execute rule job handler', () => {
     });
 
     it('should call target when tumbling rule has no events to process', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
-        const rule = await createRule(server, target.id, eventType.id, {
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
+        const rule = await createRule(adminServer, target.id, eventType.id, {
             type: 'tumbling',
             group: {
                 average: { _avg: '_value' },
@@ -92,24 +95,24 @@ describe('execute rule job handler', () => {
     });
 
     it('should call target when tumbling rule has events without field to process', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 otherValue: 5
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 otherValue: 15
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -117,7 +120,7 @@ describe('execute rule job handler', () => {
             }
         });
 
-        const rule = await createRule(server, target.id, eventType.id, {
+        const rule = await createRule(adminServer, target.id, eventType.id, {
             type: 'tumbling',
             group: {
                 average: { _avg: '_value' },
@@ -151,24 +154,24 @@ describe('execute rule job handler', () => {
     });
 
     it('should call target when tumbling rule has some events without field to process', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 otherValue: 5
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 value: 15
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -176,7 +179,7 @@ describe('execute rule job handler', () => {
             }
         });
 
-        const rule = await createRule(server, target.id, eventType.id, {
+        const rule = await createRule(adminServer, target.id, eventType.id, {
             type: 'tumbling',
             group: {
                 average: { _avg: '_value' },
@@ -210,9 +213,9 @@ describe('execute rule job handler', () => {
     });
 
     it('should call target when tumbling rule filter match', async () => {
-        const eventType = await createEventType(server);
-        const target = await createTarget(server, 'http://example.org');
-        const rule = await createRule(server, target.id, eventType.id, {
+        const eventType = await createEventType(adminServer);
+        const target = await createTarget(adminServer, 'http://example.org');
+        const rule = await createRule(adminServer, target.id, eventType.id, {
             type: 'tumbling',
             filters: { average: 40 },
             group: { average: { _avg: '_value' } },
@@ -223,21 +226,21 @@ describe('execute rule job handler', () => {
         });
         const ruleId = ObjectId.createFromHexString(rule.id);
 
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 value: 5
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
                 value: 15
             }
         });
-        await server.inject({
+        await eventProcessingServer.inject({
             method: 'POST',
             url: '/events/' + eventType.id,
             body: {
@@ -254,10 +257,10 @@ describe('execute rule job handler', () => {
         expect(scope.isDone()).toBe(true);
     });
 
-    async function createTarget(server, url = 'http://example.org') {
-        const createResponse = await server.inject({
+    async function createTarget(adminServer, url = 'http://example.org') {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/targets',
+            url: '/targets',
             body: {
                 name: 'a target',
                 url
@@ -268,15 +271,15 @@ describe('execute rule job handler', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId, rule = {}) {
+    async function createRule(adminServer, targetId, eventTypeId, rule = {}) {
         const defaultRuleValues = {
             name: 'a rule',
             type: 'realtime',
             skipOnConsecutivesMatches: false
         };
-        const createResponse = await server.inject({
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/rules',
+            url: '/rules',
             body: {
                 ...defaultRuleValues,
                 eventTypeId,
@@ -289,10 +292,10 @@ describe('execute rule job handler', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createEventType(server) {
-        const createResponse = await server.inject({
+    async function createEventType(adminServer) {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/event-types',
+            url: '/event-types',
             body: {
                 name: 'an event type'
             }
