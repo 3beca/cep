@@ -43,7 +43,7 @@ export function buildAppConfig() {
             port: {
                 doc: 'The port to bind the event processing http api.',
                 format: 'port',
-                default: 8888,
+                default: 8889,
                 env: 'CEP_EVENT_PROCESSING_HTTP_PORT',
             },
             enableSwagger: {
