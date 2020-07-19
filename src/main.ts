@@ -5,23 +5,22 @@ import logger from './logger';
 import { buildApp } from './app';
 
 async function main() {
-    const { port, host } = config.http;
-    const { databaseUrl, databaseName } = config.mongodb;
-    const { trustProxy, enableCors, metricsHttp } = config;
-
     logger.info('starting cep service');
 
-    const options = { databaseUrl, databaseName, trustProxy, enableCors };
-    const app = await buildApp(options);
+    const { adminHttp, metricsHttp, eventProcessingHttp } = config;
+    const app = await buildApp(config);
 
     await app.getMetricsServer().listen(metricsHttp.port, metricsHttp.host);
-    logger.info('started cep metrics service. Listening at port', metricsHttp.port);
+    logger.info('started cep metrics http server. Listening at port', metricsHttp.port);
 
     await app.getScheduler().start();
     logger.info('started cep scheduler');
 
-    await app.getServer().listen(port, host);
-    logger.info('started cep public service. Listening at port', port);
+    await app.getEventProcessingServer().listen(eventProcessingHttp.port, eventProcessingHttp.host);
+    logger.info('started cep event processing http server. Listening at port', eventProcessingHttp.port);
+
+    await app.getAdminServer().listen(adminHttp.port, adminHttp.host);
+    logger.info('started cep admin http server. Listening at port', adminHttp.port);
 
     process.on('SIGTERM', gracefulShutdown(app));
     process.on('SIGINT', gracefulShutdown(app));

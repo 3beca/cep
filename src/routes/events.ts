@@ -23,7 +23,7 @@ const processEventSchema = {
     }
 };
 
-export function buildEventsRoutes(engine: Engine) {
+export function buildEventProcessingRoutes(engine: Engine) {
 
     async function processEvent(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { body, params, id: requestId } = request;
