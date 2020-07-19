@@ -9,7 +9,7 @@ import Ajv from 'ajv';
 import { Server } from 'http';
 import { Metrics } from './metrics';
 import { Engine } from './engine';
-import { buildEventProcessingRoutes } from './routes/events';
+import { buildEventProcessingRoutes } from './routes/event-processing/events';
 import { AppConfig } from './config';
 
 export function buildEventProcessingServer(
@@ -83,12 +83,8 @@ export function buildEventProcessingServer(
 			reply.status(400).send(error);
 			return;
 		}
-		if (error.statusCode && error.statusCode < 500) {
-			request.log.info(error);
-		} else {
-			request.log.error(error);
-		}
-		reply.status(error.statusCode ?? 500).send(error);
+		request.log.error(error);
+		reply.status(500).send(error);
 	});
 
 	return app;

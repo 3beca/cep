@@ -5,7 +5,7 @@ import { Scheduler } from '../../../src/scheduler';
 import nock from 'nock';
 import { buildAppConfig } from '../../../src/config';
 
-describe('admin', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer;
     let scheduler: Scheduler;

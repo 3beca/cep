@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { buildAppConfig } from '../../../src/config';
 import { buildApp, App } from '../../../src/app';
 
-describe('admin', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer;
 

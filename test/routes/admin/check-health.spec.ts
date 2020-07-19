@@ -3,7 +3,7 @@ import { buildAppConfig } from '../../../src/config';
 import { ObjectId } from 'bson';
 import { buildApp, App } from '../../../src/app';
 
-describe('admin', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer;
 

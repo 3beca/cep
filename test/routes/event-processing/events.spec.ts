@@ -1,8 +1,8 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import nock from 'nock';
-import { buildAppConfig } from '../../src/config';
-import { buildApp, App } from '../../src/app';
+import { buildAppConfig } from '../../../src/config';
+import { buildApp, App } from '../../../src/app';
 
 describe('event processing', () => {
     let app: App;

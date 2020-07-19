@@ -1,4 +1,4 @@
-import { Engine } from '../engine';
+import { Engine } from '../../engine';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { Server } from 'http';
 import { ObjectId } from 'mongodb';

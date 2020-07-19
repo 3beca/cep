@@ -10,7 +10,7 @@ import { RulesService } from '../src/services/rules-services';
 import { buildMetrics } from '../src/metrics';
 import { buildAppConfig } from '../src/config';
 
-describe('server', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer;
 
@@ -20,8 +20,6 @@ describe('server', () => {
             ...config,
             adminHttp: {
                 ...config.adminHttp,
-                trustProxy: false,
-                enableCors: false,
                 enableSwagger: true
             },
             mongodb: {

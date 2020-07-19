@@ -4,7 +4,7 @@ import { buildAppConfig } from '../../../src/config';
 import { buildApp, App } from '../../../src/app';
 import nock from 'nock';
 
-describe('admin', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer;
     let eventProcessingServer;

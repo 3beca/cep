@@ -5,7 +5,7 @@ import { buildApp, App } from '../../../src/app';
 import nock from 'nock';
 import { FastifyInstance } from 'fastify';
 
-describe('admin', () => {
+describe('admin server', () => {
     let app: App;
     let adminServer: FastifyInstance;
     let eventProcessingServer: FastifyInstance;
