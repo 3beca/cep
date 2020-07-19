@@ -10,10 +10,11 @@ spec:
     - port: 3000
       targetPort: 3000
       nodePort: 30706
-      name: tcp-main
+      name: tcp-event-processing
     - port: 3001
       targetPort: 3001
-      name: tcp-internal
+      nodePort: 30801
+      name: tcp-admin
     - port: 3002
       targetPort: 3002
       nodePort: 30800
