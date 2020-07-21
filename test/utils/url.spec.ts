@@ -34,7 +34,7 @@ describe('url', () => {
                 urlData: function() {
                     return {
                         host: 'example.org'
-                    }
+                    };
                 },
                 protocol: 'https'
             } as any, null);
