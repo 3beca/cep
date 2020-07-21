@@ -39,7 +39,7 @@ The result will give us an url where we will submit http post with json event pa
 {
   "name": "sensor foo",
   "id": "5db3730cb2684d3d135f20a4",
-  "url": "http://localhost:8888/events/5db3730cb2684d3d135f20a4",
+  "url": "http://localhost:8889/events/5db3730cb2684d3d135f20a4",
   "createdAt": "2019-10-25T22:11:24.289Z",
   "updatedAt": "2019-10-25T22:11:24.289Z"
 }
