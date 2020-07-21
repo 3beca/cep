@@ -30,7 +30,7 @@ import { Config } from './config';
 import { getUrl } from './utils/url';
 
 export function buildAdminServer(
-	config: Config['adminHttp'],
+	config: Config['adminHttp'] & { eventProcessingHttpBaseUrl: string },
 	eventTypesService: EventTypesService,
 	targetsService: TargetsService,
 	rulesService: RulesService,
@@ -101,7 +101,7 @@ export function buildAdminServer(
 	// End points
 	app.register(buildCheckHealthRoutes());
 	app.register(buildVersionRoutes());
-	app.register(buildEventTypesRoutes(eventTypesService), { prefix: '/event-types' });
+	app.register(buildEventTypesRoutes(eventTypesService, config.eventProcessingHttpBaseUrl), { prefix: '/event-types' });
     app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
     app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
     app.register(buildEventsRoutes(eventsService), { prefix: '/events' });

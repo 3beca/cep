@@ -11,6 +11,10 @@ describe('admin server', () => {
         const config = buildConfig();
         app = await buildApp({
             ...config,
+            eventProcessingHttp: {
+                ...config.eventProcessingHttp,
+                baseUrl: 'https://api.mycep.com:443'
+            },
             mongodb: {
                 ...config.mongodb,
                 databaseName: `test-${new ObjectId()}`
@@ -314,7 +318,7 @@ describe('admin server', () => {
                 const event = JSON.parse(response.payload);
                 expect(response.headers.location).toBe(`http://localhost:80/event-types/${event.id}`);
                 expect(event.name).toBe('sensor-data');
-                expect(event.url).toBe(`http://localhost:80/events/${event.id}`);
+                expect(event.url).toBe(`https://api.mycep.com:443/events/${event.id}`);
                 expect(ObjectId.isValid(event.id)).toBe(true);
             });
 

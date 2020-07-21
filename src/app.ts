@@ -36,7 +36,10 @@ export async function buildApp(config: Config): Promise<App> {
     const rulesExecutionsService = buildRulesExecutionsService(db);
     const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
     const metricsServer = buildMetricsServer(metrics);
-    const adminServer = buildAdminServer(config.adminHttp,
+    const adminServer = buildAdminServer({
+            ...config.adminHttp,
+            eventProcessingHttpBaseUrl: config.eventProcessingHttp.baseUrl
+        },
         eventTypesService, targetsService, rulesService, eventsService, rulesExecutionsService, metrics);
     const eventProcessingServer = buildEventProcessingServer(config.eventProcessingHttp, engine, metrics);
     scheduler.setJobHandler('execute-rule', buildExecuteRuleJobHandler(engine));

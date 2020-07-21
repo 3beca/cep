@@ -82,12 +82,14 @@ const createSchema = {
     }
 };
 
-function toEventTypeResponse(eventType) {
-    // TODO: change to have a full external URL
-    return { ...eventType, url: `http://localhost:80/events/${eventType.id}` };
-}
+export function buildEventTypesRoutes(eventTypesService: EventTypesService, eventProcessingHttpBaseUrl: string) {
 
-export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
+    function toEventTypeResponse(eventType) {
+        return {
+            ...eventType,
+            url: `${eventProcessingHttpBaseUrl}/events/${eventType.id}`
+        };
+    }
 
     async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
         const { page, pageSize, search } = request.query;

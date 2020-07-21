@@ -60,7 +60,8 @@ describe('admin server', () => {
                 enableCors: true,
                 enableSwagger: false,
                 host: '',
-                port: 0
+                port: 0,
+                eventProcessingHttpBaseUrl: ''
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
@@ -90,7 +91,8 @@ describe('admin server', () => {
                 enableCors: true,
                 enableSwagger: false,
                 host: '',
-                port: 0
+                port: 0,
+                eventProcessingHttpBaseUrl: ''
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
@@ -160,7 +162,8 @@ describe('admin server', () => {
                 enableCors: true,
                 enableSwagger: false,
                 host: '',
-                port: 0
+                port: 0,
+                eventProcessingHttpBaseUrl: ''
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
