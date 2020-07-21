@@ -82,10 +82,7 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -107,10 +104,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/targets?page=1&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -128,10 +122,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=3',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/targets?page=1&pageSize=3'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -149,10 +140,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=2&pageSize=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/targets?page=2&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/targets?page=1&pageSize=2');
@@ -340,9 +328,6 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -361,9 +346,6 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example'
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -382,9 +364,6 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 const target = JSON.parse(responseCreateTarget.payload);
@@ -394,9 +373,6 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(responseCreateTarget2.statusCode).toBe(409);

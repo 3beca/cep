@@ -56,6 +56,24 @@ export function buildAdminServer(
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
+	// Fastify currently does not expose req.protocol in request object.
+	// Also it does not have support for X-Forwarded-Proto when trustProxy.
+	// Added code below inspired by https://github.com/fastify/fastify/pull/1805
+	if (trustProxy) {
+		app.decorateRequest('protocol', {
+			getter() {
+				return (this.headers['x-forwarded-proto'] ?? 'http').startsWith('https') ? 'https' : 'http';
+			}
+		});
+	} else {
+		app.decorateRequest('protocol', {
+			getter() {
+				// we only provide https support using a reverse proxy.
+				return 'http';
+			}
+		});
+	}
+
 	if (enableSwagger) {
 		app.register(fastifySwagger, {
 			routePrefix: '/documentation',
@@ -93,7 +111,7 @@ export function buildAdminServer(
 	if (enableCors) {
 		app.register(fastifyCors, {
 			origin: true,
-			methods: ['GET', 'POST', 'DELETE', 'PUT' ],
+			methods: ['GET', 'POST', 'DELETE', 'PUT'],
 			allowedHeaders: ['Content-Type']
 		});
 	}
@@ -102,10 +120,10 @@ export function buildAdminServer(
 	app.register(buildCheckHealthRoutes());
 	app.register(buildVersionRoutes());
 	app.register(buildEventTypesRoutes(eventTypesService, config.eventProcessingHttpBaseUrl), { prefix: '/event-types' });
-    app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
-    app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
-    app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
-    app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
+	app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
+	app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
+	app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
+	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
 
 	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks

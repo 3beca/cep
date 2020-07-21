@@ -3,12 +3,7 @@ import { getUrl } from '../../src/utils/url';
 describe('url', () => {
 
     const request = {
-        urlData() {
-            return {
-                port: 80,
-                host: 'localhost'
-            };
-        },
+        hostname: 'localhost:80',
         protocol: 'http'
     } as any;
 
@@ -31,11 +26,7 @@ describe('url', () => {
 
         it('should return url without port if not set', () => {
             const result = getUrl({
-                urlData: function() {
-                    return {
-                        host: 'example.org'
-                    };
-                },
+                hostname: 'example.org',
                 protocol: 'https'
             } as any, null);
             expect(result).toBe('https://example.org');

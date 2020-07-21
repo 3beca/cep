@@ -8,9 +8,9 @@ function removeEndSlash(path: string): string {
 }
 
 export function getUrl(request: FastifyRequest, path: string | null): string {
-    const { host, port } = request.urlData();
+    const { hostname } = request;
     const { protocol } = request as any;
-    return `${protocol}://${host}${port ? `:${port}` : ''}${path ? removeEndSlash(path) : ''}`;
+    return `${protocol}://${hostname}${path ? removeEndSlash(path) : ''}`;
 }
 
 function getPagedLink(request: FastifyRequest, page: number, pageSize: number, queryStrings: { [key:string]: string | number }): string {

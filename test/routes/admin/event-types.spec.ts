@@ -11,6 +11,10 @@ describe('admin server', () => {
         const config = buildConfig();
         app = await buildApp({
             ...config,
+            adminHttp: {
+                ...config.adminHttp,
+                trustProxy: true
+            },
             eventProcessingHttp: {
                 ...config.eventProcessingHttp,
                 baseUrl: 'https://api.mycep.com:443'
@@ -87,7 +91,8 @@ describe('admin server', () => {
                     method: 'GET',
                     url: '/event-types?search=T%3FY&pageSize=1&page=2',
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'http',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 expect(response.statusCode).toBe(200);
@@ -95,8 +100,8 @@ describe('admin server', () => {
                 const listResponse = JSON.parse(response.payload);
                 expect(listResponse.results.length).toBe(1);
                 expect(listResponse.results[0].name).toBe('my event?ype');
-                expect(listResponse.prev).toBe('http://localhost:80/event-types?page=1&pageSize=1&search=T%3FY');
-                expect(listResponse.next).toBe('http://localhost:80/event-types?page=3&pageSize=1&search=T%3FY');
+                expect(listResponse.prev).toBe('http://mycep.com/event-types?page=1&pageSize=1&search=T%3FY');
+                expect(listResponse.next).toBe('http://mycep.com/event-types?page=3&pageSize=1&search=T%3FY');
             });
 
             it('should set next and not prev link in first page when event types returned match page size', async () => {
@@ -111,12 +116,13 @@ describe('admin server', () => {
                     method: 'GET',
                     url: '/event-types?page=1&pageSize=2',
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'https',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/event-types?page=2&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('https://mycep.com/event-types?page=2&pageSize=2');
             });
 
             it('should not set next and not prev link in first page when event types returned are lower than page size', async () => {
@@ -131,7 +137,8 @@ describe('admin server', () => {
                     method: 'GET',
                     url: '/event-types?page=1&pageSize=3',
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'http',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
@@ -151,12 +158,13 @@ describe('admin server', () => {
                     method: 'GET',
                     url: '/event-types?page=2&pageSize=2',
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'https',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
-                expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/event-types?page=1&pageSize=2');
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/event-types?page=3&pageSize=2');
+                expect(payloadResponseNoPrev.prev).toBe('https://mycep.com/event-types?page=1&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('https://mycep.com/event-types?page=3&pageSize=2');
             });
 
             it('should return 400 with invalid page query string', async () => {
@@ -310,13 +318,14 @@ describe('admin server', () => {
                         name: 'sensor-data'
                     },
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'http',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const event = JSON.parse(response.payload);
-                expect(response.headers.location).toBe(`http://localhost:80/event-types/${event.id}`);
+                expect(response.headers.location).toBe(`http://mycep.com/event-types/${event.id}`);
                 expect(event.name).toBe('sensor-data');
                 expect(event.url).toBe(`https://api.mycep.com:443/events/${event.id}`);
                 expect(ObjectId.isValid(event.id)).toBe(true);
@@ -338,12 +347,13 @@ describe('admin server', () => {
                         name: 'same name'
                     },
                     headers: {
-                        ':scheme': 'http'
+                        'X-Forwarded-Proto': 'https',
+                        'X-Forwarded-Host': 'mycep.com'
                     }
                 });
                 expect(responseCreateEvent2.statusCode).toBe(409);
                 expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(responseCreateEvent2.headers.location).toBe(`http://localhost:80/event-types/${event.id}`);
+                expect(responseCreateEvent2.headers.location).toBe(`https://mycep.com/event-types/${event.id}`);
                 expect(responseCreateEvent2.payload).toBe(JSON.stringify({ message: `Event type name must be unique and is already taken by event type with id ${event.id}` }));
             });
         });

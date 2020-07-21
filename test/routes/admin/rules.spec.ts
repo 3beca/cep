@@ -98,10 +98,7 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?search=ru%3Fe&pageSize=1&page=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/rules?search=ru%3Fe&pageSize=1&page=2'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -127,10 +124,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=1&pageSize=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/rules?page=1&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -152,10 +146,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=1&pageSize=3',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/rules?page=1&pageSize=3'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -177,10 +168,7 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=2&pageSize=2',
-                    headers: {
-                        ':scheme': 'http'
-                    }
+                    url: '/rules?page=2&pageSize=2'
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/rules?page=1&pageSize=2');
@@ -707,9 +695,6 @@ describe('admin server', () => {
                         filters: {
                             value: 8
                         }
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -749,9 +734,6 @@ describe('admin server', () => {
                             unit: 'hour',
                             value: 5
                         }
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -795,9 +777,6 @@ describe('admin server', () => {
                             unit: 'second',
                             value: 1
                         }
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -889,9 +868,6 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
-                    },
-                    headers: {
-                        ':scheme': 'http'
                     }
                 });
                 expect(responseCreaterule2.statusCode).toBe(409);
