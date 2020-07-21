@@ -49,6 +49,8 @@ spec:
           value: "true"
         - name: CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY
           value: "true"
+        - name: CEP_EVENT_PROCESSING_HTTP_BASE_URL
+          value: "{{ .Values.deployment.env.eventProcessingHttpBaseUrl }}"
         - name: CEP_ADMIN_HTTP_PORT
           value: "3001"
         - name: CEP_ADMIN_HTTP_HOST
