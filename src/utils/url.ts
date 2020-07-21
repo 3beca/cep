@@ -15,7 +15,7 @@ export function getUrl(request: FastifyRequest, path: string | null): string {
 
 function getPagedLink(request: FastifyRequest, page: number, pageSize: number, queryStrings: { [key:string]: string | number }): string {
     const appendQueryStrings = Object.keys(queryStrings).map(k => `&${k}=${encodeURIComponent(queryStrings[k])}`).join();
-    const { path } = request.urlData();
+    const path = request.url.split('?')[0];
     return getUrl(request, `${path}?page=${page}&pageSize=${pageSize}${appendQueryStrings}`);
 }
 

@@ -8,7 +8,6 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { buildCheckHealthRoutes } from './routes/admin/check-health';
 import fastifyCors from 'fastify-cors';
 import fastifyMetrics from 'fastify-metrics';
-import fastifyUrlData from 'fastify-url-data';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -101,7 +100,6 @@ export function buildAdminServer(
 		});
 	}
 
-	app.register(fastifyUrlData);
 	app.register(fastifyMetrics, {
 		enableDefaultMetrics: false,
 		register: metrics.getRegister(),
