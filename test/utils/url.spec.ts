@@ -3,7 +3,7 @@ import { getUrl } from '../../src/utils/url';
 describe('url', () => {
 
     const request = {
-        getData() {
+        urlData() {
             return {
                 port: 80,
                 host: 'localhost',

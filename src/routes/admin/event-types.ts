@@ -84,7 +84,7 @@ const createSchema = {
 
 function toEventTypeResponse(eventType) {
     // TODO: change to have a full external URL
-    return { ...eventType, url: `http://localhost:8888/events/${eventType.id}` };
+    return { ...eventType, url: `http://localhost:80/events/${eventType.id}` };
 }
 
 export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
