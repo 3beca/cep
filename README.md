@@ -75,7 +75,7 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 To send an event palyoad just make an http post request to the event type url
 
 ```
-curl -X POST "http://localhost:8888/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
+curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
 ```
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.
