@@ -8,14 +8,15 @@ function removeEndSlash(path: string): string {
 }
 
 export function getUrl(request: FastifyRequest, path: string | null): string {
-    const { host, scheme, port } = (request as any).urlData();
-    return `${scheme}://${host}:${port}${path ? removeEndSlash(path) : ''}`;
+    const { host, port } = request.urlData();
+    const { protocol } = request as any;
+    return `${protocol}://${host}${port ? `:${port}` : ''}${path ? removeEndSlash(path) : ''}`;
 }
 
 function getPagedLink(request: FastifyRequest, page: number, pageSize: number, queryStrings: { [key:string]: string | number }): string {
     const appendQueryStrings = Object.keys(queryStrings).map(k => `&${k}=${encodeURIComponent(queryStrings[k])}`).join();
-    const { path, host, scheme, port } = (request as any).urlData();
-    return `${scheme}://${host}:${port}${path}?page=${page}&pageSize=${pageSize}${appendQueryStrings}`;
+    const { path } = request.urlData();
+    return getUrl(request, `${path}?page=${page}&pageSize=${pageSize}${appendQueryStrings}`);
 }
 
 export function getPrevLink(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, [key:string]: string | number } }>): string | undefined {
