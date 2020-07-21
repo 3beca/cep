@@ -1,22 +1,32 @@
-import { getExternalUrl } from '../../src/utils/url';
+import { getUrl } from '../../src/utils/url';
 
 describe('url', () => {
 
-    describe('getExternalUrl()', () => {
+    const request = {
+        getData() {
+            return {
+                port: 80,
+                host: 'localhost',
+                scheme: 'http'
+            }
+        }
+    } as any;
+
+    describe('getUrl()', () => {
 
         it('should remove end slash if present', () => {
-            const result = getExternalUrl('/my-path/');
-            expect(result).toBe('http://localhost:8888/my-path');
+            const result = getUrl(request, '/my-path/');
+            expect(result).toBe('http://localhost:80/my-path');
         });
 
         it('should not modify path if end slash is not present', () => {
-            const result = getExternalUrl('/my-path');
-            expect(result).toBe('http://localhost:8888/my-path');
+            const result = getUrl(request, '/my-path');
+            expect(result).toBe('http://localhost:80/my-path');
         });
 
         it('should return external url when path is null', () => {
-            const result = getExternalUrl(null);
-            expect(result).toBe('http://localhost:8888');
+            const result = getUrl(request, null);
+            expect(result).toBe('http://localhost:80');
         });
     });
 });

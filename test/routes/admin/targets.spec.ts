@@ -82,15 +82,18 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2'
+                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const listResponse = JSON.parse(response.payload);
                 expect(listResponse.results.length).toBe(1);
                 expect(listResponse.results[0].name).toBe('good targ?T');
-                expect(listResponse.prev).toBe('http://localhost:8888/targets?page=1&pageSize=1&search=tArg%3Ft');
-                expect(listResponse.next).toBe('http://localhost:8888/targets?page=3&pageSize=1&search=tArg%3Ft');
+                expect(listResponse.prev).toBe('http://localhost:80/targets?page=1&pageSize=1&search=tArg%3Ft');
+                expect(listResponse.next).toBe('http://localhost:80/targets?page=3&pageSize=1&search=tArg%3Ft');
             });
 
             it('should set next and not prev link in first page when targets returned match page size', async () => {
@@ -104,11 +107,14 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=2'
+                    url: '/targets?page=1&pageSize=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/targets?page=2&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/targets?page=2&pageSize=2');
             });
 
             it('should not set next and not prev link in first page when targets returned are lower than page size', async () => {
@@ -122,7 +128,10 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=3'
+                    url: '/targets?page=1&pageSize=3',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -140,11 +149,14 @@ describe('admin server', () => {
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=2&pageSize=2'
+                    url: '/targets?page=2&pageSize=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
-                expect(payloadResponseNoPrev.prev).toBe('http://localhost:8888/targets?page=1&pageSize=2');
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/targets?page=3&pageSize=2');
+                expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/targets?page=1&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/targets?page=3&pageSize=2');
             });
 
             it('should return 400 with invalid page query string', async () => {
@@ -328,12 +340,15 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const target = JSON.parse(response.payload);
-                expect(response.headers.location).toBe(`http://localhost:8888/targets/${target.id}`);
+                expect(response.headers.location).toBe(`http://localhost:80/targets/${target.id}`);
                 expect(target.name).toBe('a target');
                 expect(target.url).toBe('http://example.org');
                 expect(ObjectId.isValid(target.id)).toBe(true);
@@ -346,12 +361,15 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const target = JSON.parse(response.payload);
-                expect(response.headers.location).toBe(`http://localhost:8888/targets/${target.id}`);
+                expect(response.headers.location).toBe(`http://localhost:80/targets/${target.id}`);
                 expect(target.name).toBe('a target');
                 expect(target.url).toBe('http://example');
                 expect(ObjectId.isValid(target.id)).toBe(true);
@@ -364,6 +382,9 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 const target = JSON.parse(responseCreateTarget.payload);
@@ -373,11 +394,14 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 expect(responseCreateTarget2.statusCode).toBe(409);
                 expect(responseCreateTarget2.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(responseCreateTarget2.headers.location).toBe(`http://localhost:8888/targets/${target.id}`);
+                expect(responseCreateTarget2.headers.location).toBe(`http://localhost:80/targets/${target.id}`);
                 expect(responseCreateTarget2.payload).toBe(JSON.stringify({ message: `Target name must be unique and is already taken by target with id ${target.id}` }));
             });
         });

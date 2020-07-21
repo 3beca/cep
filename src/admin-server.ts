@@ -3,12 +3,12 @@ import packageInfo from '../package.json';
 import fastifySwagger from 'fastify-swagger';
 import NotFoundError from './errors/not-found-error';
 import ConflictError from './errors/conflict-error';
-import { getExternalUrl } from './utils/url';
 import FilterError from './filters/filter-error';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { buildCheckHealthRoutes } from './routes/admin/check-health';
 import fastifyCors from 'fastify-cors';
 import fastifyMetrics from 'fastify-metrics';
+import fastifyUrlData from 'fastify-url-data';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -27,6 +27,7 @@ import { buildRulesExecutionsRoutes } from './routes/admin/rules-executions';
 import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
 import { AppConfig } from './config';
+import { getUrl } from './utils/url';
 
 export function buildAdminServer(
 	config: AppConfig['adminHttp'],
@@ -82,6 +83,7 @@ export function buildAdminServer(
 		});
 	}
 
+	app.register(fastifyUrlData);
 	app.register(fastifyMetrics, {
 		enableDefaultMetrics: false,
 		register: metrics.getRegister(),
@@ -118,7 +120,7 @@ export function buildAdminServer(
 		}
 		if (error instanceof ConflictError) {
 			request.log.info(error);
-			reply.header('Location', getExternalUrl(`${request.url}/${error.id}`));
+			reply.header('Location', getUrl(request, `${request.url}/${error.id}`));
 			reply.status(409).send({ message: error.message });
 			return;
 		}

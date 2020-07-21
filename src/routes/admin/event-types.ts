@@ -1,4 +1,4 @@
-import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
+import { getNextLink, getPrevLink, getUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyReply, FastifyInstance, FastifyRequest } from 'fastify';
 import { Server } from 'http';
@@ -83,7 +83,8 @@ const createSchema = {
 };
 
 function toEventTypeResponse(eventType) {
-    return { ...eventType, url: `${getExternalUrl('/events')}/${eventType.id}` };
+    // TODO: change to have a full external URL
+    return { ...eventType, url: `http://localhost:8888/events/${eventType.id}` };
 }
 
 export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
@@ -119,7 +120,7 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService) {
     async function create(request: FastifyRequest<{ Body: { name: string }}>, reply: FastifyReply<Server>) {
         const { name } = request.body;
         const eventType = await eventTypesService.create({ name });
-        reply.header('Location', `${getExternalUrl(request.url)}/${eventType.id}`);
+        reply.header('Location', getUrl(request, `/event-types/${eventType.id}`));
         reply.status(201).send(toEventTypeResponse(eventType));
     }
 
