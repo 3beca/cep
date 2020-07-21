@@ -5,29 +5,29 @@ import logger from './logger';
 import { buildApp } from './app';
 
 async function main() {
-    logger.info('starting cep service');
+    logger.info('Starting cep service');
 
     const config = buildConfig();
     const { adminHttp, metricsHttp, eventProcessingHttp } = config;
     const app = await buildApp(config);
 
     await app.getMetricsServer().listen(metricsHttp.port, metricsHttp.host);
-    logger.info('started cep metrics http server. Listening at port', metricsHttp.port);
+    logger.info(`Started cep metrics http server. Listening at port ${metricsHttp.port}`);
 
     await app.getScheduler().start();
-    logger.info('started cep scheduler');
+    logger.info('Started cep scheduler');
 
     await app.getEventProcessingServer().listen(eventProcessingHttp.port, eventProcessingHttp.host);
-    logger.info('started cep event processing http server. Listening at port', eventProcessingHttp.port);
+    logger.info(`Started cep event processing http server. Listening at port ${eventProcessingHttp.port}`);
 
     await app.getAdminServer().listen(adminHttp.port, adminHttp.host);
-    logger.info('started cep admin http server. Listening at port', adminHttp.port);
+    logger.info(`Started cep admin http server. Listening at port ${adminHttp.port}`);
 
     process.on('SIGTERM', gracefulShutdown(app));
     process.on('SIGINT', gracefulShutdown(app));
 }
 
 main().catch(error => {
-    logger.error('error while starting up', error);
+    logger.error('Error while starting up - ' + error.message);
     process.exit(1);
 });
