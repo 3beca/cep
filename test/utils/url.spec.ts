@@ -8,7 +8,7 @@ describe('url', () => {
                 port: 80,
                 host: 'localhost',
                 scheme: 'http'
-            }
+            };
         }
     } as any;
 
