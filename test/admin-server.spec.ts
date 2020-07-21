@@ -8,14 +8,14 @@ import { EventTypesService } from '../src/services/event-types-service';
 import { TargetsService } from '../src/services/targets-service';
 import { RulesService } from '../src/services/rules-services';
 import { buildMetrics } from '../src/metrics';
-import { buildAppConfig } from '../src/config';
+import { buildConfig } from '../src/config';
 
 describe('admin server', () => {
     let app: App;
     let adminServer;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             adminHttp: {

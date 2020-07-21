@@ -1,7 +1,7 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import nock from 'nock';
-import { buildAppConfig } from '../../../src/config';
+import { buildConfig } from '../../../src/config';
 import { buildApp, App } from '../../../src/app';
 
 describe('event processing', () => {
@@ -10,7 +10,7 @@ describe('event processing', () => {
     let eventProcessingServer;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             mongodb: {

@@ -3,7 +3,7 @@ import { buildApp, App } from '../../../src/app';
 import { ObjectId } from 'mongodb';
 import { Scheduler } from '../../../src/scheduler';
 import nock from 'nock';
-import { buildAppConfig } from '../../../src/config';
+import { buildConfig } from '../../../src/config';
 
 describe('admin server', () => {
     let app: App;
@@ -11,7 +11,7 @@ describe('admin server', () => {
     let scheduler: Scheduler;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             mongodb: {

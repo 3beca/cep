@@ -2,7 +2,7 @@ jest.mock('pino');
 import { ObjectId } from 'bson';
 import { buildApp, App } from '../src/app';
 import { buildMetrics } from '../src/metrics';
-import { buildAppConfig } from '../src/config';
+import { buildConfig } from '../src/config';
 import { buildEventProcessingServer } from '../src/event-processing-server';
 import { Engine } from '../src/engine';
 
@@ -11,11 +11,11 @@ describe('event processing server', () => {
     let eventProcessingServer;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             eventProcessingHttp: {
-                ...config.adminHttp,
+                ...config.eventProcessingHttp,
                 enableSwagger: true
             },
             mongodb: {
@@ -55,7 +55,8 @@ describe('event processing server', () => {
                 trustProxy: false,
                 enableSwagger: false,
                 host: '',
-                port: 0
+                port: 0,
+                baseUrl: ''
             },
             null as unknown as Engine,
             buildMetrics());
@@ -80,7 +81,8 @@ describe('event processing server', () => {
                 trustProxy: false,
                 enableSwagger: false,
                 host: '',
-                port: 0
+                port: 0,
+                baseUrl: ''
             },
             null as unknown as Engine,
             buildMetrics());

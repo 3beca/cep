@@ -1,14 +1,14 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
 import { buildApp, App } from '../../../src/app';
-import { buildAppConfig } from '../../../src/config';
+import { buildConfig } from '../../../src/config';
 
 describe('admin server', () => {
     let app: App;
     let adminServer;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             mongodb: {

@@ -1,12 +1,13 @@
 import convict from 'convict';
 
-export type AppConfig = {
+export type Config = {
     env: 'production' | 'development' | 'test',
     eventProcessingHttp: {
         host: string,
         port: number,
         enableSwagger: boolean,
-        trustProxy: boolean
+        trustProxy: boolean,
+        baseUrl: string
     },
     adminHttp: {
         host: string,
@@ -25,8 +26,8 @@ export type AppConfig = {
     }
 }
 
-export function buildAppConfig() {
-    const config = convict<AppConfig>({
+export function buildConfig() {
+    const config = convict<Config>({
         env: {
             doc: 'The application environment.',
             format: ['production', 'development', 'test'],
@@ -57,6 +58,12 @@ export function buildAppConfig() {
                 format: Boolean,
                 default: false,
                 env: 'CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY',
+            },
+            baseUrl: {
+                doc: 'The base url of the event processing http api. This info is used to build the event processing url of a given event type',
+                format: String,
+                default: 'http://localhost:8889',
+                env: 'CEP_EVENT_PROCESSING_HTTP_BASE_URL',
             }
         },
         adminHttp: {

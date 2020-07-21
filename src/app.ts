@@ -13,7 +13,7 @@ import { buildMetrics } from './metrics';
 import { buildScheduler, Scheduler } from './scheduler';
 import buildExecuteRuleJobHandler from './jobs-handlers/execute-rule-job-handler';
 import { buildEventProcessingServer } from './event-processing-server';
-import { AppConfig } from './config';
+import { Config } from './config';
 
 export type App = {
     close(): Promise<void>;
@@ -24,7 +24,7 @@ export type App = {
     getScheduler(): Scheduler;
 }
 
-export async function buildApp(config: AppConfig): Promise<App> {
+export async function buildApp(config: Config): Promise<App> {
     const dbClient = await connect(config.mongodb.url);
     const db = await getAndSetupDatabase(dbClient, config.mongodb.databaseName);
     const metrics = buildMetrics();

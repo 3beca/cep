@@ -10,10 +10,10 @@ import { Server } from 'http';
 import { Metrics } from './metrics';
 import { Engine } from './engine';
 import { buildEventProcessingRoutes } from './routes/event-processing/events';
-import { AppConfig } from './config';
+import { Config } from './config';
 
 export function buildEventProcessingServer(
-	config: AppConfig['eventProcessingHttp'],
+	config: Config['eventProcessingHttp'],
 	engine: Engine,
 	metrics: Metrics): FastifyInstance {
 

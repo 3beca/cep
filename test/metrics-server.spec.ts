@@ -1,5 +1,5 @@
 jest.mock('pino');
-import { buildAppConfig } from '../src/config';
+import { buildConfig } from '../src/config';
 import { ObjectId } from 'bson';
 import { buildApp, App } from '../src/app';
 import { FastifyInstance } from 'fastify';
@@ -9,7 +9,7 @@ describe('metrics server', () => {
     let metricsServer: FastifyInstance;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             mongodb: {

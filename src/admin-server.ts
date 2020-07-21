@@ -26,11 +26,11 @@ import { buildRulesRoutes } from './routes/admin/rules';
 import { buildRulesExecutionsRoutes } from './routes/admin/rules-executions';
 import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
-import { AppConfig } from './config';
+import { Config } from './config';
 import { getUrl } from './utils/url';
 
 export function buildAdminServer(
-	config: AppConfig['adminHttp'],
+	config: Config['adminHttp'],
 	eventTypesService: EventTypesService,
 	targetsService: TargetsService,
 	rulesService: RulesService,

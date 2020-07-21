@@ -5,7 +5,7 @@ import { buildApp, App } from '../../src/app';
 import { JobHandler } from '../../src/jobs-handlers/job-handler';
 import NotFoundError from '../../src/errors/not-found-error';
 import InvalidOperationError from '../../src/errors/invalid-operation-error';
-import { buildAppConfig } from '../../src/config';
+import { buildConfig } from '../../src/config';
 
 describe('execute rule job handler', () => {
     let app: App;
@@ -14,7 +14,7 @@ describe('execute rule job handler', () => {
     let executeRuleJobHandler: JobHandler;
 
     beforeEach(async () => {
-        const config = buildAppConfig();
+        const config = buildConfig();
         app = await buildApp({
             ...config,
             mongodb: {
