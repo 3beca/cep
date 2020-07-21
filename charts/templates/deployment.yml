@@ -21,14 +21,14 @@ spec:
         readinessProbe:
           httpGet:
             path: /check-health
-            port: 3000
+            port: 3001
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
           exec:
           httpGet:
             path: /check-health
-            port: 3000
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
         resources:
