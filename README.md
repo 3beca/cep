@@ -32,7 +32,7 @@ Cep is very simple. It is modeled in 3 main concepts:
 First of all we want tell cep that an event type exists. To create an event type we just need to provide an unique name:
 
 ```
-curl -X POST "http://localhost:8888/admin/event-types/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"sensor foo\"}"
+curl -X POST "http://localhost:8888/event-types/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"sensor foo\"}"
 ```
 The result will give us an url where we will submit http post with json event payload:
 ```
@@ -52,7 +52,7 @@ A target represents an external system that will be called based on certain rule
 To create a target we just need to provide an unique name and an url.
 
 ```
-curl -X POST "http://localhost:8888/admin/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
+curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
 ```
 
 ### Create a Rule
@@ -67,7 +67,7 @@ A rule can be of the following types:
 To create a realtime rule we must provide an unique name, a target id, an event type id and a filter (this last one is optional).
 
 ```
-curl -X POST "http://localhost:8888/admin/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
+curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
 ```
 
 ### Send event payload
@@ -75,7 +75,7 @@ curl -X POST "http://localhost:8888/admin/rules/" -H "accept: application/json" 
 To send an event palyoad just make an http post request to the event type url
 
 ```
-curl -X POST "http://localhost:8888/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
+curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
 ```
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.

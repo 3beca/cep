@@ -1,21 +1,26 @@
 jest.mock('pino');
 import { ObjectId } from 'mongodb';
-import config from '../../../src/config';
-import { buildApp } from '../../../src/app';
+import { buildApp, App } from '../../../src/app';
+import { buildConfig } from '../../../src/config';
 
-describe('admin', () => {
-    let app;
-    let server;
+describe('admin server', () => {
+    let app: App;
+    let adminServer;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
-        server = app.getServer();
+        const config = buildConfig();
+        app = await buildApp({
+            ...config,
+            eventProcessingHttp: {
+                ...config.eventProcessingHttp,
+                baseUrl: 'https://api.mycep.com:443'
+            },
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
+        adminServer = app.getAdminServer();
     });
 
     afterEach(async () => {
@@ -28,9 +33,9 @@ describe('admin', () => {
         describe('get', () => {
 
             it('should return 200 with array of event types', async () => {
-                const createResponse = await server.inject({
+                const createResponse = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'an event type'
                     }
@@ -39,9 +44,9 @@ describe('admin', () => {
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdEvent = JSON.parse(createResponse.payload);
 
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types'
+                    url: '/event-types'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -52,15 +57,15 @@ describe('admin', () => {
             });
 
             it('should return 200 with array of event types filtered by search query string', async () => {
-                await createEventType(server, 'my event?ype');
-                await createEventType(server, 't?y');
-                await createEventType(server, 'good targ?t');
-                await createEventType(server, 'bad targ?t');
-                await createEventType(server, 'bbbbt?yppp');
+                await createEventType(adminServer, 'my event?ype');
+                await createEventType(adminServer, 't?y');
+                await createEventType(adminServer, 'good targ?t');
+                await createEventType(adminServer, 'bad targ?t');
+                await createEventType(adminServer, 'bbbbt?yppp');
 
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?search=T%3FY'
+                    url: '/event-types?search=T%3FY'
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -72,53 +77,62 @@ describe('admin', () => {
             });
 
             it('should return 200 with next and prev links filtered by search query string', async () => {
-                await createEventType(server, 'my event?ype');
-                await createEventType(server, 't?y');
-                await createEventType(server, 'good targ?t');
-                await createEventType(server, 'bad targ?t');
-                await createEventType(server, 'bbbbt?yppp');
+                await createEventType(adminServer, 'my event?ype');
+                await createEventType(adminServer, 't?y');
+                await createEventType(adminServer, 'good targ?t');
+                await createEventType(adminServer, 'bad targ?t');
+                await createEventType(adminServer, 'bbbbt?yppp');
 
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?search=T%3FY&pageSize=1&page=2'
+                    url: '/event-types?search=T%3FY&pageSize=1&page=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const listResponse = JSON.parse(response.payload);
                 expect(listResponse.results.length).toBe(1);
                 expect(listResponse.results[0].name).toBe('my event?ype');
-                expect(listResponse.prev).toBe('http://localhost:8888/admin/event-types?page=1&pageSize=1&search=T%3FY');
-                expect(listResponse.next).toBe('http://localhost:8888/admin/event-types?page=3&pageSize=1&search=T%3FY');
+                expect(listResponse.prev).toBe('http://localhost:80/event-types?page=1&pageSize=1&search=T%3FY');
+                expect(listResponse.next).toBe('http://localhost:80/event-types?page=3&pageSize=1&search=T%3FY');
             });
 
             it('should set next and not prev link in first page when event types returned match page size', async () => {
-                await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
+                await Promise.all([1, 2, 3, 4, 5].map(value => adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'an event type ' + value
                     }
                 })));
-                const responseNoPrev = await server.inject({
+                const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?page=1&pageSize=2'
+                    url: '/event-types?page=1&pageSize=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/event-types?page=2&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/event-types?page=2&pageSize=2');
             });
 
             it('should not set next and not prev link in first page when event types returned are lower than page size', async () => {
-                await Promise.all([1, 2].map(value => server.inject({
+                await Promise.all([1, 2].map(value => adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'an event type ' + value
                     }
                 })));
-                const responseNoPrev = await server.inject({
+                const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?page=1&pageSize=3'
+                    url: '/event-types?page=1&pageSize=3',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -126,26 +140,29 @@ describe('admin', () => {
             });
 
             it('should set next and prev link if a middle page', async () => {
-                await Promise.all([1, 2, 3, 4, 5].map(value => server.inject({
+                await Promise.all([1, 2, 3, 4, 5].map(value => adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'an event type ' + value
                     }
                 })));
-                const responseNoPrev = await server.inject({
+                const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?page=2&pageSize=2'
+                    url: '/event-types?page=2&pageSize=2',
+                    headers: {
+                        ':scheme': 'http'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
-                expect(payloadResponseNoPrev.prev).toBe('http://localhost:8888/admin/event-types?page=1&pageSize=2');
-                expect(payloadResponseNoPrev.next).toBe('http://localhost:8888/admin/event-types?page=3&pageSize=2');
+                expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/event-types?page=1&pageSize=2');
+                expect(payloadResponseNoPrev.next).toBe('http://localhost:80/event-types?page=3&pageSize=2');
             });
 
             it('should return 400 with invalid page query string', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?page=invalid'
+                    url: '/event-types?page=invalid'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -157,9 +174,9 @@ describe('admin', () => {
             });
 
             it('should return 400 with invalid pageSize query string', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?pageSize=invalid'
+                    url: '/event-types?pageSize=invalid'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -171,9 +188,9 @@ describe('admin', () => {
             });
 
             it('should return 400 with pageSize query string greater than 100', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?pageSize=101'
+                    url: '/event-types?pageSize=101'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -185,9 +202,9 @@ describe('admin', () => {
             });
 
             it('should return 400 with pageSize query string lesser than 1', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?pageSize=0'
+                    url: '/event-types?pageSize=0'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -199,9 +216,9 @@ describe('admin', () => {
             });
 
             it('should return 400 with page query string lesser than 1', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types?page=0'
+                    url: '/event-types?page=0'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -216,9 +233,9 @@ describe('admin', () => {
         describe('get by id', () => {
 
             it('should return 400 when event identifier is not a valid ObjectId', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types/invalid-object-id-here'
+                    url: '/event-types/invalid-object-id-here'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -226,9 +243,9 @@ describe('admin', () => {
             });
 
             it('should return 404 when event does not exists', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types/' + new ObjectId()
+                    url: '/event-types/' + new ObjectId()
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -236,9 +253,9 @@ describe('admin', () => {
             });
 
             it('should return 200 with the event types', async () => {
-                const createResponse = await server.inject({
+                const createResponse = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'an event type'
                     }
@@ -247,9 +264,9 @@ describe('admin', () => {
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdEvent = JSON.parse(createResponse.payload);
 
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types/' + createdEvent.id
+                    url: '/event-types/' + createdEvent.id
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -260,9 +277,9 @@ describe('admin', () => {
 
         describe('post', () => {
             it('should return 400 when name is undefined', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: undefined
                     }
@@ -273,9 +290,9 @@ describe('admin', () => {
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'a'.repeat(101)
                     }
@@ -286,41 +303,47 @@ describe('admin', () => {
             });
 
             it('should return 201 with created event when request is valid', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'sensor-data'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 expect(response.statusCode).toBe(201);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const event = JSON.parse(response.payload);
-                expect(response.headers.location).toBe(`http://localhost:8888/admin/event-types/${event.id}`);
+                expect(response.headers.location).toBe(`http://localhost:80/event-types/${event.id}`);
                 expect(event.name).toBe('sensor-data');
-                expect(event.url).toBe(`http://localhost:8888/events/${event.id}`);
+                expect(event.url).toBe(`https://api.mycep.com:443/events/${event.id}`);
                 expect(ObjectId.isValid(event.id)).toBe(true);
             });
 
             it('should return 409 when try to create an event type with the same name', async () => {
-                const responseCreateEvent = await server.inject({
+                const responseCreateEvent = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'same name'
                     }
                 });
                 const event = JSON.parse(responseCreateEvent.payload);
-                const responseCreateEvent2 = await server.inject({
+                const responseCreateEvent2 = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'same name'
+                    },
+                    headers: {
+                        ':scheme': 'http'
                     }
                 });
                 expect(responseCreateEvent2.statusCode).toBe(409);
                 expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(responseCreateEvent2.headers.location).toBe(`http://localhost:8888/admin/event-types/${event.id}`);
+                expect(responseCreateEvent2.headers.location).toBe(`http://localhost:80/event-types/${event.id}`);
                 expect(responseCreateEvent2.payload).toBe(JSON.stringify({ message: `Event type name must be unique and is already taken by event type with id ${event.id}` }));
             });
         });
@@ -328,9 +351,9 @@ describe('admin', () => {
         describe('delete', () => {
 
             it('should return 400 when event identifier is not a valid ObjectId', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/admin/event-types/invalid-object-id-here'
+                    url: '/event-types/invalid-object-id-here'
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -338,17 +361,17 @@ describe('admin', () => {
             });
 
             it('should return 204 when event does not exist', async () => {
-                const response = await server.inject({
+                const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/admin/event-types/' + new ObjectId()
+                    url: '/event-types/' + new ObjectId()
                 });
                 expect(response.statusCode).toBe(204);
             });
 
             it('should return 204 when event exists', async () => {
-                const createResponse = await server.inject({
+                const createResponse = await adminServer.inject({
                     method: 'POST',
-                    url: '/admin/event-types',
+                    url: '/event-types',
                     body: {
                         name: 'sensor-data'
                     }
@@ -357,27 +380,27 @@ describe('admin', () => {
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdEvent = JSON.parse(createResponse.payload);
 
-                const deleteResponse = await server.inject({
+                const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/admin/event-types/' + createdEvent.id
+                    url: '/event-types/' + createdEvent.id
                 });
                 expect(deleteResponse.statusCode).toBe(204);
 
-                const getResponse = await server.inject({
+                const getResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/admin/event-types/' + createdEvent.id
+                    url: '/event-types/' + createdEvent.id
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
 
             it('should return 400 when event type is used in one or more rules', async () => {
-                const eventType = await createEventType(server);
-                const target = await createTarget(server);
-                const rule = await createRule(server, target.id, eventType.id);
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const rule = await createRule(adminServer, target.id, eventType.id);
 
-                const deleteResponse = await server.inject({
+                const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/admin/event-types/' + eventType.id
+                    url: '/event-types/' + eventType.id
                 });
                 expect(deleteResponse.statusCode).toBe(400);
                 expect(deleteResponse.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -390,10 +413,10 @@ describe('admin', () => {
         });
     });
 
-    async function createTarget(server) {
-        const createResponse = await server.inject({
+    async function createTarget(adminServer) {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/targets',
+            url: '/targets',
             body: {
                 name: 'a target',
                 url: 'http://example.org'
@@ -404,10 +427,10 @@ describe('admin', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createRule(server, targetId, eventTypeId) {
-        const createResponse = await server.inject({
+    async function createRule(adminServer, targetId, eventTypeId) {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/rules',
+            url: '/rules',
             body: {
                 name: 'a rule',
                 type: 'realtime',
@@ -423,10 +446,10 @@ describe('admin', () => {
         return JSON.parse(createResponse.payload);
     }
 
-    async function createEventType(server, name = 'an event type') {
-        const createResponse = await server.inject({
+    async function createEventType(adminServer, name = 'an event type') {
+        const createResponse = await adminServer.inject({
             method: 'POST',
-            url: '/admin/event-types',
+            url: '/event-types',
             body: {
                 name
             }

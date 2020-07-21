@@ -1,5 +1,5 @@
 jest.mock('pino');
-import config from '../src/config';
+import { buildConfig } from '../src/config';
 import { ObjectId } from 'bson';
 import { buildApp, App } from '../src/app';
 import { FastifyInstance } from 'fastify';
@@ -9,13 +9,14 @@ describe('metrics server', () => {
     let metricsServer: FastifyInstance;
 
     beforeEach(async () => {
-        const options = {
-            databaseName: `test-${new ObjectId()}`,
-            databaseUrl: config.mongodb.databaseUrl,
-            trustProxy: false,
-            enableCors: false
-        };
-        app = await buildApp(options);
+        const config = buildConfig();
+        app = await buildApp({
+            ...config,
+            mongodb: {
+                ...config.mongodb,
+                databaseName: `test-${new ObjectId()}`
+            }
+        });
         metricsServer = app.getMetricsServer();
     });
 
@@ -25,7 +26,7 @@ describe('metrics server', () => {
     });
 
     it('should return 200 with prometheus metrics', async () => {
-        await app.getServer().inject({
+        await app.getAdminServer().inject({
             method: 'GET',
             url: '/test'
         });
@@ -37,12 +38,12 @@ describe('metrics server', () => {
         expect(response.headers['content-type']).toBe('text/plain');
         expect(response.payload).toContain('process_cpu_user_seconds_total');
         expect(response.payload).toContain('nodejs_version_info');
-        expect(response.payload).toContain('cep_server_http_request_duration_seconds_bucket');
-        expect(response.payload).toContain('cep_server_http_request_duration_seconds_sum');
-        expect(response.payload).toContain('cep_server_http_request_duration_seconds_count');
-        expect(response.payload).toContain('cep_server_http_request_summary_seconds');
-        expect(response.payload).toContain('cep_server_http_request_summary_seconds_sum');
-        expect(response.payload).toContain('cep_server_http_request_summary_seconds_count');
+        expect(response.payload).toContain('cep_admin_server_http_request_duration_seconds_bucket');
+        expect(response.payload).toContain('cep_admin_server_http_request_duration_seconds_sum');
+        expect(response.payload).toContain('cep_admin_server_http_request_duration_seconds_count');
+        expect(response.payload).toContain('cep_admin_server_http_request_summary_seconds');
+        expect(response.payload).toContain('cep_admin_server_http_request_summary_seconds_sum');
+        expect(response.payload).toContain('cep_admin_server_http_request_summary_seconds_count');
     });
 
     it('should return 500 when unhandled errors happened', async () => {

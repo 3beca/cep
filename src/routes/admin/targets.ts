@@ -1,4 +1,4 @@
-import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
+import { getNextLink, getPrevLink, getUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { ObjectId } from 'mongodb';
@@ -118,7 +118,7 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
     async function create(request: FastifyRequest<{ Body: { name:string, url: string} }>, reply: FastifyReply<Server>) {
         const { name, url } = request.body;
         const target = await targetsService.create({ name, url });
-        reply.header('Location', `${getExternalUrl(request.url)}/${target.id}`);
+        reply.header('Location', getUrl(request, `/targets/${target.id}`));
         reply.status(201).send(target);
     }
 

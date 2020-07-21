@@ -17,18 +17,18 @@ spec:
     spec:
       containers:
       - name: tribeca-cep
-        image: {{ .Values.image }}      
+        image: {{ .Values.image }}
         readinessProbe:
           httpGet:
-            path: /admin/check-health
-            port: 3000
+            path: /check-health
+            port: 3001
           initialDelaySeconds: 5
-          periodSeconds: 5       
+          periodSeconds: 5
         livenessProbe:
           exec:
           httpGet:
-            path: /admin/check-health
-            port: 3000               
+            path: /check-health
+            port: 3001
           initialDelaySeconds: 15
           periodSeconds: 5
         resources:
@@ -41,27 +41,29 @@ spec:
         env:
         - name: NODE_ENV
           value: production
-        - name: HTTP_PORT
+        - name: CEP_EVENT_PROCESSING_HTTP_PORT
           value: "3000"
-        - name: HTTP_HOST
+        - name: CEP_EVENT_PROCESSING_HTTP_HOST
           value: "0.0.0.0"
-        - name: EXTERNAL_HTTP_PROTOCOL
-          value: https
-        - name: EXTERNAL_HTTP_HOST
-          value: "{{ .Values.deployment.env.externalHttpHost }}"
-        - name: EXTERNAL_HTTP_PORT
-          value: "443"
-        - name: INTERNAL_HTTP_HOST
-          value: "tribeca-cep"
-        - name: INTERNAL_HTTP_PORT
+        - name: CEP_EVENT_PROCESSING_HTTP_ENABLE_SWAGGER
+          value: "true"
+        - name: CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY
+          value: "true"
+        - name: CEP_EVENT_PROCESSING_HTTP_BASE_URL
+          value: "{{ .Values.deployment.env.eventProcessingHttpBaseUrl }}"
+        - name: CEP_ADMIN_HTTP_PORT
           value: "3001"
-        - name: METRICS_HTTP_HOST
+        - name: CEP_ADMIN_HTTP_HOST
           value: "0.0.0.0"
-        - name: METRICS_HTTP_PORT
+        - name: CEP_ADMIN_HTTP_ENABLE_SWAGGER
+          value: "true"
+        - name: CEP_ADMIN_HTTP_ENABLE_CORS
+          value: "true"
+        - name: CEP_ADMIN_HTTP_TRUST_PROXY
+          value: "true"
+        - name: CEP_METRICS_HTTP_PORT
           value: "3002"
-        - name: TRUST_PROXY
-          value: "true"
-        - name: ENABLE_CORS
-          value: "true"
-        - name: MONGODB_URL
+        - name: CEP_METRICS_HTTP_HOST
+          value: "0.0.0.0"
+        - name: CEP_MONGODB_URL
           value: mongodb://10.1.1.1:27017

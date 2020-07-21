@@ -1,88 +1,132 @@
 import convict from 'convict';
 
-const config = convict({
-    env: {
-        doc: 'The application environment.',
-        format: ['production', 'development', 'test'],
-        default: 'development',
-        env: 'NODE_ENV'
+export type Config = {
+    env: 'production' | 'development' | 'test',
+    eventProcessingHttp: {
+        host: string,
+        port: number,
+        enableSwagger: boolean,
+        trustProxy: boolean,
+        baseUrl: string
     },
-    http: {
-        host: {
-            doc: 'The host ip address to bind.',
-            format: String,
-            default: 'localhost',
-            env: 'HTTP_HOST',
-        },
-        port: {
-            doc: 'The port to bind.',
-            format: 'port',
-            default: 8888,
-            env: 'HTTP_PORT',
-        }
-    },
-    externalHttp: {
-        protocol: {
-            doc: 'The external protocol.',
-            format: ['http', 'https'],
-            default: 'http',
-            env: 'EXTERNAL_HTTP_PROTOCOL',
-        },
-        host: {
-            doc: 'The external host.',
-            format: String,
-            default: 'localhost',
-            env: 'EXTERNAL_HTTP_HOST',
-        },
-        port: {
-            doc: 'The external port.',
-            format: 'port',
-            default: 8888,
-            env: 'EXTERNAL_HTTP_PORT',
-        }
+    adminHttp: {
+        host: string,
+        port: number,
+        enableSwagger: boolean,
+        enableCors: boolean,
+        trustProxy: boolean
     },
     metricsHttp: {
-        host: {
-            doc: 'The metrics host.',
-            format: String,
-            default: 'localhost',
-            env: 'METRICS_HTTP_HOST',
-        },
-        port: {
-            doc: 'The metrics port.',
-            format: 'port',
-            default: 8890,
-            env: 'METRICS_HTTP_PORT',
-        }
-    },
-    trustProxy: {
-        doc: 'indicates if the application is served behind a reverse proxy.',
-        format: Boolean,
-        default: false,
-        env: 'TRUST_PROXY',
-    },
-    enableCors: {
-        doc: 'indicates if the application supports cors requests.',
-        format: Boolean,
-        default: false,
-        env: 'ENABLE_CORS'
+        host: string,
+        port: number
     },
     mongodb: {
-        databaseUrl: {
-            doc: 'Mongodb connection string url.',
-            format: String,
-            default: 'mongodb://localhost:27017',
-            env: 'MONGODB_URL',
+        url: string,
+        databaseName: string
+    }
+}
+
+export function buildConfig() {
+    const config = convict<Config>({
+        env: {
+            doc: 'The application environment.',
+            format: ['production', 'development', 'test'],
+            default: 'development',
+            env: 'NODE_ENV'
         },
-        databaseName: {
-            doc: 'Mongodb database name.',
-            format: String,
-            default: 'tribeca-cep',
-            env: 'MONGODB_DATABASE_NAME'
+        eventProcessingHttp: {
+            host: {
+                doc: 'The host ip address to bind the event processsing http api.',
+                format: String,
+                default: 'localhost',
+                env: 'CEP_EVENT_PROCESSING_HTTP_HOST',
+            },
+            port: {
+                doc: 'The port to bind the event processing http api.',
+                format: 'port',
+                default: 8889,
+                env: 'CEP_EVENT_PROCESSING_HTTP_PORT',
+            },
+            enableSwagger: {
+                doc: 'It indicates if Swagger UI is enabled for the event processing http api.',
+                format: Boolean,
+                default: false,
+                env: 'CEP_EVENT_PROCESSING_HTTP_ENABLE_SWAGGER'
+            },
+            trustProxy: {
+                doc: 'It indicates if the event processing http api is served behind a trusted proxy.',
+                format: Boolean,
+                default: false,
+                env: 'CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY',
+            },
+            baseUrl: {
+                doc: 'The base url of the event processing http api. This info is used to build the event processing url of a given event type',
+                format: String,
+                default: 'http://localhost:8889',
+                env: 'CEP_EVENT_PROCESSING_HTTP_BASE_URL',
+            }
+        },
+        adminHttp: {
+            host: {
+                doc: 'The host ip address to bind the admin http api.',
+                format: String,
+                default: 'localhost',
+                env: 'CEP_ADMIN_HTTP_HOST',
+            },
+            port: {
+                doc: 'The port to bind the admin http api.',
+                format: 'port',
+                default: 8888,
+                env: 'CEP_ADMIN_HTTP_PORT',
+            },
+            trustProxy: {
+                doc: 'It indicates if the admin http api is served behind a trusted proxy.',
+                format: Boolean,
+                default: false,
+                env: 'CEP_ADMIN_HTTP_TRUST_PROXY',
+            },
+            enableCors: {
+                doc: 'It indicates if cors requests are enabled for the admin http api.',
+                format: Boolean,
+                default: false,
+                env: 'CEP_ADMIN_HTTP_ENABLE_CORS'
+            },
+            enableSwagger: {
+                doc: 'It indicates if Swagger UI is enabled for the admin http api.',
+                format: Boolean,
+                default: false,
+                env: 'CEP_ADMIN_HTTP_ENABLE_SWAGGER'
+            }
+        },
+        metricsHttp: {
+            host: {
+                doc: 'The host ip address to bind the metrics http api.',
+                format: String,
+                default: 'localhost',
+                env: 'CEP_METRICS_HTTP_HOST',
+            },
+            port: {
+                doc: 'The port to bind the metrics http api.',
+                format: 'port',
+                default: 8890,
+                env: 'CEP_METRICS_HTTP_PORT',
+            }
+        },
+        mongodb: {
+            url: {
+                doc: 'The MongoDB connection string url.',
+                format: String,
+                default: 'mongodb://localhost:27017',
+                env: 'CEP_MONGODB_URL',
+            },
+            databaseName: {
+                doc: 'The MongoDB database name.',
+                format: String,
+                default: 'tribeca-cep',
+                env: 'CEP_MONGODB_DATABASE_NAME'
+            }
         }
-    },
-});
-
-config.validate({ allowed: 'strict' });
-
-export default config.getProperties();
+    });
+    config.validate({ allowed: 'strict' });
+    return config.getProperties();
+}

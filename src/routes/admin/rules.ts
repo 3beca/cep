@@ -1,4 +1,4 @@
-import { getNextLink, getPrevLink, getExternalUrl } from '../../utils/url';
+import { getNextLink, getPrevLink, getUrl } from '../../utils/url';
 import NotFoundError from '../../errors/not-found-error';
 import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { Server } from 'http';
@@ -217,7 +217,7 @@ export function buildRulesRoutes(
             targetId: ObjectId.createFromHexString(targetId),
         };
         const rule = await rulesService.create(ruleToCreate);
-        reply.header('Location', `${getExternalUrl(request.url)}/${rule.id}`);
+        reply.header('Location', getUrl(request, `/rules/${rule.id}`));
         reply.status(201).send(await toRuleDto(rule));
     }
 
