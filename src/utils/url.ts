@@ -8,8 +8,7 @@ function removeEndSlash(path: string): string {
 }
 
 export function getUrl(request: FastifyRequest, path: string | null): string {
-    const { hostname } = request;
-    const { protocol } = request as any;
+    const { hostname, protocol } = request;
     return `${protocol}://${hostname}${path ? removeEndSlash(path) : ''}`;
 }
 
