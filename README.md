@@ -9,8 +9,32 @@ A simple complex event processing system
 **Table of Contents**
 
 - [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Admin Http API](#admin-http-api)
+  - [Create an Event Type](#create-an-event-type)
+  - [Create a Target](#create-a-target)
+  - [Create a Rule](#create-a-rule)
+- [Event Processing Http API](#event-processing-http-api)
+  - [Send an event](#send-an-event)
+- [Configuration](#configuration)
+- [Admin User Interface](#admin-user-interface)
+- [Docker Compose](#docker-compose)
+- [Swagger](#swagger)
+- [Test](#test)
+- [License](#license)
+
+## Introduction
+
+C.E.P. stays for Complex Event Processing. Its main goal is to allow you to process events in real time, create alerts, automate processes, and perform stream analytics.
+
+It is modeled in 3 main concepts:
+* **Event Type**: define a type of event. This can represent a sensor (i.e.: sensor X temperature).
+* **Target**: web hook urls to forward events payload based on rule matching
+* **Rule**: a rule is created for an event type, with a filter that will be evaluated for each event payload received and a target that will be called whenever the filter matches the event payload.
 
 ## Getting Started
+
+Install the [NodeJs](https://nodejs.org) runtime. Latest LTS is recommended.
 
 Clone the repo. Install dependencies:
 
@@ -18,42 +42,19 @@ Clone the repo. Install dependencies:
 npm ci
 ```
 
-After this is done, run the application in watch mode
+Now, run the application prompting the following command:
+
+```
+npm run build && npm run start
+```
+
+or run it in watch mode prompting the following command:
 
 ```
 npm run start-watch
 ```
 
-## Introduction
-
-C.E.P. stays for Complex Event Processing. 
-
-It is modeled in 3 main concepts:
-* **Event Type**: define a type of event where you can send event payload to a given url
-* **Target**: web hook urls to send event payload based on rule matching
-* **Rule**: a rule is created for an event type, with a filter that will be evaluated for each event payload received and a target that will be called whenever the filter matches the event payload
-
-# Configuration
-
-The environment variable to configure your cep instance:
-
-|ENV|Description|Type|Default|
-|---|-----------|----|-------|
-|NODE_ENV|the application environment.|string|development|
-|CEP_EVENT_PROCESSING_HTTP_HOST|The host ip address to bind the event processsing http api.|string|localhost|
-|CEP_EVENT_PROCESSING_HTTP_PORT|The port to bind the event processing http api.|port|8889|
-|CEP_EVENT_PROCESSING_HTTP_ENABLE_SWAGGER|It indicates if Swagger UI is enabled for the event processing http api.|boolean|false|
-|CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY|It indicates if the event processing http api is served behind a trusted proxy.|boolean|false|
-|CEP_EVENT_PROCESSING_HTTP_BASE_URL|The base url of the event processing http api. This info is used to build the event processing url of a given event type|string|http://localhost:8889|
-|CEP_ADMIN_HTTP_HOST|The host ip address to bind the admin http api.|string|localhost|
-|CEP_ADMIN_HTTP_PORT|The port to bind the admin http api.|port|8888|
-|CEP_ADMIN_HTTP_TRUST_PROXY|It indicates if the admin http api is served behind a trusted proxy.|boolean|false|
-|CEP_ADMIN_HTTP_ENABLE_CORS|It indicates if cors requests are enabled for the admin http api.|boolean|false|
-|CEP_ADMIN_HTTP_ENABLE_SWAGGER|It indicates if Swagger UI is enabled for the admin http api.|boolean|false|
-|CEP_METRICS_HTTP_HOST|The host ip address to bind the metrics http api.|string|localhost|
-|CEP_METRICS_HTTP_PORT|The port to bind the metrics http api.|port|8890|
-|CEP_MONGODB_URL|The MongoDB connection string url.|string|mongodb://localhost:27017|
-|CEP_MONGODB_DATABASE_NAME|The MongoDB database name.|string|tribeca-cep|
+**NOTE**: in order to run, a mongod server must be listening at http://localhost:27017. See [Configuration](#configuration) to change the default database connection url.
 
 # Admin Http API
 
@@ -104,7 +105,7 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 
 ## Event Processing Http API
 
-### Send event payload
+### Send an event
 
 To send an event palyoad just make an http post request to the event type url
 
@@ -114,9 +115,31 @@ curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept:
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.
 
+# Configuration
+
+The environment variable to configure your cep instance:
+
+|ENV|Description|Type|Default|
+|---|-----------|----|-------|
+|NODE_ENV|the application environment.|string|development|
+|CEP_EVENT_PROCESSING_HTTP_HOST|The host ip address to bind the event processsing http api.|string|localhost|
+|CEP_EVENT_PROCESSING_HTTP_PORT|The port to bind the event processing http api.|port|8889|
+|CEP_EVENT_PROCESSING_HTTP_ENABLE_SWAGGER|It indicates if Swagger UI is enabled for the event processing http api.|boolean|false|
+|CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY|It indicates if the event processing http api is served behind a trusted proxy.|boolean|false|
+|CEP_EVENT_PROCESSING_HTTP_BASE_URL|The base url of the event processing http api. This info is used to build the event processing url of a given event type|string|http://localhost:8889|
+|CEP_ADMIN_HTTP_HOST|The host ip address to bind the admin http api.|string|localhost|
+|CEP_ADMIN_HTTP_PORT|The port to bind the admin http api.|port|8888|
+|CEP_ADMIN_HTTP_TRUST_PROXY|It indicates if the admin http api is served behind a trusted proxy.|boolean|false|
+|CEP_ADMIN_HTTP_ENABLE_CORS|It indicates if cors requests are enabled for the admin http api.|boolean|false|
+|CEP_ADMIN_HTTP_ENABLE_SWAGGER|It indicates if Swagger UI is enabled for the admin http api.|boolean|false|
+|CEP_METRICS_HTTP_HOST|The host ip address to bind the metrics http api.|string|localhost|
+|CEP_METRICS_HTTP_PORT|The port to bind the metrics http api.|port|8890|
+|CEP_MONGODB_URL|The MongoDB connection string url.|string|mongodb://localhost:27017|
+|CEP_MONGODB_DATABASE_NAME|The MongoDB database name.|string|tribeca-cep|
+
 ## Admin User Interface
 
-In the repository https://github.com/3beca/cep-ui can be found an admin web user interface. From your favorite browser you can easily manage event types, target and rules.
+The repository [3beca/cep-ui](https://github.com/3beca/cep-ui) host an awesome admin web user interface. From your favorite browser you can easily manage event types, target and rules.
 
 ## Docker Compose
 
@@ -126,7 +149,7 @@ We provide a docker compose to quickly have cep up and running.
 docker-compose up
 ```
 
-The docker compose includes also the cep-ui, grafana and prometheus for monitoring the cep instance.
+The docker compose includes a mongodb standalone instance, the cep-ui served at http://localhost:8080, grafana and prometheus for monitoring the cep instance.
 
 ## Swagger
 
@@ -152,7 +175,7 @@ Run the test suite with the following command:
 npm test
 ```
 
-Note: to execute the test suite you must have a mongodb 3.x or greater listening at localhost:27017.
+**Note**: to execute the test suite you must have a mongodb 3.x or greater listening at localhost:27017.
 
 ## License
 
