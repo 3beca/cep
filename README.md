@@ -1,5 +1,5 @@
 # cep
-A simple complex event processing system
+A simple complex event processing system.
 
 [![CodeFactor](https://www.codefactor.io/repository/github/3beca/cep/badge)](https://www.codefactor.io/repository/github/3beca/cep)
 ![Node.js CI](https://github.com/3beca/cep/workflows/Node.js%20CI/badge.svg?branch=master)
@@ -25,11 +25,11 @@ A simple complex event processing system
 
 ## Introduction
 
-C.E.P. stays for Complex Event Processing. Its main goal is to allow you to process events in real time, create alerts, automate processes, and perform stream analytics.
+C.E.P. stays for Complex Event Processing. Its main goal is to allow you to process events. Some common use cases are create alerts, automate processes, and perform stream analytics.
 
 It is modeled in 3 main concepts:
 * **Event Type**: define a type of event. This can represent a sensor (i.e.: sensor X temperature).
-* **Target**: web hook urls to forward events payload based on rule matching
+* **Target**: web hook urls to forward events payload based on rule matching.
 * **Rule**: a rule is created for an event type, with a filter that will be evaluated for each event payload received and a target that will be called whenever the filter matches the event payload.
 
 ## Getting Started
@@ -67,7 +67,7 @@ First of all we want tell cep that an event type exists. To create an event type
 ```
 curl -X POST "http://localhost:8888/event-types/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"sensor foo\"}"
 ```
-The result will give us an url where we will submit http post with json event payload:
+The result will give us an url of the [Event Processing Http API](#event-processing-http-api) where we will submit http post with json event payload:
 ```
 {
   "name": "sensor foo",
@@ -105,6 +105,8 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 
 ## Event Processing Http API
 
+This API provides an http endpoint to ingest events into the cep system.
+
 ### Send an event
 
 To send an event palyoad just make an http post request to the event type url
@@ -139,7 +141,7 @@ The environment variable to configure your cep instance:
 
 ## Admin User Interface
 
-The repository [3beca/cep-ui](https://github.com/3beca/cep-ui) host an awesome admin web user interface. From your favorite browser you can easily manage event types, target and rules.
+The repository [3beca/cep-ui](https://github.com/3beca/cep-ui) hosts an awesome admin web user interface. From your favorite browser you can easily manage event types, target and rules.
 
 ## Docker Compose
 
