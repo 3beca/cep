@@ -60,7 +60,7 @@ export function buildConfig() {
                 env: 'CEP_EVENT_PROCESSING_HTTP_TRUST_PROXY',
             },
             baseUrl: {
-                doc: 'The base url of the event processing http api. This info is used to build the event processing url of a given event type',
+                doc: 'The base url of the event processing http api. This info is used to build the event processing url of a given event type.',
                 format: String,
                 default: 'http://localhost:8889',
                 env: 'CEP_EVENT_PROCESSING_HTTP_BASE_URL',
