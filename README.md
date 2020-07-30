@@ -56,7 +56,7 @@ npm run start-watch
 
 **NOTE**: in order to run, a mongod server must be listening at http://localhost:27017. See [Configuration](#configuration) to change the default database connection url.
 
-# Admin Http API
+## Admin Http API
 
 Cep provides an admin http api to manage event types, targets and rules.
 
@@ -117,7 +117,7 @@ curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept:
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.
 
-# Configuration
+## Configuration
 
 The environment variable to configure your cep instance:
 
