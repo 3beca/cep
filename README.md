@@ -15,6 +15,7 @@ A simple complex event processing system.
   - [Create a Target](#create-a-target)
   - [Create a Rule](#create-a-rule)
   - [Rule Options](#rule-options)
+  - [Rule Filters](#rule-filters)
 - [Event Processing Http API](#event-processing-http-api)
   - [Send an event](#send-an-event)
 - [Configuration](#configuration)
@@ -113,9 +114,27 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 |eventTypeId|event type identifier|string||
 |targetId|target identifier|string||
 |skipOnConsecutivesMatches|when set to true the rule will invoke the target only on the first match after a no matching execution, consecutives matches will be skipped and the target won't be invoked. This option can be useful in use case as alerts.|boolean|false|
-|filters|It represents a condition over the data of the event payload. When filters is not set, the rule will always match and so invoke the target.|Object|{}|
+|filters|It represents a condition over the data of the event payload. When filters is not set, the rule will always match and so invoke the target.|[Object](#rule-filters)|{}|
 |group|It represents a group expression. This field is only allowed and required in windowing rules: sliding and tumbling.|Object||
 |windowSize|It represents the time window to evaluate the group expression. As group field, it is only allowed and required in windowing rules: sliding and tumbling. It is composed by two fields: unit and value, where unit can be 'second', 'minute', 'hour', and value is a positive integer. i.e.: ```{ 'unit': 'minute', 'value': 5 }``` means 5 minutes.|Object||
+
+### Rule Filters
+
+It represents a condition over the data of the event payload for realtime rules or a condition over the result group expression in case of rules of type slinding or tumbling.
+
+The sintax has been inspired by mongodb query expression language. The operator supported are the following:
+
+|Operator|Description|Examples|
+|--------|-----------|--------|
+|_eq|equal operator|```{ 'foo': { '_eq': 5 } }``` match if the field foo has value equal to 5. Same condition can be expressed as ```{ 'foo': 5 }```.|
+|_gt|greater than operator|```{ 'foo': { '_gt': 5 } }``` match if the field foo has value greater than 5.|
+|_gte|greater or equal operator|```{ 'foo': { '_gte': 5 } }``` match if the field foo has value greater or equal to 5.|
+|_lt|less than operator|```{ 'foo': { '_lt_': 5 } }``` match if the field foo has value less to 5.|
+|_lte|less or equal than operator|```{ 'foo': { '_lte_': 5 } }``` match if the field foo has value less or equal to 5.|
+|_near|geo operator. This field only apply to field with value in GeoJSON coordinates array, like: ```[long, lat]```.|```{ '_near': { '_geometry': { 'type': 'Point', 'coordinates': [ 37.992340, -1.130654 ] }, '_minDistance': 10, '_maxDistance': 12 } }``` match if the value distance from [ 37.992340, -1.130654 ] is between 10 and 12 meters.|
+|_and|and operator to compose more complex condition with AND logic|```{ '_and': [{ 'foo': { '_lt': 5 } }, { 'foo': { '_gt': 0 } }] }``` match if the field foo has value is greater than 0 and less than 5.|
+|_or|or operator to compose more complex condition with OR logic|```{ '_or': [{ 'foo': 5 }, { 'foo': 4}] }``` match if the field foo has value equal to 5 or 4.|
+
 
 ## Event Processing Http API
 
