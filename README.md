@@ -131,7 +131,7 @@ The sintax has been inspired by mongodb query expression language. The operator 
 |_gte|greater or equal operator|```{ 'foo': { '_gte': 5 } }``` match if the field foo has value greater or equal to 5.|
 |_lt|less than operator|```{ 'foo': { '_lt_': 5 } }``` match if the field foo has value less to 5.|
 |_lte|less or equal than operator|```{ 'foo': { '_lte_': 5 } }``` match if the field foo has value less or equal to 5.|
-|_near|geo operator. This field only apply to field with value in GeoJSON coordinates array, like: ```[long, lat]```.|```{ '_near': { '_geometry': { 'type': 'Point', 'coordinates': [ 37.992340, -1.130654 ] }, '_minDistance': 10, '_maxDistance': 12 } }``` match if the value distance from [ 37.992340, -1.130654 ] is between 10 and 12 meters.|
+|_near|geo operator. This field only apply to field with value in GeoJSON coordinates array, like: ```[long, lat]```.|```{ 'foo': { '_near': { '_geometry': { 'type': 'Point', 'coordinates': [ 37.992340, -1.130654 ] }, '_minDistance': 10, '_maxDistance': 12 } } }``` match if the distance between the value of the field foo and [ 37.992340, -1.130654 ] is between 10 and 12 meters.|
 |_and|and operator to compose more complex condition with AND logic|```{ '_and': [{ 'foo': { '_lt': 5 } }, { 'foo': { '_gt': 0 } }] }``` match if the field foo has value is greater than 0 and less than 5.|
 |_or|or operator to compose more complex condition with OR logic|```{ '_or': [{ 'foo': 5 }, { 'foo': 4}] }``` match if the field foo has value equal to 5 or 4.|
 
