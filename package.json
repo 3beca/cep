@@ -19,7 +19,8 @@
   },
   "keywords": [
     "cep",
-    "nodejs"
+    "nodejs",
+    "iot"
   ],
   "author": "juanjofp, francescorivola",
   "license": "MIT",
