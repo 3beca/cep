@@ -1,4 +1,4 @@
-<div style="text-align:center"><img src="./logo.png" /></div>
+<div style="text-align: center"><a href="#"><img src="./logo.png" /></a></div>
 
 # cep
 A simple complex event processing system.
