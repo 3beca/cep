@@ -16,6 +16,7 @@ A simple complex event processing system.
   - [Create a Rule](#create-a-rule)
   - [Rule Options](#rule-options)
   - [Rule Filters](#rule-filters)
+  - [Rule Group](#rule-group)
 - [Event Processing Http API](#event-processing-http-api)
   - [Send an event](#send-an-event)
 - [Configuration](#configuration)
@@ -115,14 +116,14 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 |targetId|target identifier|string||
 |skipOnConsecutivesMatches|when set to true the rule will invoke the target only on the first match after a no matching execution, consecutives matches will be skipped and the target won't be invoked. This option can be useful in use case as alerts.|boolean|false|
 |filters|It represents a condition over the data of the event payload. When filters is not set, the rule will always match and so invoke the target.|[Object](#rule-filters)|{}|
-|group|It represents a group expression. This field is only allowed and required in windowing rules: sliding and tumbling.|Object||
+|group|It represents a group expression. This field is only allowed and required in windowing rules: sliding and tumbling.|[Object](#rule-group)||
 |windowSize|It represents the time window to evaluate the group expression. As group field, it is only allowed and required in windowing rules: sliding and tumbling. It is composed by two fields: unit and value, where unit can be 'second', 'minute', 'hour', and value is a positive integer. i.e.: ```{ 'unit': 'minute', 'value': 5 }``` means 5 minutes.|Object||
 
 ### Rule Filters
 
 It represents a condition over the data of the event payload for realtime rules or a condition over the result group expression in case of rules of type slinding or tumbling.
 
-The sintax has been inspired by mongodb query expression language. The operator supported are the following:
+The sintax has been inspired by mongodb query expression language. The operators supported are the following:
 
 |Operator|Description|Examples|
 |--------|-----------|--------|
@@ -135,6 +136,20 @@ The sintax has been inspired by mongodb query expression language. The operator 
 |_and|and operator to compose more complex condition with AND logic|```{ '_and': [{ 'foo': { '_lt': 5 } }, { 'foo': { '_gt': 0 } }] }``` match if the field foo has value is greater than 0 and less than 5.|
 |_or|or operator to compose more complex condition with OR logic|```{ '_or': [{ 'foo': 5 }, { 'foo': 4}] }``` match if the field foo has value equal to 5 or 4.|
 
+### Rule Group
+
+Rules of type sliding or tumbling have a group expression that will be evaluated in a time window.
+
+The sintax has been inspired by mongodb aggregate group expression language. The grouping operators supported are the following:
+
+|Operator|Description|Examples|
+|--------|-----------|--------|
+|_max|max value|```{ 'maxFoo': { '_max': '_foo' } }``` it will return the max value of the field foo in a field called maxFoo.|
+|_min|min value|```{ 'minFoo': { '_min': '_foo' } }``` it will return the min value of the field foo in a field called minFoo.|
+|_avg|average value|```{ 'avgFoo': { '_avg': '_foo' } }``` it will return the average value of the field foo in a field called avgFoo.|
+|_sum|sum values. Its value can be a event payload field or a number|```{ 'count': { '_sum': 1 } }``` it will return the count of the events in a field called count. ```{ 'totalFoo': { '_sum': '_foo' } }``` it will return the total sum of foo values in a field called totalFoo.|
+|_stdDevPop|standard deviation population value|```{ 'stdDevPopFoo': { '_stdDevPop': '_foo' } }``` it will return the standard deviation of the population values of the field foo in a field called stdDevPopFoo.|
+|_stdDevSamp|standard deviation sample value|```{ 'stdDevSampleFoo': { '_stdDevSamp': '_foo' } }``` it will return the standard deviation sample value of the field foo in a field called stdDevSampleFoo.|
 
 ## Event Processing Http API
 
