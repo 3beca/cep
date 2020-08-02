@@ -149,8 +149,8 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 |_min|min value|```{ 'minFoo': { '_min': '_foo' } }``` it will return the min value of the field foo in a field called minFoo.|
 |_avg|average value|```{ 'avgFoo': { '_avg': '_foo' } }``` it will return the average value of the field foo in a field called avgFoo.|
 |_sum|sum values. Its value can be a event payload field or a number|```{ 'count': { '_sum': 1 } }``` it will return the count of the events in a field called count. ```{ 'totalFoo': { '_sum': '_foo' } }``` it will return the total sum of foo values in a field called totalFoo.|
-|_stdDevPop|standard deviation population value|```{ 'stdDevPopFoo': { '_stdDevPop': '_foo' } }``` it will return the standard deviation of the population values of the field foo in a field called stdDevPopFoo.|
-|_stdDevSamp|standard deviation sample value|```{ 'stdDevSampleFoo': { '_stdDevSamp': '_foo' } }``` it will return the standard deviation sample value of the field foo in a field called stdDevSampleFoo.|
+|_stdDevPop|population standard deviation value|```{ 'stdDevPopFoo': { '_stdDevPop': '_foo' } }``` it will return the population standard deviation of the values of the field foo in a field called stdDevPopFoo.|
+|_stdDevSamp|sample standard deviation value|```{ 'stdDevSampleFoo': { '_stdDevSamp': '_foo' } }``` it will return the sample standard deviation of the values of the field foo in a field called stdDevSampleFoo.|
 
 ### Rule Examples
 
