@@ -17,6 +17,7 @@ A simple complex event processing system.
   - [Rule Options](#rule-options)
   - [Rule Filters](#rule-filters)
   - [Rule Group](#rule-group)
+  - [Rule Examples](#rule-examples)
 - [Event Processing Http API](#event-processing-http-api)
   - [Send an event](#send-an-event)
 - [Configuration](#configuration)
@@ -150,6 +151,64 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 |_sum|sum values. Its value can be a event payload field or a number|```{ 'count': { '_sum': 1 } }``` it will return the count of the events in a field called count. ```{ 'totalFoo': { '_sum': '_foo' } }``` it will return the total sum of foo values in a field called totalFoo.|
 |_stdDevPop|standard deviation population value|```{ 'stdDevPopFoo': { '_stdDevPop': '_foo' } }``` it will return the standard deviation of the population values of the field foo in a field called stdDevPopFoo.|
 |_stdDevSamp|standard deviation sample value|```{ 'stdDevSampleFoo': { '_stdDevSamp': '_foo' } }``` it will return the standard deviation sample value of the field foo in a field called stdDevSampleFoo.|
+
+### Rule Examples
+
+#### Realtime Rule
+
+```
+{
+  "name": "temperature is less than 0 degrees",
+  "type": "realtime",
+  "targetId": "5db373aeb2684dc2105f20a5",
+  "eventTypeId": "5db3730cb2684d3d135f20a4",
+  "filters": { "temperature": { "_ls": 0 } }
+}
+```
+
+#### Sliding Rule
+
+```
+{
+  "name": "temperature average greater than 35 degrees on the last hour",
+  "type": "sliding",
+  "targetId": "5db373aeb2684dc2105f20a5",
+  "eventTypeId": "5db3730cb2684d3d135f20a4",
+  "filters": { "maxTemperature": { "_gt": 35 } },
+  "group": {
+    "avgTemperature": { "_avg": "_temperature" }
+  },
+  "windowSize": {
+    "unite": "hour",
+    "value": 1
+  }
+}
+```
+
+In the example above, the sliding rule will calculate on every event the average value of the field **temperature** in the last hour. The target will be invoked when the result is greater than 35 degrees.
+
+#### Tumbling Rule
+
+```
+{
+  "name": "temperature greater than 35 degrees on the last hour",
+  "type": "tumbling",
+  "targetId": "5db373aeb2684dc2105f20a5",
+  "eventTypeId": "5db3730cb2684d3d135f20a4",
+  "filters": { "maxTemperature": { "_gt": 35 } },
+  "group": {
+    "maxTemperature": { "_max": "_temperature" }
+  },
+  "windowSize": {
+    "unite": "hour",
+    "value": 1
+  }
+}
+```
+
+In the example above, the tumbling rule will every hour calculate the max value of the field **temperature** in the last hour. The target will be invoked when the result is greater than 35 degrees.
+
+On rule match in tumbling and sliding rules, the http post done to the target url have as body the group expression result. i.e. ```{ "maxTemperature": 37 }```
 
 ## Event Processing Http API
 
