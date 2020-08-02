@@ -14,10 +14,10 @@ A simple complex event processing system.
   - [Create an Event Type](#create-an-event-type)
   - [Create a Target](#create-a-target)
   - [Create a Rule](#create-a-rule)
-  - [Rule Options](#rule-options)
-  - [Rule Filters](#rule-filters)
-  - [Rule Group](#rule-group)
-  - [Rule Examples](#rule-examples)
+    - [Rule Options](#rule-options)
+    - [Rule Filters](#rule-filters)
+    - [Rule Group](#rule-group)
+    - [Rule Examples](#rule-examples)
 - [Event Processing Http API](#event-processing-http-api)
   - [Send an event](#send-an-event)
 - [Configuration](#configuration)
@@ -107,7 +107,7 @@ i.e.: to create a realtime rule we must provide an unique name, a type, a target
 curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
 ```
 
-### Rule Options
+#### Rule Options
 
 |field name|Description|Type|Default|
 |----------|-----------|----|-------|
@@ -120,7 +120,7 @@ curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Co
 |group|It represents a group expression. This field is only allowed and required in windowing rules: sliding and tumbling.|[Object](#rule-group)||
 |windowSize|It represents the time window to evaluate the group expression. As group field, it is only allowed and required in windowing rules: sliding and tumbling. It is composed by two fields: unit and value, where unit can be 'second', 'minute', 'hour', and value is a positive integer. i.e.: ```{ 'unit': 'minute', 'value': 5 }``` means 5 minutes.|Object||
 
-### Rule Filters
+#### Rule Filters
 
 It represents a condition over the data of the event payload for realtime rules or a condition over the result group expression in case of rules of type slinding or tumbling.
 
@@ -137,7 +137,7 @@ The sintax has been inspired by mongodb query expression language. The operators
 |_and|and operator to compose more complex condition with AND logic|```{ '_and': [{ 'foo': { '_lt': 5 } }, { 'foo': { '_gt': 0 } }] }``` match if the field foo has value is greater than 0 and less than 5.|
 |_or|or operator to compose more complex condition with OR logic|```{ '_or': [{ 'foo': 5 }, { 'foo': 4}] }``` match if the field foo has value equal to 5 or 4.|
 
-### Rule Group
+#### Rule Group
 
 Rules of type sliding or tumbling have a group expression that will be evaluated in a time window.
 
@@ -152,9 +152,9 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 |_stdDevPop|population standard deviation value|```{ 'stdDevPopFoo': { '_stdDevPop': '_foo' } }``` it will return the population standard deviation of the values of the field foo in a field called stdDevPopFoo.|
 |_stdDevSamp|sample standard deviation value|```{ 'stdDevSampleFoo': { '_stdDevSamp': '_foo' } }``` it will return the sample standard deviation of the values of the field foo in a field called stdDevSampleFoo.|
 
-### Rule Examples
+#### Rule Examples
 
-#### Realtime Rule
+##### Realtime Rule
 
 ```
 {
@@ -166,7 +166,7 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 }
 ```
 
-#### Sliding Rule
+##### Sliding Rule
 
 ```
 {
@@ -187,7 +187,7 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 
 In the example above, the sliding rule will calculate on every event the average value of the field **temperature** in the last hour. The target will be invoked when the result is greater than 35 degrees.
 
-#### Tumbling Rule
+##### Tumbling Rule
 
 ```
 {
