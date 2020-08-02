@@ -1,3 +1,4 @@
+![CEP](logo.png)
 # cep
 A simple complex event processing system.
 
