@@ -7,6 +7,7 @@ A simple complex event processing system.
 ![Node.js CI](https://github.com/3beca/cep/workflows/Node.js%20CI/badge.svg?branch=master)
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=3beca/cep)](https://dependabot.com)
 [![codecov](https://codecov.io/gh/3beca/cep/branch/master/graph/badge.svg)](https://codecov.io/gh/3beca/cep)
+[![vulnerabilities](https://snyk.io/test/github/3beca/cep/badge.svg)](https://snyk.io/test/github/3beca/cep)
 
 **Table of Contents**
 
