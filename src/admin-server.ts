@@ -146,7 +146,7 @@ export function buildAdminServer(
 	app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
 	app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
 	app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
-	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
+	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: '/rules-executions' });
 
 	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks
