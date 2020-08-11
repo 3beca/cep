@@ -45,6 +45,60 @@ describe('admin server', () => {
         expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
     });
 
+    it('should return 401 when api keys are set but does not match request Authorization header', async () => {
+        const adminServer = buildAdminServer({
+            trustProxy: false,
+            enableCors: true,
+            enableSwagger: false,
+            host: '',
+            port: 0,
+            eventProcessingHttpBaseUrl: '',
+            apiKeys: 'myApiKey1 myApiKey2'
+        },
+        null as unknown as EventTypesService,
+        null as unknown as TargetsService,
+        null as unknown as RulesService,
+        null as unknown as EventsService,
+        null as unknown as RulesExecutionsService,
+        buildMetrics());
+        const response = await adminServer.inject({
+            method: 'GET',
+            url: '/version',
+            headers: {
+                authorization: 'apiKey myApiKey3'
+            }
+        });
+        expect(response.statusCode).toBe(401);
+        expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+        expect(JSON.parse(response.payload)).toStrictEqual({ error: 'invalid authorization header' });
+    });
+
+    it('should return 200 when api keys are set and matches request Authorization header', async () => {
+        const adminServer = buildAdminServer({
+            trustProxy: false,
+            enableCors: true,
+            enableSwagger: true,
+            host: '',
+            port: 0,
+            eventProcessingHttpBaseUrl: '',
+            apiKeys: 'myApiKey1 myApiKey2'
+        },
+        null as unknown as EventTypesService,
+        null as unknown as TargetsService,
+        null as unknown as RulesService,
+        null as unknown as EventsService,
+        null as unknown as RulesExecutionsService,
+        buildMetrics());
+        const response = await adminServer.inject({
+            method: 'GET',
+            url: '/version',
+            headers: {
+                authorization: 'apiKey myApiKey2'
+            }
+        });
+        expect(response.statusCode).toBe(200);
+    });
+
     it('should return 200 for swagger endpoint', async () => {
         const response = await adminServer.inject({
           method: 'GET',
@@ -61,7 +115,8 @@ describe('admin server', () => {
                 enableSwagger: false,
                 host: '',
                 port: 0,
-                eventProcessingHttpBaseUrl: ''
+                eventProcessingHttpBaseUrl: '',
+                apiKeys: 'myApiKey1'
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
@@ -92,7 +147,8 @@ describe('admin server', () => {
                 enableSwagger: false,
                 host: '',
                 port: 0,
-                eventProcessingHttpBaseUrl: ''
+                eventProcessingHttpBaseUrl: '',
+                apiKeys: 'myApiKey'
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,
@@ -163,7 +219,8 @@ describe('admin server', () => {
                 enableSwagger: false,
                 host: '',
                 port: 0,
-                eventProcessingHttpBaseUrl: ''
+                eventProcessingHttpBaseUrl: '',
+                apiKeys: ''
             },
             null as unknown as EventTypesService,
             null as unknown as TargetsService,

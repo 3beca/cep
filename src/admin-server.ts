@@ -8,6 +8,7 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { buildCheckHealthRoutes } from './routes/admin/check-health';
 import fastifyCors from 'fastify-cors';
 import fastifyMetrics from 'fastify-metrics';
+import bearerAuthPlugin from 'fastify-bearer-auth';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -43,7 +44,9 @@ export function buildAdminServer(
 	rulesExecutionsService: RulesExecutionsService,
 	metrics: Metrics): FastifyInstance {
 
-	const { trustProxy, enableCors, enableSwagger } = config;
+	const { trustProxy, enableCors, enableSwagger, apiKeys } = config;
+	const keys = new Set(apiKeys.split(' ').filter(k => k));
+	const enableSecurity = keys.size > 0;
 
 	const app = fastify({
 		logger,
@@ -101,9 +104,25 @@ export function buildAdminServer(
 					{ name: 'events', description: 'Processed events log related end-points' }
 				],
 				consumes: ['application/json'],
-				produces: ['application/json']
+				produces: ['application/json'],
+				...(enableSecurity ? {
+					securityDefinitions: {
+						apiKeyHeader: {
+							type: 'apiKey',
+							in: 'header',
+							name: 'Authorization'
+						}
+					},
+					security: {
+						apiKeyHeader: []
+					}
+				} as any : {})
 			}
 		});
+	}
+
+	if (enableSecurity) {
+		app.register(bearerAuthPlugin, { keys, bearerType: 'apiKey' });
 	}
 
 	app.register(fastifyMetrics, {
