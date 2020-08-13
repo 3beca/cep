@@ -74,4 +74,4 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
-        script: helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.IMAGE_NAME }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --install --wait
+        script: helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.IMAGE_NAME }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys=${{ secrets.ADMIN_HTTP_API_KEYS }} --install --wait
