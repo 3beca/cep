@@ -2,7 +2,7 @@
 // currently the plugin is not used as there is not an easy way to exclude routes
 // from the auth check: see https://github.com/fastify/fastify-bearer-auth/issues/47.
 
-import { FastifyRequest, FastifyReply } from "fastify";
+import { FastifyRequest, FastifyReply } from 'fastify';
 
 export type ApiKeyOptions = {
     keys: Set<string>,
@@ -31,7 +31,7 @@ export function apiKeyAuth(options: ApiKeyOptions) {
     if (!result) {
         const invalidKeyError = Error('invalid authorization header');
         req.log.error('invalid authorization header: `%s`', header);
-        res.code(401).send({ error:  invalidKeyError.message });
+        res.code(401).send({ error: invalidKeyError.message });
         return;
     }
     next();
