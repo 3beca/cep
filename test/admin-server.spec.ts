@@ -107,6 +107,29 @@ describe('admin server', () => {
         expect(response.headers['content-type']).toBe('text/html; charset=UTF-8');
     });
 
+    it('should return 200 for swagger endpoint when no authorization header set and apiKeys are set', async () => {
+        const adminServer = buildAdminServer({
+                trustProxy: false,
+                enableCors: true,
+                enableSwagger: true,
+                host: '',
+                port: 0,
+                eventProcessingHttpBaseUrl: '',
+                apiKeys: 'myApiKey1 myApiKey2'
+            },
+            null as unknown as EventTypesService,
+            null as unknown as TargetsService,
+            null as unknown as RulesService,
+            null as unknown as EventsService,
+            null as unknown as RulesExecutionsService,
+            buildMetrics());
+        const response = await adminServer.inject({
+          method: 'GET',
+          url: '/documentation/static/index.html'
+        });
+        expect(response.statusCode).toBe(200);
+    });
+
     it('should return 404 for swagger endpoint when swagger is not enabled', async () => {
         const adminServer = buildAdminServer({
                 trustProxy: false,
