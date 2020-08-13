@@ -11,6 +11,10 @@ describe('admin server', () => {
         const config = buildConfig();
         app = await buildApp({
             ...config,
+            adminHttp: {
+                ...config.adminHttp,
+                apiKeys: 'myApiKey myApiKey2'
+            },
             mongodb: {
                 ...config.mongodb,
                 databaseName: `test-${new ObjectId()}`
@@ -26,10 +30,24 @@ describe('admin server', () => {
 
     describe('version', () => {
 
+        it('should return 401 when invalid token', async () => {
+            const response = await adminServer.inject({
+                method: 'GET',
+                url: '/version',
+                headers: {
+                    authorization: 'apiKey invalidApiKey'
+                }
+            });
+            expect(response.statusCode).toBe(401);
+        });
+
         it('should return 200 with cep version', async () => {
             const response = await adminServer.inject({
                 method: 'GET',
-                url: '/version'
+                url: '/version',
+                headers: {
+                    authorization: 'apiKey myApiKey2'
+                }
             });
             expect(response.statusCode).toBe(200);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
