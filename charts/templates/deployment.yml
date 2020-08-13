@@ -24,7 +24,7 @@ spec:
             port: 3001
             httpHeaders:
             - name: Authorization
-              value: "apiKey {{ .Values.deployment.env.adminHttpApiKeys }}"
+              value: "apiKey {{ (split " " .Values.deployment.env.adminHttpApiKeys)._0 }}"
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
@@ -34,7 +34,7 @@ spec:
             port: 3001
             httpHeaders:
             - name: Authorization
-              value: "apiKey {{ .Values.deployment.env.adminHttpApiKeys }}"
+              value: "apiKey {{ (split " " .Values.deployment.env.adminHttpApiKeys)._0 }}"
           initialDelaySeconds: 15
           periodSeconds: 5
         resources:
