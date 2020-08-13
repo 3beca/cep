@@ -8,7 +8,6 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { buildCheckHealthRoutes } from './routes/admin/check-health';
 import fastifyCors from 'fastify-cors';
 import fastifyMetrics from 'fastify-metrics';
-import bearerAuthPlugin from 'fastify-bearer-auth';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -28,6 +27,7 @@ import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
 import { Config } from './config';
 import { getUrl } from './utils/url';
+import { apiKeyAuth } from './auth';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -122,7 +122,10 @@ export function buildAdminServer(
 	}
 
 	if (enableSecurity) {
-		app.register(bearerAuthPlugin, { keys, bearerType: 'apiKey' });
+		app.addHook('onRequest', apiKeyAuth({
+			keys,
+			excludeRoutes: enableSwagger ? ['/documentation'] : []
+		}));
 	}
 
 	app.register(fastifyMetrics, {
