@@ -113,10 +113,10 @@ export function buildAdminServer(
 							name: 'Authorization'
 						}
 					},
-					security: {
+					security: [{
 						apiKeyHeader: []
-					}
-				} as any : {})
+					}]
+				} : {})
 			}
 		});
 	}
