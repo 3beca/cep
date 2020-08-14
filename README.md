@@ -244,6 +244,7 @@ The environment variable to configure your cep instance:
 |CEP_ADMIN_HTTP_TRUST_PROXY|It indicates if the admin http api is served behind a trusted proxy.|boolean|false|
 |CEP_ADMIN_HTTP_ENABLE_CORS|It indicates if cors requests are enabled for the admin http api.|boolean|false|
 |CEP_ADMIN_HTTP_ENABLE_SWAGGER|It indicates if Swagger UI is enabled for the admin http api.|boolean|false|
+|CEP_ADMIN_HTTP_API_KEYS|When set it enables admin http api security via ```Authorization: apiKey [APIKEY]``` http header. 1 or more API keys can be set separated by blank space character. Multiple API keys provides an easy way to establish a policy of API keys rotation.|string||
 |CEP_METRICS_HTTP_HOST|The host ip address to bind the metrics http api.|string|localhost|
 |CEP_METRICS_HTTP_PORT|The port to bind the metrics http api.|port|8890|
 |CEP_MONGODB_URL|The MongoDB connection string url.|string|mongodb://localhost:27017|

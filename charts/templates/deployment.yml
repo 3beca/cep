@@ -22,6 +22,9 @@ spec:
           httpGet:
             path: /check-health
             port: 3001
+            httpHeaders:
+            - name: Authorization
+              value: "apiKey {{ (split " " .Values.deployment.env.adminHttpApiKeys)._0 }}"
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
@@ -29,6 +32,9 @@ spec:
           httpGet:
             path: /check-health
             port: 3001
+            httpHeaders:
+            - name: Authorization
+              value: "apiKey {{ (split " " .Values.deployment.env.adminHttpApiKeys)._0 }}"
           initialDelaySeconds: 15
           periodSeconds: 5
         resources:
@@ -61,6 +67,8 @@ spec:
           value: "true"
         - name: CEP_ADMIN_HTTP_TRUST_PROXY
           value: "true"
+        - name: CEP_ADMIN_HTTP_API_KEYS
+          value: "{{ .Values.deployment.env.adminHttpApiKeys }}"
         - name: CEP_METRICS_HTTP_PORT
           value: "3002"
         - name: CEP_METRICS_HTTP_HOST

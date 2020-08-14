@@ -14,6 +14,10 @@ describe('admin server', () => {
         const config = buildConfig();
         app = await buildApp({
             ...config,
+            adminHttp: {
+                ...config.adminHttp,
+                apiKeys: 'myApiKey myApiKey2'
+            },
             mongodb: {
                 ...config.mongodb,
                 databaseName: `test-${new ObjectId()}`
@@ -35,6 +39,17 @@ describe('admin server', () => {
 
         describe('get', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'GET',
+                    url: '/rules',
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 200 with array of rules', async () => {
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
@@ -47,6 +62,9 @@ describe('admin server', () => {
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: true,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -55,7 +73,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules'
+                    url: '/rules',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -76,7 +97,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?search=ru%3Fe'
+                    url: '/rules?search=ru%3Fe',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -98,7 +122,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?search=ru%3Fe&pageSize=1&page=2'
+                    url: '/rules?search=ru%3Fe&pageSize=1&page=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -120,11 +147,17 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=1&pageSize=2'
+                    url: '/rules?page=1&pageSize=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -142,11 +175,17 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=1&pageSize=3'
+                    url: '/rules?page=1&pageSize=3',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -164,11 +203,17 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=2&pageSize=2'
+                    url: '/rules?page=2&pageSize=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/rules?page=1&pageSize=2');
@@ -178,7 +223,10 @@ describe('admin server', () => {
             it('should return 400 with invalid page query string', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=invalid'
+                    url: '/rules?page=invalid',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -192,7 +240,10 @@ describe('admin server', () => {
             it('should return 400 with invalid pageSize query string', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?pageSize=invalid'
+                    url: '/rules?pageSize=invalid',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -206,7 +257,10 @@ describe('admin server', () => {
             it('should return 400 with pageSize query string greater than 100', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?pageSize=101'
+                    url: '/rules?pageSize=101',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -220,7 +274,10 @@ describe('admin server', () => {
             it('should return 400 with pageSize query string lesser than 1', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?pageSize=0'
+                    url: '/rules?pageSize=0',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -234,7 +291,10 @@ describe('admin server', () => {
             it('should return 400 with page query string lesser than 1', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules?page=0'
+                    url: '/rules?page=0',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -248,10 +308,24 @@ describe('admin server', () => {
 
         describe('get by id', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'GET',
+                    url: '/rules/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when rule identifier is not a valid ObjectId', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules/invalid-object-id-here'
+                    url: '/rules/invalid-object-id-here',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -261,7 +335,10 @@ describe('admin server', () => {
             it('should return 404 when rule does not exists', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules/' + new ObjectId()
+                    url: '/rules/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -280,6 +357,9 @@ describe('admin server', () => {
                         eventTypeId: eventType.id,
                         skipOnConsecutivesMatches: false,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -288,7 +368,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules/' + createdRule.id
+                    url: '/rules/' + createdRule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -299,12 +382,32 @@ describe('admin server', () => {
 
         describe('post', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/rules',
+                    body: {
+                        name: 'a rule',
+                        type: 'realtime',
+                        eventTypeId: eventType.id,
+                        targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when payload is not a valid json', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/rules',
                     headers: {
-                        'content-type': 'application/json'
+                        'content-type': 'application/json',
+                        authorization: 'apiKey myApiKey'
                     },
                     body: '{invalid: json}'
                 });
@@ -324,6 +427,9 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -342,6 +448,9 @@ describe('admin server', () => {
                         type: undefined,
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -360,6 +469,9 @@ describe('admin server', () => {
                         type: 'unexisting rule type',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -382,6 +494,9 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -407,6 +522,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -428,6 +546,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -448,6 +569,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: undefined,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -468,6 +592,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: undefined
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -487,6 +614,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: 'abc',
                         targetId: 'cbd'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -512,6 +642,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: nonExistingEventTypeId,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -533,6 +666,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: nonExistingTargetId
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -556,6 +692,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -585,6 +724,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -611,6 +753,9 @@ describe('admin server', () => {
                         windowSize: undefined,
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -640,6 +785,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -669,6 +817,9 @@ describe('admin server', () => {
                         },
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -695,6 +846,9 @@ describe('admin server', () => {
                         filters: {
                             value: 8
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -734,6 +888,9 @@ describe('admin server', () => {
                             unit: 'hour',
                             value: 5
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -777,6 +934,9 @@ describe('admin server', () => {
                             unit: 'second',
                             value: 1
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -832,13 +992,19 @@ describe('admin server', () => {
                             unit: 'hour',
                             value: 5
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(500);
 
                 const listResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules'
+                    url: '/rules',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(listResponse.statusCode).toBe(200);
                 const listResponseBody = JSON.parse(listResponse.payload);
@@ -857,6 +1023,9 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 const rule = JSON.parse(responseCreaterule.payload);
@@ -868,6 +1037,9 @@ describe('admin server', () => {
                         type: 'realtime',
                         eventTypeId: eventType.id,
                         targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(responseCreaterule2.statusCode).toBe(409);
@@ -879,10 +1051,24 @@ describe('admin server', () => {
 
         describe('delete', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'DELETE',
+                    url: '/rules/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when rule identifier is not a valid ObjectId', async () => {
                 const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/rules/invalid-object-id-here'
+                    url: '/rules/invalid-object-id-here',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -892,7 +1078,10 @@ describe('admin server', () => {
             it('should return 204 when rule does not exist', async () => {
                 const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/rules/' + new ObjectId()
+                    url: '/rules/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(204);
             });
@@ -904,13 +1093,19 @@ describe('admin server', () => {
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/rules/' + createdRule.id
+                    url: '/rules/' + createdRule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(deleteResponse.statusCode).toBe(204);
 
                 const getResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules/' + createdRule.id
+                    url: '/rules/' + createdRule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
@@ -940,6 +1135,9 @@ describe('admin server', () => {
                             unit: 'minute',
                             value: 1
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -952,7 +1150,10 @@ describe('admin server', () => {
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/rules/' + rule.id
+                    url: '/rules/' + rule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(deleteResponse.statusCode).toBe(204);
                 expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
@@ -983,6 +1184,9 @@ describe('admin server', () => {
                             unit: 'second',
                             value: 10
                         }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -991,13 +1195,19 @@ describe('admin server', () => {
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/rules/' + rule.id
+                    url: '/rules/' + rule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(deleteResponse.statusCode).toBe(500);
 
                 const getResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/rules/' + rule.id
+                    url: '/rules/' + rule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(getResponse.statusCode).toBe(200);
                 expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
@@ -1013,6 +1223,9 @@ describe('admin server', () => {
                     type: 'realtime',
                     eventTypeId: eventType.id,
                     targetId: target.id
+                },
+                headers: {
+                    authorization: 'apiKey myApiKey'
                 }
             });
             expect(createResponse.statusCode).toBe(201);
@@ -1026,6 +1239,9 @@ describe('admin server', () => {
                 url: '/event-types',
                 body: {
                     name: 'an event type'
+                },
+                headers: {
+                    authorization: 'apiKey myApiKey'
                 }
             });
             expect(createResponse.statusCode).toBe(201);
@@ -1040,6 +1256,9 @@ describe('admin server', () => {
                 body: {
                     name: 'a target',
                     url: 'https://example.org'
+                },
+                headers: {
+                    authorization: 'apiKey myApiKey'
                 }
             });
             expect(createResponse.statusCode).toBe(201);

@@ -14,7 +14,8 @@ export type Config = {
         port: number,
         enableSwagger: boolean,
         enableCors: boolean,
-        trustProxy: boolean
+        trustProxy: boolean,
+        apiKeys: string
     },
     metricsHttp: {
         host: string,
@@ -96,6 +97,12 @@ export function buildConfig() {
                 format: Boolean,
                 default: false,
                 env: 'CEP_ADMIN_HTTP_ENABLE_SWAGGER'
+            },
+            apiKeys: {
+                doc: 'When set it enables admin http api security via Authorization: apiKey [APIKEY] http header. Multiple Api Keys can be set separated by blank space character.',
+                format: String,
+                default: '',
+                env: 'CEP_ADMIN_HTTP_API_KEYS'
             }
         },
         metricsHttp: {

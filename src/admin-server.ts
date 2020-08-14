@@ -27,6 +27,7 @@ import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
 import { Config } from './config';
 import { getUrl } from './utils/url';
+import { apiKeyAuth } from './auth';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -43,7 +44,9 @@ export function buildAdminServer(
 	rulesExecutionsService: RulesExecutionsService,
 	metrics: Metrics): FastifyInstance {
 
-	const { trustProxy, enableCors, enableSwagger } = config;
+	const { trustProxy, enableCors, enableSwagger, apiKeys } = config;
+	const keys = new Set(apiKeys.split(' ').filter(k => k));
+	const enableSecurity = keys.size > 0;
 
 	const app = fastify({
 		logger,
@@ -101,9 +104,28 @@ export function buildAdminServer(
 					{ name: 'events', description: 'Processed events log related end-points' }
 				],
 				consumes: ['application/json'],
-				produces: ['application/json']
+				produces: ['application/json'],
+				...(enableSecurity ? {
+					securityDefinitions: {
+						apiKeyHeader: {
+							type: 'apiKey',
+							in: 'header',
+							name: 'Authorization'
+						}
+					},
+					security: [{
+						apiKeyHeader: []
+					}]
+				} : {})
 			}
 		});
+	}
+
+	if (enableSecurity) {
+		app.addHook('onRequest', apiKeyAuth({
+			keys,
+			excludeRoutes: enableSwagger ? ['/documentation'] : []
+		}));
 	}
 
 	app.register(fastifyMetrics, {
@@ -127,7 +149,7 @@ export function buildAdminServer(
 	app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
 	app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
 	app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
-	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: 'rules-executions' });
+	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: '/rules-executions' });
 
 	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks

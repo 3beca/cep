@@ -11,6 +11,10 @@ describe('admin server', () => {
         const config = buildConfig();
         app = await buildApp({
             ...config,
+            adminHttp: {
+                ...config.adminHttp,
+                apiKeys: 'myApiKey myApiKey2'
+            },
             mongodb: {
                 ...config.mongodb,
                 databaseName: `test-${new ObjectId()}`
@@ -28,6 +32,17 @@ describe('admin server', () => {
 
         describe('get', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'GET',
+                    url: '/targets',
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 200 with array of targets', async () => {
                 const createResponse = await adminServer.inject({
                     method: 'POST',
@@ -35,6 +50,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -43,7 +61,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets'
+                    url: '/targets',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -62,7 +83,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?search=tArg%3Ft'
+                    url: '/targets?search=tArg%3Ft',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -82,7 +106,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2'
+                    url: '/targets?search=tArg%3Ft&pageSize=1&page=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -100,11 +127,17 @@ describe('admin server', () => {
                     body: {
                         name: 'a target ' + value,
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=2'
+                    url: '/targets?page=1&pageSize=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -118,11 +151,17 @@ describe('admin server', () => {
                     body: {
                         name: 'a target ' + value,
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=1&pageSize=3'
+                    url: '/targets?page=1&pageSize=3',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBeUndefined();
@@ -136,11 +175,17 @@ describe('admin server', () => {
                     body: {
                         name: 'a target ' + value,
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 })));
                 const responseNoPrev = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=2&pageSize=2'
+                    url: '/targets?page=2&pageSize=2',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 const payloadResponseNoPrev = JSON.parse(responseNoPrev.payload);
                 expect(payloadResponseNoPrev.prev).toBe('http://localhost:80/targets?page=1&pageSize=2');
@@ -150,7 +195,10 @@ describe('admin server', () => {
             it('should return 400 with invalid page query string', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=invalid'
+                    url: '/targets?page=invalid',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -164,7 +212,10 @@ describe('admin server', () => {
             it('should return 400 with invalid pageSize query string', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?pageSize=invalid'
+                    url: '/targets?pageSize=invalid',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -178,7 +229,10 @@ describe('admin server', () => {
             it('should return 400 with pageSize query string greater than 100', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?pageSize=101'
+                    url: '/targets?pageSize=101',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -192,7 +246,10 @@ describe('admin server', () => {
             it('should return 400 with pageSize query string lesser than 1', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?pageSize=0'
+                    url: '/targets?pageSize=0',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -206,7 +263,10 @@ describe('admin server', () => {
             it('should return 400 with page query string lesser than 1', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets?page=0'
+                    url: '/targets?page=0',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -220,10 +280,24 @@ describe('admin server', () => {
 
         describe('get by id', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'GET',
+                    url: '/targets/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when target identifier is not a valid ObjectId', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets/invalid-object-id-here'
+                    url: '/targets/invalid-object-id-here',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -233,7 +307,10 @@ describe('admin server', () => {
             it('should return 404 when target does not exists', async () => {
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets/' + new ObjectId()
+                    url: '/targets/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -247,6 +324,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -255,7 +335,10 @@ describe('admin server', () => {
 
                 const response = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets/' + createdTarget.id
+                    url: '/targets/' + createdTarget.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -265,6 +348,22 @@ describe('admin server', () => {
         });
 
         describe('post', () => {
+
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'a target',
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when name is undefined', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
@@ -272,6 +371,9 @@ describe('admin server', () => {
                     body: {
                         name: undefined,
                         url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -286,6 +388,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: undefined
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -300,6 +405,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'a non valid url'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -314,6 +422,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a'.repeat(101),
                         url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(400);
@@ -328,6 +439,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -346,6 +460,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(response.statusCode).toBe(201);
@@ -364,6 +481,9 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 const target = JSON.parse(responseCreateTarget.payload);
@@ -373,6 +493,9 @@ describe('admin server', () => {
                     body: {
                         name: 'same name',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(responseCreateTarget2.statusCode).toBe(409);
@@ -384,10 +507,24 @@ describe('admin server', () => {
 
         describe('delete', () => {
 
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'DELETE',
+                    url: '/targets/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
             it('should return 400 when target identifier is not a valid ObjectId', async () => {
                 const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/targets/invalid-object-id-here'
+                    url: '/targets/invalid-object-id-here',
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -397,7 +534,10 @@ describe('admin server', () => {
             it('should return 204 when target does not exist', async () => {
                 const response = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/targets/' + new ObjectId()
+                    url: '/targets/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(response.statusCode).toBe(204);
             });
@@ -409,6 +549,9 @@ describe('admin server', () => {
                     body: {
                         name: 'a target',
                         url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
                     }
                 });
                 expect(createResponse.statusCode).toBe(201);
@@ -417,13 +560,19 @@ describe('admin server', () => {
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/targets/' + createdTarget.id
+                    url: '/targets/' + createdTarget.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(deleteResponse.statusCode).toBe(204);
 
                 const getResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/targets/' + createdTarget.id
+                    url: '/targets/' + createdTarget.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(getResponse.statusCode).toBe(404);
             });
@@ -435,7 +584,10 @@ describe('admin server', () => {
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/targets/' + target.id
+                    url: '/targets/' + target.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
                 });
                 expect(deleteResponse.statusCode).toBe(400);
                 expect(deleteResponse.headers['content-type']).toBe('application/json; charset=utf-8');
@@ -455,6 +607,9 @@ describe('admin server', () => {
             body: {
                 name,
                 url: 'http://example.org'
+            },
+            headers: {
+                authorization: 'apiKey myApiKey'
             }
         });
         expect(createResponse.statusCode).toBe(201);
@@ -474,6 +629,9 @@ describe('admin server', () => {
                 filters: {
                     field: 'value'
                 }
+            },
+            headers: {
+                authorization: 'apiKey myApiKey'
             }
         });
         expect(createResponse.statusCode).toBe(201);
@@ -487,6 +645,9 @@ describe('admin server', () => {
             url: '/event-types',
             body: {
                 name: 'an event type'
+            },
+            headers: {
+                authorization: 'apiKey myApiKey'
             }
         });
         expect(createResponse.statusCode).toBe(201);
