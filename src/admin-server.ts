@@ -8,6 +8,7 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { buildCheckHealthRoutes } from './routes/admin/check-health';
 import fastifyCors from 'fastify-cors';
 import fastifyMetrics from 'fastify-metrics';
+import fastifyBearerAuth from 'fastify-bearer-auth';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
 import Ajv from 'ajv';
@@ -27,7 +28,6 @@ import { buildVersionRoutes } from './routes/admin/version';
 import { buildEventsRoutes } from './routes/admin/events';
 import { Config } from './config';
 import { getUrl } from './utils/url';
-import { apiKeyAuth } from './auth';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -121,13 +121,6 @@ export function buildAdminServer(
 		});
 	}
 
-	if (enableSecurity) {
-		app.addHook('onRequest', apiKeyAuth({
-			keys,
-			excludeRoutes: enableSwagger ? ['/documentation'] : []
-		}));
-	}
-
 	app.register(fastifyMetrics, {
 		enableDefaultMetrics: false,
 		register: metrics.getRegister(),
@@ -142,18 +135,25 @@ export function buildAdminServer(
 		});
 	}
 
-	// End points
-	app.register(buildCheckHealthRoutes());
-	app.register(buildVersionRoutes());
-	app.register(buildEventTypesRoutes(eventTypesService, config.eventProcessingHttpBaseUrl), { prefix: '/event-types' });
-	app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
-	app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
-	app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
-	app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: '/rules-executions' });
+	app.register(async function routes(app: FastifyInstance) {
 
-	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
-		// Default not found handler with preValidation and preHandler hooks
-		reply.code(404).send({ message: 'Resource not found' });
+		if (enableSecurity) {
+			app.register(fastifyBearerAuth, { keys, bearerType: 'apiKey' });
+		}
+
+		// End points
+		app.register(buildCheckHealthRoutes());
+		app.register(buildVersionRoutes());
+		app.register(buildEventTypesRoutes(eventTypesService, config.eventProcessingHttpBaseUrl), { prefix: '/event-types' });
+		app.register(buildTargetsRoutes(targetsService), { prefix: '/targets' });
+		app.register(buildRulesRoutes(targetsService, eventTypesService, rulesService), { prefix: '/rules' });
+		app.register(buildEventsRoutes(eventsService), { prefix: '/events' });
+		app.register(buildRulesExecutionsRoutes(rulesExecutionsService), { prefix: '/rules-executions' });
+
+		app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
+			// Default not found handler with preValidation and preHandler hooks
+			reply.code(404).send({ message: 'Resource not found' });
+		});
 	});
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
