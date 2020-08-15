@@ -13,7 +13,7 @@ jobs:
       CI: true
       SERVICE_NAME: tribeca-cep
       DOCKER_IMAGE: francescorivola/tribeca-cep
-      DOCKER_PLATFORMS: linux/arm64,linux/x86-64
+      DOCKER_PLATFORMS: linux/x86-64,linux/arm64
 
     runs-on: ubuntu-latest
 
@@ -86,4 +86,4 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
-        script: helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.IMAGE_NAME }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys="${{ secrets.ADMIN_HTTP_API_KEYS }}" --install --wait
+        script: helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.DOCKER_IMAGE }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys="${{ secrets.ADMIN_HTTP_API_KEYS }}" --install --wait
