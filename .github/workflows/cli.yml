@@ -13,6 +13,7 @@ jobs:
       CI: true
       IMAGE_NAME: francescorivola/tribeca-cep
       SERVICE_NAME: tribeca-cep
+      DOCKER_PLATFORMS: linux/arm64,linux/386
 
     runs-on: ubuntu-latest
 
@@ -43,18 +44,29 @@ jobs:
       if: github.ref == 'refs/heads/master'
       uses: codecov/codecov-action@v1
 
-    - name: Docker Build and Publish
-      if: github.ref == 'refs/heads/master'
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: ${{ env.IMAGE_NAME }}
-        tag_with_ref: true
-        tag_with_sha: true
+    - name: Set up Docker Buildx
+      #if: github.ref == 'refs/heads/master'
+      uses: crazy-max/ghaction-docker-buildx@v3
+
+    - name: Docker Login
+      #if: github.ref == 'refs/heads/master'
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
+
+    - name: Docker Buildx Build and Push
+      #if: github.ref == 'refs/heads/master'
+      run: |
+        docker buildx build --output "type=image,push=true" --platform ${DOCKER_PLATFORMS} \
+          --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+          --build-arg VCS_REF=${GITHUB_SHA::8} \
+          --tag ${DOCKER_IMAGE}:sha-$(echo ${{ github.sha }} | cut -c1-7) \
+          --tag ${DOCKER_IMAGE}:latest .
 
     - name: Copy Helm Chart via ssh
-      if: github.ref == 'refs/heads/master'
+      #if: github.ref == 'refs/heads/master'
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -67,7 +79,7 @@ jobs:
         rm: true
 
     - name: Deploy using Helm
-      if: github.ref == 'refs/heads/master'
+      #if: github.ref == 'refs/heads/master'
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
