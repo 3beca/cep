@@ -11,8 +11,8 @@ jobs:
 
     env:
       CI: true
-      IMAGE_NAME: francescorivola/tribeca-cep
       SERVICE_NAME: tribeca-cep
+      DOCKER_IMAGE: francescorivola/tribeca-cep
       DOCKER_PLATFORMS: linux/arm64,linux/386
 
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
         docker buildx build --output "type=image,push=true" --platform ${DOCKER_PLATFORMS} \
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
           --build-arg VCS_REF=${GITHUB_SHA::8} \
-          --tag "${DOCKER_IMAGE}:sha-$(echo ${{ github.sha }} | cut -c1-7)" \
+          --tag ${DOCKER_IMAGE}:sha-$(echo ${{ github.sha }} | cut -c1-7) \
           --tag ${DOCKER_IMAGE}:latest .
 
     - name: Copy Helm Chart via ssh
