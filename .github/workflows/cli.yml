@@ -37,19 +37,19 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
     - run: npm run build --if-present
-    #- run: npm run lint
-    #- run: npm run test-ci
+    - run: npm run lint
+    - run: npm run test-ci
 
     - name: Publish Code Coverage
       if: github.ref == 'refs/heads/master'
       uses: codecov/codecov-action@v1
 
     - name: Set up Docker Buildx
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       uses: crazy-max/ghaction-docker-buildx@v3
 
     - name: Docker Login
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -57,7 +57,7 @@ jobs:
         echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
 
     - name: Docker Buildx Build and Push
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       run: |
         docker buildx build --output "type=image,push=true" --platform ${DOCKER_PLATFORMS} \
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
@@ -66,7 +66,7 @@ jobs:
           --tag ${DOCKER_IMAGE}:latest .
 
     - name: Copy Helm Chart via ssh
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -79,7 +79,7 @@ jobs:
         rm: true
 
     - name: Deploy using Helm
-      #if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
