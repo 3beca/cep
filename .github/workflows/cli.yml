@@ -13,7 +13,7 @@ jobs:
       CI: true
       SERVICE_NAME: tribeca-cep
       DOCKER_IMAGE: francescorivola/tribeca-cep
-      DOCKER_PLATFORMS: linux/arm64,linux/386
+      DOCKER_PLATFORMS: linux/arm64,linux/x86-64
 
     runs-on: ubuntu-latest
 
