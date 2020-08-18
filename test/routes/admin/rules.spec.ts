@@ -329,7 +329,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params rule id must be a valid ObjectId' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params rule id must be a valid ObjectId'
+                }));
             });
 
             it('should return 404 when rule does not exists', async () => {
@@ -342,7 +346,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 404,
+                    error: 'Not Found',
+                    message: 'Resource not found'
+                }));
             });
 
             it('should return 200 with rule', async () => {
@@ -413,7 +421,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'Unexpected token i in JSON at position 1' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'Unexpected token i in JSON at position 1'
+                }));
             });
 
             it('should return 400 when name is undefined', async () => {
@@ -434,7 +446,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'name\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'name\''
+                }));
             });
 
             it('should return 400 when type is undefined', async () => {
@@ -455,7 +471,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'type\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'type\''
+                }));
             });
 
             it('should return 400 when type is not supported', async () => {
@@ -529,7 +549,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: '_aa is not a valid filter operator' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: '_aa is not a valid filter operator'
+                }));
             });
 
             it('should return 400 when filters has an invalid key', async () => {
@@ -553,7 +577,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'filter key \'$a\' cannot contain invalid symbol \'$\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'filter key \'$a\' cannot contain invalid symbol \'$\''
+                }));
             });
 
             it('should return 400 when event type id is undefined', async () => {
@@ -576,7 +604,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'eventTypeId\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'eventTypeId\''
+                }));
             });
 
             it('should return 400 when target id is undefined', async () => {
@@ -599,7 +631,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'targetId\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'targetId\''
+                }));
             });
 
             it('should return 400 when target id and/or event type id are not valid ObjectIds', async () => {
@@ -649,7 +685,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: `event type with identifier ${nonExistingEventTypeId} does not exists` }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: `event type with identifier ${nonExistingEventTypeId} does not exists`
+                }));
             });
 
             it('should return 400 when targetId does not exists', async () => {
@@ -673,7 +713,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: `target with identifier ${nonExistingTargetId} does not exists` }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: `target with identifier ${nonExistingTargetId} does not exists`
+                }));
             });
 
             it('should return 400 when group is undefined in rule of type sliding', async () => {
@@ -1045,7 +1089,11 @@ describe('admin server', () => {
                 expect(responseCreaterule2.statusCode).toBe(409);
                 expect(responseCreaterule2.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(responseCreaterule2.headers.location).toBe(`http://localhost:80/rules/${rule.id}`);
-                expect(responseCreaterule2.payload).toBe(JSON.stringify({ message: `Rule name must be unique and is already taken by rule with id ${rule.id}` }));
+                expect(responseCreaterule2.payload).toBe(JSON.stringify({
+                    statusCode: 409,
+                    error: 'Conflict',
+                    message: `Rule name must be unique and is already taken by rule with id ${rule.id}`
+                }));
             });
         });
 
@@ -1072,7 +1120,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params rule id must be a valid ObjectId' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params rule id must be a valid ObjectId'
+                }));
             });
 
             it('should return 204 when rule does not exist', async () => {

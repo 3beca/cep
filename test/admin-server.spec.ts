@@ -42,7 +42,11 @@ describe('admin server', () => {
         });
         expect(response.statusCode).toBe(404);
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
+        expect(response.payload).toBe(JSON.stringify({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Resource not found'
+        }));
     });
 
     it('should return 401 when api keys are set but does not match request Authorization header', async () => {
@@ -70,7 +74,11 @@ describe('admin server', () => {
         });
         expect(response.statusCode).toBe(401);
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(JSON.parse(response.payload)).toStrictEqual({ error: 'invalid authorization header' });
+        expect(JSON.parse(response.payload)).toStrictEqual({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message: 'invalid authorization header'
+        });
     });
 
     it('should return 401 when api keys are set but no Authorization header', async () => {
@@ -95,7 +103,11 @@ describe('admin server', () => {
         });
         expect(response.statusCode).toBe(401);
         expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-        expect(JSON.parse(response.payload)).toStrictEqual({ error: 'missing authorization header' });
+        expect(JSON.parse(response.payload)).toStrictEqual({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message: 'missing authorization header'
+        });
     });
 
     it('should return 200 for swagger endpoint', async () => {

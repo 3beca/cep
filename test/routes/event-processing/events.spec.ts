@@ -51,7 +51,11 @@ describe('event processing', () => {
             });
             expect(response.statusCode).toBe(404);
             expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-            expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
+            expect(response.payload).toBe(JSON.stringify({
+                statusCode: 404,
+                error: 'Not Found',
+                message: 'Resource not found'
+            }));
         });
 
         it('should return 204 when event type exists', async () => {

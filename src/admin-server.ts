@@ -138,7 +138,15 @@ export function buildAdminServer(
 	app.register(async function routes(app: FastifyInstance) {
 
 		if (enableSecurity) {
-			app.register(fastifyBearerAuth, { keys, bearerType: 'apiKey' });
+			app.register(fastifyBearerAuth, {
+				keys,
+				bearerType: 'apiKey',
+				errorResponse: (err: Error) => ({
+					statusCode: 401,
+					error: 'Unauthorized',
+					message: err.message
+				})
+			});
 		}
 
 		// End points
@@ -152,36 +160,53 @@ export function buildAdminServer(
 
 		app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 			// Default not found handler with preValidation and preHandler hooks
-			reply.code(404).send({ message: 'Resource not found' });
+			reply.code(404).send({
+				statusCode: 404,
+				error: 'Not Found',
+				message: 'Resource not found'
+			});
 		});
 	});
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
-			reply.status(404).send({ message: 'Resource not found' });
+			reply.status(404).send({
+				statusCode: 404,
+				error: 'Not Found',
+				message: 'Resource not found'
+			});
 			return;
 		}
 		if (error instanceof ConflictError) {
 			request.log.info(error);
 			reply.header('Location', getUrl(request, `${request.url}/${error.id}`));
-			reply.status(409).send({ message: error.message });
+			reply.status(409).send({
+				statusCode: 409,
+				error: 'Conflict',
+				message: error.message
+			});
 			return;
 		}
 		if (error instanceof FilterError ||
 			error instanceof InvalidOperationError ||
 			error instanceof GroupError ||
-			error.validation) {
+			error.validation ||
+			error.statusCode === 400) {
 			request.log.info(error);
-			reply.status(400).send(error);
+			reply.status(400).send({
+				statusCode: 400,
+				error: 'Bad Request',
+				message: error.message
+			});
 			return;
 		}
-		if (error.statusCode && error.statusCode < 500) {
-			request.log.info(error);
-		} else {
-			request.log.error(error);
-		}
-		reply.status(error.statusCode ?? 500).send(error);
+		request.log.error(error);
+		reply.status(500).send({
+			statusCode: 500,
+			error: 'Internal Server Error',
+			message: 'Ups, something goes wrong.'
+		});
 	});
 
 	return app;

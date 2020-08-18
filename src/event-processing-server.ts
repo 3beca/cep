@@ -69,22 +69,38 @@ export function buildEventProcessingServer(
 
 	app.setNotFoundHandler(function(request, reply: FastifyReply<Server>) {
 		// Default not found handler with preValidation and preHandler hooks
-		reply.code(404).send({ message: 'Resource not found' });
+		reply.code(404).send({
+			statusCode: 404,
+			error: 'Not Found',
+			message: 'Resource not found'
+		});
 	});
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
 			request.log.info(error);
-			reply.status(404).send({ message: 'Resource not found' });
+			reply.status(404).send({
+				statusCode: 404,
+				error: 'Not Found',
+				message: 'Resource not found'
+			});
 			return;
 		}
 		if (error.validation) {
 			request.log.info(error);
-			reply.status(400).send(error);
+			reply.status(400).send({
+				statusCode: 400,
+				error: 'Bad Request',
+				message: error.message
+			});
 			return;
 		}
 		request.log.error(error);
-		reply.status(500).send(error);
+		reply.status(500).send({
+			statusCode: 500,
+			error: 'Internal Server Error',
+			message: 'Ups, something goes wrong.'
+		});
 	});
 
 	return app;

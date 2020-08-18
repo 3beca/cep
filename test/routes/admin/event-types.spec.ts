@@ -310,7 +310,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params event type id must be a valid ObjectId' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params event type id must be a valid ObjectId'
+                }));
             });
 
             it('should return 404 when event does not exists', async () => {
@@ -323,7 +327,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(404);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ message: 'Resource not found' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 404,
+                    error: 'Not Found',
+                    message: 'Resource not found'
+                }));
             });
 
             it('should return 200 with the event types', async () => {
@@ -384,7 +392,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body should have required property \'name\'' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'name\''
+                }));
             });
 
             it('should return 400 when name is longer than 100 characters', async () => {
@@ -400,7 +412,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'body/name should NOT be longer than 100 characters' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/name should NOT be longer than 100 characters'
+                }));
             });
 
             it('should return 201 with created event when request is valid', async () => {
@@ -452,7 +468,11 @@ describe('admin server', () => {
                 expect(responseCreateEvent2.statusCode).toBe(409);
                 expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
                 expect(responseCreateEvent2.headers.location).toBe(`https://mycep.com/event-types/${event.id}`);
-                expect(responseCreateEvent2.payload).toBe(JSON.stringify({ message: `Event type name must be unique and is already taken by event type with id ${event.id}` }));
+                expect(responseCreateEvent2.payload).toBe(JSON.stringify({
+                    statusCode: 409,
+                    error: 'Conflict',
+                    message: `Event type name must be unique and is already taken by event type with id ${event.id}`
+                }));
             });
         });
 
@@ -479,7 +499,11 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(400);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(response.payload).toBe(JSON.stringify({ statusCode: 400, error: 'Bad Request', message: 'params event type id must be a valid ObjectId' }));
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params event type id must be a valid ObjectId'
+                }));
             });
 
             it('should return 204 when event does not exist', async () => {
