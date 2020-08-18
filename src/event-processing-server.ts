@@ -86,7 +86,8 @@ export function buildEventProcessingServer(
 			});
 			return;
 		}
-		if (error.validation) {
+		if (error.validation ||
+			error.statusCode === 400) {
 			request.log.info(error);
 			reply.status(400).send({
 				statusCode: 400,
