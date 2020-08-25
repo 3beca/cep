@@ -242,7 +242,7 @@ describe('admin server', () => {
     it('should return 404 when CORS preflight request but cors is not enabled', async () => {
         adminServer.register(
             function(fastify, opts, next) {
-                fastify.get('/', async (request, reply) => {
+                fastify.post('/', async (request, reply) => {
                     reply.status(200).send({ success: true });
                 });
                 next();
@@ -257,19 +257,76 @@ describe('admin server', () => {
         expect(responseOptions.statusCode).toBe(404);
         expect(responseOptions.headers['content-type']).toBe('application/json; charset=utf-8');
 
-        const responseGet = await adminServer.inject({
-            method: 'GET',
+        const responsePost = await adminServer.inject({
+            method: 'POST',
             url: '/cors',
             headers: {
+                'Content-Type': 'application/json',
                 origin: 'https://mywebsite.com'
+            },
+            body: { test: true }
+        });
+
+        expect(responsePost.statusCode).toBe(200);
+        expect(responsePost.headers['access-control-allow-origin']).toBe(undefined);
+    });
+
+    it('should return 204 when CORS preflight request and cors and security is enabled', async () => {
+        const adminServer = buildAdminServer({
+                trustProxy: false,
+                enableCors: true,
+                enableSwagger: false,
+                host: '',
+                port: 0,
+                eventProcessingHttpBaseUrl: '',
+                apiKeys: 'abc'
+            },
+            null as unknown as EventTypesService,
+            null as unknown as TargetsService,
+            null as unknown as RulesService,
+            null as unknown as EventsService,
+            null as unknown as RulesExecutionsService,
+            buildMetrics());
+        adminServer.register(
+            function(fastify, opts, next) {
+                fastify.post('/', async (request, reply) => {
+                    reply.status(200).send({ success: true });
+                });
+                next();
+            }, { prefix: '/cors' }
+        );
+
+        const responseOptions = await adminServer.inject({
+            method: 'OPTIONS',
+            url: '/cors',
+            headers: {
+                origin: 'https://mywebsite.com',
+                'Access-Control-Request-Method': 'POST',
+                'Access-Control-Request-Headers': 'Content-Type, Authorization'
             }
         });
 
-        expect(responseGet.statusCode).toBe(200);
-        expect(responseGet.headers['access-control-allow-origin']).toBe(undefined);
+        expect(responseOptions.statusCode).toBe(204);
+        expect(responseOptions.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
+        expect(responseOptions.headers['access-control-allow-methods']).toBe('GET, POST, DELETE, PUT');
+        expect(responseOptions.headers['access-control-allow-headers']).toBe('Content-Type, Authorization');
+
+        const responsePost = await adminServer.inject({
+            method: 'POST',
+            url: '/cors',
+            headers: {
+                'Content-Type': 'application/json',
+                authorization: 'apiKey abc',
+                origin: 'https://mywebsite.com'
+            },
+            body: { test: true}
+        } as any);
+
+        expect(responsePost.statusCode).toBe(200);
+        expect(responsePost.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
     });
 
-    it('should return 204 when CORS preflight request and cors is enabled', async () => {
+    it('should return 204 when CORS preflight request and cors is enabled but security is not enabled', async () => {
         const adminServer = buildAdminServer({
                 trustProxy: false,
                 enableCors: true,
@@ -287,7 +344,7 @@ describe('admin server', () => {
             buildMetrics());
         adminServer.register(
             function(fastify, opts, next) {
-                fastify.get('/', async (request, reply) => {
+                fastify.post('/', async (request, reply) => {
                     reply.status(200).send({ success: true });
                 });
                 next();
@@ -296,20 +353,17 @@ describe('admin server', () => {
 
         const responseOptions = await adminServer.inject({
             method: 'OPTIONS',
-            url: '/cors'
-        });
-
-        expect(responseOptions.statusCode).toBe(204);
-
-        const responseGet = await adminServer.inject({
-            method: 'GET',
             url: '/cors',
             headers: {
-                origin: 'https://mywebsite.com'
+                origin: 'https://mywebsite.com',
+                'Access-Control-Request-Method': 'POST',
+                'Access-Control-Request-Headers': 'Content-Type, Authorization'
             }
         });
 
-        expect(responseGet.statusCode).toBe(200);
-        expect(responseGet.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
+        expect(responseOptions.statusCode).toBe(204);
+        expect(responseOptions.headers['access-control-allow-origin']).toBe('https://mywebsite.com');
+        expect(responseOptions.headers['access-control-allow-methods']).toBe('GET, POST, DELETE, PUT');
+        expect(responseOptions.headers['access-control-allow-headers']).toBe('Content-Type');
     });
 });

@@ -131,7 +131,7 @@ export function buildAdminServer(
 		app.register(fastifyCors, {
 			origin: true,
 			methods: ['GET', 'POST', 'DELETE', 'PUT'],
-			allowedHeaders: ['Content-Type']
+			allowedHeaders: ['Content-Type', ...(enableSecurity ? ['Authorization'] : []) ]
 		});
 	}
 
