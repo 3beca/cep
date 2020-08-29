@@ -182,7 +182,7 @@ The sintax has been inspired by mongodb aggregate group expression language. The
     "avgTemperature": { "_avg": "_temperature" }
   },
   "windowSize": {
-    "unite": "hour",
+    "unit": "hour",
     "value": 1
   }
 }
@@ -203,7 +203,7 @@ In the example above, the sliding rule will calculate on every event the average
     "maxTemperature": { "_max": "_temperature" }
   },
   "windowSize": {
-    "unite": "hour",
+    "unit": "hour",
     "value": 1
   }
 }
