@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "agenda": "^3.1.0",
-    "ajv": "^6.12.4",
+    "ajv": "^6.12.5",
     "ajv-errors": "^1.0.1",
     "convict": "^6.0.0",
     "escape-string-regexp": "^4.0.0",
