@@ -107,10 +107,12 @@ export function buildEngine(
             await Promise.all(rulesThatMustInvokeTargets.map(async matchResult => {
                 const { rule } = matchResult;
                 const target = targets[rule.targetId.toHexString()];
-                const response = await fetch(target.url, {
+                const { url, headers } = target;
+                const response = await fetch(url, {
                     method: 'POST',
                     body: JSON.stringify(matchResult.payload),
                     headers: {
+                        ...(headers ?? {}),
                         'Content-Type': 'application/json',
                         'request-id': requestId,
                         'X-Rule-Id': rule.id.toHexString(),
