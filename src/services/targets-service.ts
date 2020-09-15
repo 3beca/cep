@@ -6,7 +6,7 @@ import { Target } from '../models/target';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
-    create(target: Pick<Target, 'name' | 'url'>): Promise<Target>;
+    create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target>;
     getById(id: ObjectId): Promise<Target>;
     deleteById(id: ObjectId): Promise<void>;
     getByIds(ids: ObjectId[]): Promise<Target[]>;
@@ -28,7 +28,7 @@ export function buildTargetsService(db: Db): TargetsService {
             const targets = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return targets.map(toDto);
         },
-        async create(target: Pick<Target, 'name' | 'url'>): Promise<Target> {
+        async create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target> {
             const targetToCreate = {
                 ...target,
                 createdAt: new Date(),

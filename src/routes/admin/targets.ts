@@ -11,6 +11,10 @@ const targetschema = {
         name: { type: 'string' },
         id: { type: 'string' },
         url: { type: 'string' },
+        headers: {
+            type: 'object',
+            additionalProperties: { type: 'string' }
+        },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
@@ -78,6 +82,10 @@ const createSchema = {
             url: {
                 type: 'string',
                 format: 'uri'
+            },
+            headers: {
+                type: 'object',
+                additionalProperties: { type: 'string' }
             }
         }
     },
@@ -115,9 +123,9 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest<{ Body: { name:string, url: string} }>, reply: FastifyReply<Server>) {
-        const { name, url } = request.body;
-        const target = await targetsService.create({ name, url });
+    async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }} }>, reply: FastifyReply<Server>) {
+        const { name, url, headers } = request.body;
+        const target = await targetsService.create({ name, url, headers });
         reply.header('Location', getUrl(request, `/targets/${target.id}`));
         reply.status(201).send(target);
     }
