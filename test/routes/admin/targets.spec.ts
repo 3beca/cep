@@ -49,7 +49,11 @@ describe('admin server', () => {
                     url: '/targets',
                     body: {
                         name: 'a target',
-                        url: 'http://example.org'
+                        url: 'http://example.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-app-id': '123'
+                        }
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -58,6 +62,12 @@ describe('admin server', () => {
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdTarget = JSON.parse(createResponse.payload);
+                expect(createdTarget.name).toBe('a target');
+                expect(createdTarget.url).toBe('http://example.org');
+                expect(createdTarget.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-app-id': '123'
+                });
 
                 const response = await adminServer.inject({
                     method: 'GET',
@@ -509,6 +519,54 @@ describe('admin server', () => {
                     statusCode: 400,
                     error: 'Bad Request',
                     message: 'body/headers/a should be string'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Type', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Type': 'plain/text'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-type cannot be specified'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Length', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Length': 456
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-length cannot be specified'
                 }));
             });
 

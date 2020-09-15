@@ -3,6 +3,7 @@ import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
+import InvalidOperationError from '../errors/invalid-operation-error';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
@@ -22,6 +23,17 @@ export function buildTargetsService(db: Db): TargetsService {
         return `.*${escapeStringRegex(search)}.*`;
     }
 
+    const unsupportedHeaders = ['content-type', 'content-length'];
+
+    function assertNoUnsupportedHeaders(headers: { [key: string]: string }): void {
+        const keys = Object.keys(headers).map(k => k.toLowerCase());
+        for (const key of keys) {
+            if (unsupportedHeaders.includes(key)) {
+                throw new InvalidOperationError(`body/headers/${key} cannot be specified`);
+            }
+        }
+    }
+
     return {
         async list(page: number, pageSize: number, search?: string): Promise<Target[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -34,6 +46,9 @@ export function buildTargetsService(db: Db): TargetsService {
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
+            if (targetToCreate.headers) {
+                assertNoUnsupportedHeaders(targetToCreate.headers);
+            }
             try {
                 const { insertedId } = await collection.insertOne(targetToCreate);
                 return { ...targetToCreate, id: insertedId };
