@@ -49,7 +49,11 @@ describe('admin server', () => {
                     url: '/targets',
                     body: {
                         name: 'a target',
-                        url: 'http://example.org'
+                        url: 'http://example.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-app-id': '123'
+                        }
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -58,6 +62,12 @@ describe('admin server', () => {
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdTarget = JSON.parse(createResponse.payload);
+                expect(createdTarget.name).toBe('a target');
+                expect(createdTarget.url).toBe('http://example.org');
+                expect(createdTarget.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-app-id': '123'
+                });
 
                 const response = await adminServer.inject({
                     method: 'GET',
@@ -331,7 +341,11 @@ describe('admin server', () => {
                     url: '/targets',
                     body: {
                         name: 'a target',
-                        url: 'http://example.org'
+                        url: 'http://example.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-app-id': 123
+                        }
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -340,6 +354,12 @@ describe('admin server', () => {
                 expect(createResponse.statusCode).toBe(201);
                 expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
                 const createdTarget = JSON.parse(createResponse.payload);
+                expect(createdTarget.name).toBe('a target');
+                expect(createdTarget.url).toBe('http://example.org');
+                expect(createdTarget.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-app-id': '123'
+                });
 
                 const response = await adminServer.inject({
                     method: 'GET',
@@ -350,8 +370,8 @@ describe('admin server', () => {
                 });
                 expect(response.statusCode).toBe(200);
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
-                const gettarget = JSON.parse(response.payload);
-                expect(gettarget).toEqual(createdTarget);
+                const getTarget = JSON.parse(response.payload);
+                expect(getTarget).toEqual(createdTarget);
             });
         });
 
@@ -456,7 +476,101 @@ describe('admin server', () => {
                 }));
             });
 
-            it('should return 201 with created target when request is valid', async () => {
+            it('should return 400 when headers is not an object', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: []
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers should be object'
+                }));
+            });
+
+            it('should return 400 when headers value is not a string', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            a: { complex: 'object' }
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/a should be string'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Type', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Type': 'plain/text'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-type cannot be specified'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Length', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Length': 456
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-length cannot be specified'
+                }));
+            });
+
+            it('should return 201 with created target when request has only required fields', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',
@@ -477,7 +591,36 @@ describe('admin server', () => {
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
-            it('should return 201 with created target when url host is a top-level domain ony', async () => {
+            it('should return 201 with created target when request includes valid headers', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'a target',
+                        url: 'http://example.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-custom-header': 5
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const target = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:80/targets/${target.id}`);
+                expect(target.name).toBe('a target');
+                expect(target.url).toBe('http://example.org');
+                expect(target.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-custom-header': '5'
+                });
+                expect(ObjectId.isValid(target.id)).toBe(true);
+            });
+
+            it('should return 201 with created target when url host is a top-level domain', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',

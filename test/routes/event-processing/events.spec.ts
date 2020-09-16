@@ -109,14 +109,19 @@ describe('event processing', () => {
             expect(scope.isDone()).toBe(false);
         });
 
-        it('should call target when event payload matches rule filters with request-id header and payload as body', async () => {
+        it('should call target when event payload matches rule filters with request-id headers + custom headers and payload as body', async () => {
             const eventType = await createEventType(adminServer);
-            const target = await createTarget(adminServer, 'http://example.org/');
+            const target = await createTarget(adminServer, 'http://example.org/', {
+                authorization: 'Bearer myKey',
+                'x-custom-header': '7'
+            });
             const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
 
             const requestId = new ObjectId().toHexString();
             const scope = nock('http://example.org', {
                 reqheaders: {
+                    authorization: 'Bearer myKey',
+                    'x-custom-header': '7',
                     'request-id': requestId,
                     'X-Rule-Id': rule.id,
                     'X-Rule-Name': rule.name,
@@ -455,13 +460,14 @@ describe('event processing', () => {
         expect(scope.isDone()).toBe(true);
     });
 
-    async function createTarget(adminServer, url = 'http://example.org') {
+    async function createTarget(adminServer, url = 'http://example.org', headers?: { [key: string]: string }) {
         const createResponse = await adminServer.inject({
             method: 'POST',
             url: '/targets',
             body: {
                 name: 'a target',
-                url
+                url,
+                headers
             }
         });
         expect(createResponse.statusCode).toBe(201);

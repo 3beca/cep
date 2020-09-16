@@ -3,10 +3,11 @@ import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
+import InvalidOperationError from '../errors/invalid-operation-error';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
-    create(target: Pick<Target, 'name' | 'url'>): Promise<Target>;
+    create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target>;
     getById(id: ObjectId): Promise<Target>;
     deleteById(id: ObjectId): Promise<void>;
     getByIds(ids: ObjectId[]): Promise<Target[]>;
@@ -22,18 +23,32 @@ export function buildTargetsService(db: Db): TargetsService {
         return `.*${escapeStringRegex(search)}.*`;
     }
 
+    const unsupportedHeaders = ['content-type', 'content-length'];
+
+    function assertNoUnsupportedHeaders(headers: { [key: string]: string }): void {
+        const keys = Object.keys(headers).map(k => k.toLowerCase());
+        for (const key of keys) {
+            if (unsupportedHeaders.includes(key)) {
+                throw new InvalidOperationError(`body/headers/${key} cannot be specified`);
+            }
+        }
+    }
+
     return {
         async list(page: number, pageSize: number, search?: string): Promise<Target[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const targets = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return targets.map(toDto);
         },
-        async create(target: Pick<Target, 'name' | 'url'>): Promise<Target> {
+        async create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target> {
             const targetToCreate = {
                 ...target,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
+            if (targetToCreate.headers) {
+                assertNoUnsupportedHeaders(targetToCreate.headers);
+            }
             try {
                 const { insertedId } = await collection.insertOne(targetToCreate);
                 return { ...targetToCreate, id: insertedId };

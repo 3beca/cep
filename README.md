@@ -95,6 +95,14 @@ To create a target we just need to provide an **unique name** and an **url**.
 curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
 ```
 
+In addition custom headers can be defined for a target as an optional parameter: **headers**.
+
+```
+curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\", \"headers\": { \"Authorization\": \"Bearer TOKEN\" }}"
+```
+
+**Note**: headers not supported are Content-Type (this is always set by the system with value application/json) and Content-Length.
+
 ### Create a Rule
 
 Rules allow to create a relationship between event types and targets.
