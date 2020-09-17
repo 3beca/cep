@@ -86,4 +86,4 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
-        script: source .bashrc && helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.DOCKER_IMAGE }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys="${{ secrets.ADMIN_HTTP_API_KEYS }}" --install --wait
+        script: /snap/bin/microk8s.helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.DOCKER_IMAGE }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys="${{ secrets.ADMIN_HTTP_API_KEYS }}" --install --wait
