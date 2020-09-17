@@ -150,6 +150,20 @@ describe('template-engine', () => {
             }
         });
 
+        it('should throw an error if some template has invalid syntax', async () => {
+            expect.assertions(1);
+            try {
+                await templateEngine.render({
+                    title: [{ value: 'My {{a}}' }],
+                    value: '{{value',
+                    value2: '49',
+                    value3: 'the value is {{value}}'
+                }, { title: 'test', value: 4.99 });
+            } catch (error) {
+                expect(error.message).toBe('/value output "{{value" not closed, line:1, col:1');
+            }
+        });
+
         it('should return template object replacing with empty string when variable does not exist in the model', async () => {
             const result = await templateEngine.render({
                 title: 'My {{a}}',
