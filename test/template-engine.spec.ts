@@ -147,5 +147,41 @@ describe('template-engine', () => {
                 expect(error.message).toBe('/title/0/value tag "bla" not found, line:1, col:4');
             }
         });
+
+        it('should return template object replacing with empty string when variable does not exist in the model', async () => {
+            const result = await templateEngine.render({
+                title: 'My {{a}}',
+                value: '{{a.b.c}}',
+                value2: '49',
+                value3: 'the value is {{d.i}}'
+            }, { title: 'test', value: 4.99 });
+
+            expect(result).toStrictEqual({
+                title: 'My ',
+                value: '',
+                value2: '49',
+                value3: 'the value is '
+            });
+        });
+
+        it('should return template object skip invalid filters', async () => {
+            const result = await templateEngine.render({
+                title: 'My {{ title | invalidFilter | capitalize }}'
+            }, { title: 'test' });
+
+            expect(result).toStrictEqual({
+                title: 'My Test',
+            });
+        });
+
+        it('should return template object applying valid filters', async () => {
+            const result = await templateEngine.render({
+                title: 'My {{ title | upcase }}'
+            }, { title: 'test' });
+
+            expect(result).toStrictEqual({
+                title: 'My TEST',
+            });
+        });
     });
 });
