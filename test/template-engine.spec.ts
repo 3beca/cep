@@ -80,13 +80,15 @@ describe('template-engine', () => {
             const result = await templateEngine.render({
                 title: 'My {{title}}',
                 value: null,
-                value2: undefined
+                value2: undefined,
+                value3: [null, undefined, 0]
             }, { title: 1, description: 'cat', test: 'composed' });
 
             expect(result).toStrictEqual({
                 title: 'My 1',
                 value: null,
-                value2: undefined
+                value2: undefined,
+                value3: [null, undefined, 0]
             });
         });
 
