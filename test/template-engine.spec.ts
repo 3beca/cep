@@ -105,5 +105,47 @@ describe('template-engine', () => {
                 value3: 'the value is 4.99'
             });
         });
+
+        it('should throw an error if some template makes use of include', async () => {
+            expect.assertions(1);
+            try {
+                await templateEngine.render({
+                    title: 'My {% include "package.json" %}',
+                    value: '{{value}}',
+                    value2: '49',
+                    value3: 'the value is {{value}}'
+                }, { title: 'test', value: 4.99 });
+            } catch (error) {
+                expect(error.message).toBe('/title partials and layouts are not supported, line:1, col:4');
+            }
+        });
+
+        it('should throw an error if some template makes use of render', async () => {
+            expect.assertions(1);
+            try {
+                await templateEngine.render({
+                    title: [{ value: 'My {% render "package.json" %}' }],
+                    value: '{{value}}',
+                    value2: '49',
+                    value3: 'the value is {{value}}'
+                }, { title: 'test', value: 4.99 });
+            } catch (error) {
+                expect(error.message).toBe('/title/0/value partials and layouts are not supported, line:1, col:4');
+            }
+        });
+
+        it('should throw an error if some template makes use of an invalid tag', async () => {
+            expect.assertions(1);
+            try {
+                await templateEngine.render({
+                    title: [{ value: 'My {% bla %}' }],
+                    value: '{{value}}',
+                    value2: '49',
+                    value3: 'the value is {{value}}'
+                }, { title: 'test', value: 4.99 });
+            } catch (error) {
+                expect(error.message).toBe('/title/0/value tag "bla" not found, line:1, col:4');
+            }
+        });
     });
 });
