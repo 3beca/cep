@@ -199,5 +199,15 @@ describe('template-engine', () => {
                 title: 'My TEST',
             });
         });
+
+        it('should return template object applying if logic', async () => {
+            const result = await templateEngine.render({
+                title: 'Value is {% if value > 5 %}HIGH{% endif %}'
+            }, { value: 7 });
+
+            expect(result).toStrictEqual({
+                title: 'Value is HIGH',
+            });
+        });
     });
 });
