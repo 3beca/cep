@@ -4,6 +4,7 @@ import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { ObjectId } from 'mongodb';
 import { Server } from 'http';
 import { TargetsService } from '../../services/targets-service';
+import { Target } from '../../models/target';
 
 const targetSchema = {
     type: 'object',
@@ -102,6 +103,34 @@ const createSchema = {
     }
 };
 
+
+const updateSchema = {
+    tags: ['targets'],
+    params: targetIdParam,
+    body: {
+        type: 'object',
+        required: ['name', 'url'],
+        properties: {
+            name: { type: 'string', maxLength: 100 },
+            url: {
+                type: 'string',
+                format: 'uri'
+            },
+            headers: {
+                type: 'object',
+                additionalProperties: { type: 'string' }
+            },
+            body: {
+                type: 'object',
+                additionalProperties: true
+            }
+        }
+    },
+    response: {
+        200: targetSchema
+    }
+};
+
 export function buildTargetsRoutes(targetsService: TargetsService) {
 
     async function list(request: FastifyRequest<{ Querystring: { page: number, pageSize: number, search: string } }>) {
@@ -114,7 +143,7 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         };
     }
 
-    async function getById(request: FastifyRequest<{ Params: { id: string } }>) {
+    async function getById(request: FastifyRequest<{ Params: { id: string } }>): Promise<Target> {
         const { id } = request.params;
         const targetId = ObjectId.createFromHexString(id);
         const target = await targetsService.getById(targetId);
@@ -131,6 +160,13 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         reply.status(204).send();
     }
 
+    function updateById(request: FastifyRequest<{ Params: { id: string }, Body: { name:string, url: string, headers: { [key:string]: string }, body: any } }>, reply: FastifyReply<Server>): Promise<Target> {
+        const { id } = request.params;
+        const { name, url, headers, body } = request.body;
+        const targetId = ObjectId.createFromHexString(id);
+        return targetsService.updateById(targetId, { name, url, headers, body });
+    }
+
     async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }, body: any } }>, reply: FastifyReply<Server>) {
         const { name, url, headers, body } = request.body;
         const target = await targetsService.create({ name, url, headers, body });
@@ -141,6 +177,7 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
     return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+        fastify.put('/:id', { ...opts, schema: updateSchema }, updateById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
         fastify.post('/', { ...opts, schema: createSchema }, create);
         next();

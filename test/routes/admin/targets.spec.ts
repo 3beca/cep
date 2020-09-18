@@ -578,7 +578,7 @@ describe('admin server', () => {
                 }));
             });
 
-            it('should return 400 when headers is not an object', async () => {
+            it('should return 400 when body is not an object', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',
@@ -704,18 +704,7 @@ describe('admin server', () => {
             });
 
             it('should return 409 when try to create a target with the same name', async () => {
-                const responseCreateTarget = await adminServer.inject({
-                    method: 'POST',
-                    url: '/targets',
-                    body: {
-                        name: 'same name',
-                        url: 'http://example.org'
-                    },
-                    headers: {
-                        authorization: 'apiKey myApiKey'
-                    }
-                });
-                const target = JSON.parse(responseCreateTarget.payload);
+                const target = await createTarget(adminServer, 'same name');
                 const responseCreateTarget2 = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',
@@ -734,6 +723,382 @@ describe('admin server', () => {
                     statusCode: 409,
                     error: 'Conflict',
                     message: `Target name must be unique and is already taken by target with id ${target.id}`
+                }));
+            });
+        });
+
+        describe('put', () => {
+
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'a target',
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
+            it('should return 400 when target identifier is not a valid ObjectId', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/invalid-object-id-here',
+                    body: {
+                        name: 'a name',
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params target id must be a valid ObjectId'
+                }));
+            });
+
+            it('should return 404 when target does not exists', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId(),
+                    body: {
+                        name: 'a name',
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(404);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 404,
+                    error: 'Not Found',
+                    message: 'Resource not found'
+                }));
+            });
+
+            it('should return 400 when name is undefined', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: undefined,
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'name\''
+                }));
+            });
+
+            it('should return 400 when url is undefined', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'a target',
+                        url: undefined
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'url\''
+                }));
+            });
+
+            it('should return 400 when url is not valid', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'a target',
+                        url: 'a non valid url'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/url should match format "uri"'
+                }));
+            });
+
+            it('should return 400 when name is longer than 100 characters', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'a'.repeat(101),
+                        url: 'https://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/name should NOT be longer than 100 characters'
+                }));
+            });
+
+            it('should return 400 when headers is not an object', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: []
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers should be object'
+                }));
+            });
+
+            it('should return 400 when headers value is not a string', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + new ObjectId().toHexString(),
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            a: { complex: 'object' }
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/a should be string'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Type', async () => {
+                const target = await createTarget(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Type': 'plain/text'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-type cannot be specified'
+                }));
+            });
+
+            it('should return 400 when headers key is Content-Length', async () => {
+                const target = await createTarget(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        headers: {
+                            'Content-Length': 456
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/headers/content-length cannot be specified'
+                }));
+            });
+
+            it('should return 400 when body is not an object', async () => {
+                const target = await createTarget(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: []
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body should be object'
+                }));
+            });
+
+            it('should return 400 when body has invalid syntax in template', async () => {
+                const target = await createTarget(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: {
+                            title: 'my title is {{ bad syntax'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body/title output "{{ bad syntax" not closed, line:1, col:13'
+                }));
+            });
+
+            it('should return 200 with updated target when request has only required fields', async () => {
+                const target = await createTarget(adminServer, 'my target');
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'my target 2',
+                        url: 'http://example-changed.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedTarget = JSON.parse(response.payload);
+                expect(updatedTarget.name).toBe('my target 2');
+                expect(updatedTarget.url).toBe('http://example-changed.org');
+                expect(ObjectId.isValid(updatedTarget.id)).toBe(true);
+                expect(updatedTarget.id).toBe(target.id);
+                expect(updatedTarget.createdAt).toBe(target.createdAt);
+                expect(updatedTarget.updatedAt).not.toBe(target.updatedAt);
+            });
+
+            it('should return 200 with updated target when request includes valid headers and body', async () => {
+                const target = await createTarget(adminServer, 'my target');
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'an updatedTarget',
+                        url: 'http://example-changed.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-custom-header': 5
+                        },
+                        body: {
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedTarget = JSON.parse(response.payload);
+                expect(ObjectId.isValid(updatedTarget.id)).toBe(true);
+                expect(updatedTarget.id).toBe(target.id);
+                expect(updatedTarget.name).toBe('an updatedTarget');
+                expect(updatedTarget.url).toBe('http://example-changed.org');
+                expect(updatedTarget.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-custom-header': '5'
+                });
+                expect(updatedTarget.body).toStrictEqual({
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
+                });
+                expect(updatedTarget.createdAt).toBe(target.createdAt);
+                expect(updatedTarget.updatedAt).not.toBe(target.updatedAt);
+            });
+
+            it('should return 409 when try to create a target with the same name', async () => {
+                const target1 = await createTarget(adminServer, 'same name');
+                const target2 = await createTarget(adminServer, 'a name');
+                const responseUpdateTarget2 = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target2.id,
+                    body: {
+                        name: 'same name',
+                        url: 'http://example.org'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(responseUpdateTarget2.statusCode).toBe(409);
+                expect(responseUpdateTarget2.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(responseUpdateTarget2.headers.location).toBe(`http://localhost:80/targets/${target1.id}`);
+                expect(responseUpdateTarget2.payload).toBe(JSON.stringify({
+                    statusCode: 409,
+                    error: 'Conflict',
+                    message: `Target name must be unique and is already taken by target with id ${target1.id}`
                 }));
             });
         });

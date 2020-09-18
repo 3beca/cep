@@ -5,13 +5,15 @@ import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { TemplateEngine } from '../template-engine';
+import NotFoundError from '../errors/not-found-error';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
-    create(target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target>;
     getById(id: ObjectId): Promise<Target>;
-    deleteById(id: ObjectId): Promise<void>;
     getByIds(ids: ObjectId[]): Promise<Target[]>;
+    create(target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target>;
+    updateById(id: ObjectId, targetToUpdate: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target>;
+    deleteById(id: ObjectId): Promise<void>;
     registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void;
 }
 
@@ -43,6 +45,16 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
         }
     }
 
+    async function handleConflictError(error, name: string): Promise<object> {
+        if (error.name === 'MongoError' && error.code === 11000) {
+            const existingTarget = await collection.findOne({ name });
+            if (existingTarget) {
+                return new ConflictError(`Target name must be unique and is already taken by target with id ${existingTarget._id}`, existingTarget._id, 'targets');
+            }
+        }
+        return error;
+    }
+
     return {
         async list(page: number, pageSize: number, search?: string): Promise<Target[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -65,13 +77,31 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 const { insertedId } = await collection.insertOne(targetToCreate);
                 return { ...targetToCreate, id: insertedId };
             } catch (error) {
-                if (error.name === 'MongoError' && error.code === 11000) {
-                    const existingTarget = await collection.findOne({ name: target.name });
-                    if (existingTarget) {
-                        throw new ConflictError(`Target name must be unique and is already taken by target with id ${existingTarget._id}`, existingTarget._id, 'targets');
-                    }
-                }
-                throw error;
+                throw await handleConflictError(error, target.name);
+            }
+        },
+        async updateById(id: ObjectId, target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target> {
+            const existingTarget = await this.getById(id);
+            if (!existingTarget) {
+                throw new NotFoundError(`Target ${id} cannot be found`);
+            }
+            if (target.headers) {
+                assertNoUnsupportedHeaders(target.headers);
+            }
+            if (target.body) {
+                await assertBodyTemplateIsValid(target.body);
+            }
+            const targetToUpdate = {
+                ...target,
+                id: undefined,
+                updatedAt: new Date(),
+                createdAt: existingTarget.createdAt
+            };
+            try {
+                await collection.replaceOne({ _id: id }, targetToUpdate);
+                return { ...targetToUpdate, id };
+            } catch (error) {
+                throw await handleConflictError(error, target.name);
             }
         },
         async getById(id: ObjectId): Promise<Target> {
