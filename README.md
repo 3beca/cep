@@ -77,7 +77,13 @@ Cep provides an Admin Http API to manage event types, targets and rules. Also ca
 To create an event type we just need to provide an unique name:
 
 ```sh
-curl -X POST "http://localhost:8888/event-types/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"sensor foo\"}"
+curl --request POST \
+  --url "http://localhost:8888/event-types/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "sensor foo"
+  }'
 ```
 
 The result will give us an url of the [Event Processing Http API](#event-processing-http-api) where we will submit http post with json event payload:
@@ -99,7 +105,15 @@ A target represents an external system that will be called whenever a rule match
 To create a target we just need to provide an **unique name** and an **url**. On a rule match an http request will be done to the provided target url.
 
 ```sh
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
+
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org"
+  }'
 ```
 
 #### Target Body Template
@@ -130,7 +144,17 @@ Where **event** is the event payload in case the rule is of type realtime, or th
 Example:
 
 ```sh
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\", \"body\": { \"title\": \"the value is {{event.value}}\" }}"
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org",
+    "body": {
+      "title": "the value is {{event.value}}"
+    }
+  }'
 ```
 
 #### Target Headers
@@ -138,7 +162,18 @@ curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "
 In addition custom headers can be defined for a target as an optional parameter: **headers**.
 
 ```sh
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\", \"headers\": { \"Authorization\": \"Bearer TOKEN\" }}"
+
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org",
+    "headers": {
+      "Authorization": "Bearer TOKEN"
+    }
+  }'
 ```
 
 **Note**: headers not supported are Content-Type (this is always set by the system with value application/json) and Content-Length.
@@ -152,7 +187,18 @@ Here are some example of targets that using body template and headers can easily
 A simple target to send a message to a Telegram Chat via a Bot using the [Telegram Bot Http API](https://core.telegram.org/bots/api#sendmessage):
 
 ```sh
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"Telegram Bot Target\", \"url\": \"https://api.telegram.org/bot<token>/sendMessage\", \"body\": { \"chat_id\": 123, \"text\": \"{{rule.name}} - 🌡️ your temperature sensor {{eventType.name}} value is {{event.temperature}} degrees\" }}"
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Telegram Bot Target",
+    "url": "https://api.telegram.org/bot<token>/sendMessage",
+    "body": {
+      "chat_id": 123,
+      "text": "{{rule.name}} - 🌡️ your temperature sensor {{eventType.name}} value is {{event.temperature}} degrees"
+    }
+  }'
 ```
 
 ##### SendGrid Target
@@ -161,38 +207,38 @@ A simple target to send email via the [SendGrid Http API](https://sendgrid.com/d
 
 ```sh
 curl --request POST \
---url "http://localhost:8888/targets/" \
---header "accept: application/json" \
---header "Content-Type: application/json" \
---data '{
-	"name": "Email Target",
-	"url": "https://api.sendgrid.com/v3/mail/send",
-	"headers": {
-		"Authorization": "Bearer <sendGridApiKey>"
-	},
-	"body": {
-		"personalizations": [
-			{
-				"to": [{
-					"email": "to@example.com"
-				}]
-			}
-		],
-		"from": {
-			"email": "from@example.com",
-			"name": "Me"
-		},
-		"reply_to": {
-			"email": "no-reply@example.org",
-			"name": "no-reply"
-		},
-		"subject": "A new update from your sensor {{eventType.name}}",
-		"content": [{
-			"type": "text/html",
-			"value": "<h1>Your sensor value is {{event.value}}</h1>"
-		}]
-	}
-}'
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Email Target",
+    "url": "https://api.sendgrid.com/v3/mail/send",
+    "headers": {
+      "Authorization": "Bearer <sendGridApiKey>"
+    },
+    "body": {
+      "personalizations": [
+        {
+          "to": [{
+            "email": "to@example.com"
+          }]
+        }
+      ],
+      "from": {
+        "email": "from@example.com",
+        "name": "Me"
+      },
+      "reply_to": {
+        "email": "no-reply@example.org",
+        "name": "no-reply"
+      },
+      "subject": "A new update from your sensor {{eventType.name}}",
+      "content": [{
+        "type": "text/html",
+        "value": "<h1>Your sensor value is {{event.value}}</h1>"
+      }]
+    }
+  }'
 ```
 
 ### Create a Rule
@@ -207,7 +253,21 @@ A rule can be of the following types:
 i.e.: to create a realtime rule we must provide an unique name, a type, a target id, an event type id and a filter (this last one is optional).
 
 ```sh
-curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
+curl --request POST \
+  --url "http://localhost:8888/rules/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "value greater than 42",
+    "type": "realtime",
+    "targetId": "5db373aeb2684dc2105f20a5",
+    "eventTypeId": "5db3730cb2684d3d135f20a4",
+    "filters": {
+      "value": {
+        "_gt": 42
+      }
+    }
+  }'
 ```
 
 #### Rule Options
@@ -322,7 +382,13 @@ This API provides an http endpoint to ingest events into the cep system.
 To send an event palyoad just make an http post request to the event type url
 
 ```sh
-curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
+curl --request POST \
+  --url "http://localhost:8888/rules/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "value": 43
+  }'
 ```
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.
