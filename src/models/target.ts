@@ -7,6 +7,7 @@ export type Target = {
     headers?: {
         [key: string]: string;
     };
+    body?: any;
     createdAt: Date;
     updatedAt: Date;
 }

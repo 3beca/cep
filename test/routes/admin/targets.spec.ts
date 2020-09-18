@@ -53,6 +53,10 @@ describe('admin server', () => {
                         headers: {
                             authorization: 'Bearer myKey',
                             'x-app-id': '123'
+                        },
+                        body: {
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
                         }
                     },
                     headers: {
@@ -67,6 +71,10 @@ describe('admin server', () => {
                 expect(createdTarget.headers).toStrictEqual({
                     authorization: 'Bearer myKey',
                     'x-app-id': '123'
+                });
+                expect(createdTarget.body).toStrictEqual({
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
                 });
 
                 const response = await adminServer.inject({
@@ -601,6 +609,10 @@ describe('admin server', () => {
                         headers: {
                             authorization: 'Bearer myKey',
                             'x-custom-header': 5
+                        },
+                        body: {
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
                         }
                     },
                     headers: {
@@ -616,6 +628,10 @@ describe('admin server', () => {
                 expect(target.headers).toStrictEqual({
                     authorization: 'Bearer myKey',
                     'x-custom-header': '5'
+                });
+                expect(target.body).toStrictEqual({
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
                 });
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
