@@ -578,6 +578,28 @@ describe('admin server', () => {
                 }));
             });
 
+            it('should return 400 when headers is not an object', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: []
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body should be object'
+                }));
+            });
+
             it('should return 400 when body has invalid syntax in template', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
