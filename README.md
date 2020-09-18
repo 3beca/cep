@@ -16,6 +16,8 @@ A simple complex event processing system.
 - [Admin Http API](#admin-http-api)
   - [Create an Event Type](#create-an-event-type)
   - [Create a Target](#create-a-target)
+    - [Target Body Template](#target-body-template)
+    - [Target Headers](#target-headers)
   - [Create a Rule](#create-a-rule)
     - [Rule Options](#rule-options)
     - [Rule Filters](#rule-filters)
@@ -89,11 +91,44 @@ The result will give us an url of the [Event Processing Http API](#event-process
 
 A target represents an external system that will be called whenever a rule match.
 
-To create a target we just need to provide an **unique name** and an **url**.
+To create a target we just need to provide an **unique name** and an **url**. When a rule match an http request will be done to the provided target url.
 
 ```
 curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
 ```
+
+#### Target Body Template
+
+By default the Target http request body is the event payload in case the rule is of type realtime, or the group result in case the rule is type of tumbling.
+
+Targets support an optional body property to customize as you wish the http request body. This body property can be any object.
+
+Body properties of type string support templates using [liquid template language](https://shopify.github.io/liquid/).
+
+The template model will match the following structure:
+
+```
+{
+   "eventType": {
+      "id": string,
+      "name": string
+   },
+   "rule": {
+      "id": string,
+      "name": string
+    },
+   "event": any
+}
+```
+Where **event** is the event payload in case the rule is of type realtime, or the group result in case the rule is type of tumbling.
+
+Example:
+
+```
+curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\", \"body\": { \"title\": \"the value is {{event.value}}\" }}"
+```
+
+#### Target Headers
 
 In addition custom headers can be defined for a target as an optional parameter: **headers**.
 
