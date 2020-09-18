@@ -4,6 +4,7 @@ import { toDto } from '../utils/dto';
 import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
 import InvalidOperationError from '../errors/invalid-operation-error';
+import { TemplateEngine } from '../template-engine';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
@@ -14,7 +15,7 @@ export type TargetsService = {
     registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void;
 }
 
-export function buildTargetsService(db: Db): TargetsService {
+export function buildTargetsService(db: Db, templateEngine: TemplateEngine): TargetsService {
 
     const collection = db.collection('targets');
     const beforeDeleteEventHandlers: ((id: ObjectId) => void)[] = [];
@@ -34,6 +35,14 @@ export function buildTargetsService(db: Db): TargetsService {
         }
     }
 
+    async function assertBodyTemplateIsValid(body: any): Promise<void> {
+        try {
+            await templateEngine.render(body, {});
+        } catch(error) {
+            throw new InvalidOperationError(`body/body${error.message}`);
+        }
+    }
+
     return {
         async list(page: number, pageSize: number, search?: string): Promise<Target[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -48,6 +57,9 @@ export function buildTargetsService(db: Db): TargetsService {
             };
             if (targetToCreate.headers) {
                 assertNoUnsupportedHeaders(targetToCreate.headers);
+            }
+            if (targetToCreate.body) {
+                await assertBodyTemplateIsValid(targetToCreate.body);
             }
             try {
                 const { insertedId } = await collection.insertOne(targetToCreate);

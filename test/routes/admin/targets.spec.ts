@@ -578,6 +578,30 @@ describe('admin server', () => {
                 }));
             });
 
+            it('should return 400 when body has invalid syntax in template', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: {
+                            title: 'my title is {{ bad syntax'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body/title output "{{ bad syntax" not closed, line:1, col:13'
+                }));
+            });
+
             it('should return 201 with created target when request has only required fields', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
@@ -599,7 +623,7 @@ describe('admin server', () => {
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
-            it('should return 201 with created target when request includes valid headers', async () => {
+            it('should return 201 with created target when request includes valid headers and body', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',

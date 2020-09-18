@@ -14,6 +14,7 @@ import { buildScheduler, Scheduler } from './scheduler';
 import buildExecuteRuleJobHandler from './jobs-handlers/execute-rule-job-handler';
 import { buildEventProcessingServer } from './event-processing-server';
 import { Config } from './config';
+import { buildTemplateEngine } from './template-engine';
 
 export type App = {
     close(): Promise<void>;
@@ -28,9 +29,10 @@ export async function buildApp(config: Config): Promise<App> {
     const dbClient = await connect(config.mongodb.url);
     const db = await getAndSetupDatabase(dbClient, config.mongodb.databaseName);
     const metrics = buildMetrics();
+    const templateEngine = buildTemplateEngine();
     const scheduler = buildScheduler(db);
     const eventTypesService = buildEventTypesService(db);
-    const targetsService = buildTargetsService(db);
+    const targetsService = buildTargetsService(db, templateEngine);
     const rulesService = buildRulesService(db, targetsService, eventTypesService, scheduler);
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
