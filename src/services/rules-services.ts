@@ -96,7 +96,7 @@ export function buildRulesService(db: Db,
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingRule = await collection.findOne({ name });
                     if (existingRule) {
-                        throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id);
+                        throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id, 'rules');
                     }
                 }
                 throw error;

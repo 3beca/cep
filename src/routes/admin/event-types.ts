@@ -82,6 +82,21 @@ const createSchema = {
     }
 };
 
+const updateSchema = {
+    tags: ['event types'],
+    params: eventTypeIdParam,
+    body: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+            name: { type: 'string', maxLength: 100 }
+        }
+    },
+    response: {
+        200: eventTypeSchema
+    }
+};
+
 export function buildEventTypesRoutes(eventTypesService: EventTypesService, eventProcessingHttpBaseUrl: string) {
 
     function toEventTypeResponse(eventType) {
@@ -112,6 +127,14 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService, even
         return toEventTypeResponse(eventType);
     }
 
+    async function updateById(request: FastifyRequest<{ Params: { id: string }, Body: { name: string } }>, reply: FastifyReply<Server>): Promise<void> {
+        const { id } = request.params;
+        const { name } = request.body;
+        const eventTypeId = ObjectId.createFromHexString(id);
+        const updatedEventType = await eventTypesService.updateById(eventTypeId, { name });
+        return toEventTypeResponse(updatedEventType);
+    }
+
     async function deleteById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply<Server>): Promise<void> {
         const { id } = request.params;
         const eventTypeId = ObjectId.createFromHexString(id);
@@ -129,6 +152,7 @@ export function buildEventTypesRoutes(eventTypesService: EventTypesService, even
     return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
+        fastify.put('/:id', { ...opts, schema: updateSchema }, updateById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
         fastify.post('/', { ...opts, schema: createSchema }, create);
         next();

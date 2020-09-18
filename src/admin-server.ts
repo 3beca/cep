@@ -180,7 +180,7 @@ export function buildAdminServer(
 		}
 		if (error instanceof ConflictError) {
 			request.log.info(error);
-			reply.header('Location', getUrl(request, `${request.url}/${error.id}`));
+			reply.header('Location', getUrl(request, `/${error.resources}/${error.id}`));
 			reply.status(409).send({
 				statusCode: 409,
 				error: 'Conflict',

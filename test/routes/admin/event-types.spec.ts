@@ -442,18 +442,8 @@ describe('admin server', () => {
             });
 
             it('should return 409 when try to create an event type with the same name', async () => {
-                const responseCreateEvent = await adminServer.inject({
-                    method: 'POST',
-                    url: '/event-types',
-                    body: {
-                        name: 'same name'
-                    },
-                    headers: {
-                        authorization: 'apiKey myApiKey2'
-                    }
-                });
-                const event = JSON.parse(responseCreateEvent.payload);
-                const responseCreateEvent2 = await adminServer.inject({
+                const eventType = await createEventType(adminServer, 'same name');
+                const responseCreateEventType = await adminServer.inject({
                     method: 'POST',
                     url: '/event-types',
                     body: {
@@ -465,13 +455,169 @@ describe('admin server', () => {
                         authorization: 'apiKey myApiKey2'
                     }
                 });
-                expect(responseCreateEvent2.statusCode).toBe(409);
-                expect(responseCreateEvent2.headers['content-type']).toBe('application/json; charset=utf-8');
-                expect(responseCreateEvent2.headers.location).toBe(`https://mycep.com/event-types/${event.id}`);
-                expect(responseCreateEvent2.payload).toBe(JSON.stringify({
+                expect(responseCreateEventType.statusCode).toBe(409);
+                expect(responseCreateEventType.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(responseCreateEventType.headers.location).toBe(`https://mycep.com/event-types/${eventType.id}`);
+                expect(responseCreateEventType.payload).toBe(JSON.stringify({
                     statusCode: 409,
                     error: 'Conflict',
-                    message: `Event type name must be unique and is already taken by event type with id ${event.id}`
+                    message: `Event type name must be unique and is already taken by event type with id ${eventType.id}`
+                }));
+            });
+        });
+
+
+        describe('put', () => {
+
+            it('should return 401 when invalid token', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey invalidApiKey'
+                    },
+                    body: {
+                        name: 'new event type name'
+                    }
+                });
+                expect(response.statusCode).toBe(401);
+            });
+
+            it('should return 400 when event identifier is not a valid ObjectId', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/invalid-object-id-here',
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    },
+                    body: {
+                        name: 'new event type name'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'params event type id must be a valid ObjectId'
+                }));
+            });
+
+            it('should return 404 when event does not exists', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + new ObjectId(),
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    },
+                    body: {
+                        name: 'new event type name'
+                    }
+                });
+                expect(response.statusCode).toBe(404);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 404,
+                    error: 'Not Found',
+                    message: 'Resource not found'
+                }));
+            });
+
+            it('should return 400 when name is undefined', async () => {
+                const eventType = await createEventType(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + eventType.id,
+                    body: {
+                        name: undefined
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body should have required property \'name\''
+                }));
+            });
+
+            it('should return 400 when name is longer than 100 characters', async () => {
+                const eventType = await createEventType(adminServer);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + eventType.id,
+                    body: {
+                        name: 'a'.repeat(101)
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/name should NOT be longer than 100 characters'
+                }));
+            });
+
+            it('should return 200 with the updated event type', async () => {
+                const createResponse = await adminServer.inject({
+                    method: 'POST',
+                    url: '/event-types',
+                    body: {
+                        name: 'an event type'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    }
+                });
+                expect(createResponse.statusCode).toBe(201);
+                expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+                const createdEvent = JSON.parse(createResponse.payload);
+
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + createdEvent.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey2'
+                    },
+                    body: {
+                        name: 'new event type name'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const putEvent = JSON.parse(response.payload);
+                expect(putEvent.name).toEqual('new event type name');
+            });
+
+            it('should return 409 when try to create an event type with the same name', async () => {
+                const eventType = await createEventType(adminServer, 'same name');
+                const eventType2 = await createEventType(adminServer);
+                const responseCreateEventType = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/event-types/' + eventType2.id,
+                    body: {
+                        name: 'same name'
+                    },
+                    headers: {
+                        'X-Forwarded-Proto': 'https',
+                        'X-Forwarded-Host': 'mycep.com',
+                        authorization: 'apiKey myApiKey2'
+                    }
+                });
+                expect(responseCreateEventType.statusCode).toBe(409);
+                expect(responseCreateEventType.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(responseCreateEventType.headers.location).toBe(`https://mycep.com/event-types/${eventType.id}`);
+                expect(responseCreateEventType.payload).toBe(JSON.stringify({
+                    statusCode: 409,
+                    error: 'Conflict',
+                    message: `Event type name must be unique and is already taken by event type with id ${eventType.id}`
                 }));
             });
         });
@@ -518,23 +664,11 @@ describe('admin server', () => {
             });
 
             it('should return 204 when event exists', async () => {
-                const createResponse = await adminServer.inject({
-                    method: 'POST',
-                    url: '/event-types',
-                    body: {
-                        name: 'sensor-data'
-                    },
-                    headers: {
-                        authorization: 'apiKey myApiKey2'
-                    }
-                });
-                expect(createResponse.statusCode).toBe(201);
-                expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-                const createdEvent = JSON.parse(createResponse.payload);
+                const eventType = await createEventType(adminServer);
 
                 const deleteResponse = await adminServer.inject({
                     method: 'DELETE',
-                    url: '/event-types/' + createdEvent.id,
+                    url: '/event-types/' + eventType.id,
                     headers: {
                         authorization: 'apiKey myApiKey2'
                     }
@@ -543,7 +677,7 @@ describe('admin server', () => {
 
                 const getResponse = await adminServer.inject({
                     method: 'GET',
-                    url: '/event-types/' + createdEvent.id,
+                    url: '/event-types/' + eventType.id,
                     headers: {
                         authorization: 'apiKey myApiKey2'
                     }

@@ -68,7 +68,7 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 if (error.name === 'MongoError' && error.code === 11000) {
                     const existingTarget = await collection.findOne({ name: target.name });
                     if (existingTarget) {
-                        throw new ConflictError(`Target name must be unique and is already taken by target with id ${existingTarget._id}`, existingTarget._id);
+                        throw new ConflictError(`Target name must be unique and is already taken by target with id ${existingTarget._id}`, existingTarget._id, 'targets');
                     }
                 }
                 throw error;
