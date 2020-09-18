@@ -91,7 +91,7 @@ The result will give us an url of the [Event Processing Http API](#event-process
 
 A target represents an external system that will be called whenever a rule match.
 
-To create a target we just need to provide an **unique name** and an **url**. When a rule match an http request will be done to the provided target url.
+To create a target we just need to provide an **unique name** and an **url**. On a rule match an http request will be done to the provided target url.
 
 ```
 curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
