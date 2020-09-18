@@ -171,7 +171,7 @@ curl --request POST \
     "name": "target bar",
     "url": "https://example.org",
     "headers": {
-      "Authorization": "Bearer TOKEN"
+      "Authorization": "Bearer <token>"
     }
   }'
 ```
