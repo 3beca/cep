@@ -53,6 +53,10 @@ describe('admin server', () => {
                         headers: {
                             authorization: 'Bearer myKey',
                             'x-app-id': '123'
+                        },
+                        body: {
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
                         }
                     },
                     headers: {
@@ -67,6 +71,10 @@ describe('admin server', () => {
                 expect(createdTarget.headers).toStrictEqual({
                     authorization: 'Bearer myKey',
                     'x-app-id': '123'
+                });
+                expect(createdTarget.body).toStrictEqual({
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
                 });
 
                 const response = await adminServer.inject({
@@ -570,6 +578,52 @@ describe('admin server', () => {
                 }));
             });
 
+            it('should return 400 when headers is not an object', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: []
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body should be object'
+                }));
+            });
+
+            it('should return 400 when body has invalid syntax in template', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'test',
+                        url: 'https://example.org',
+                        body: {
+                            title: 'my title is {{ bad syntax'
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/body/title output "{{ bad syntax" not closed, line:1, col:13'
+                }));
+            });
+
             it('should return 201 with created target when request has only required fields', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
@@ -591,7 +645,7 @@ describe('admin server', () => {
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
-            it('should return 201 with created target when request includes valid headers', async () => {
+            it('should return 201 with created target when request includes valid headers and body', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',
@@ -601,6 +655,10 @@ describe('admin server', () => {
                         headers: {
                             authorization: 'Bearer myKey',
                             'x-custom-header': 5
+                        },
+                        body: {
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
                         }
                     },
                     headers: {
@@ -616,6 +674,10 @@ describe('admin server', () => {
                 expect(target.headers).toStrictEqual({
                     authorization: 'Bearer myKey',
                     'x-custom-header': '5'
+                });
+                expect(target.body).toStrictEqual({
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
                 });
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });

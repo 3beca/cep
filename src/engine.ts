@@ -12,6 +12,7 @@ import { Rule, SlidingRule, TumblingRule } from './models/rule';
 import { Target } from './models/target';
 import InvalidOperationError from './errors/invalid-operation-error';
 import { EventType } from './models/event-type';
+import { TemplateEngine } from './template-engine';
 
 export type Engine = {
     processEvent(eventTypeId: ObjectId, eventPayload: any, requestId: string): Promise<void>;
@@ -34,7 +35,8 @@ export function buildEngine(
     rulesService: RulesService,
     targetsService: TargetsService,
     eventsService: EventsService,
-    rulesExecutionsService: RulesExecutionsService): Engine {
+    rulesExecutionsService: RulesExecutionsService,
+    templateEngine: TemplateEngine): Engine {
 
     function createEvent(eventType, payload, requestId: string): Promise<Event> {
         const event = {
@@ -105,12 +107,23 @@ export function buildEngine(
             const targetIds = rulesThatMustInvokeTargets.map(r => r.rule.targetId);
             const targets = await getTargetsDictionary(targetIds);
             await Promise.all(rulesThatMustInvokeTargets.map(async matchResult => {
-                const { rule } = matchResult;
+                const { rule, payload } = matchResult;
                 const target = targets[rule.targetId.toHexString()];
-                const { url, headers } = target;
+                const { url, headers, body: bodyTemplate } = target;
+                const body = bodyTemplate ? await templateEngine.render(bodyTemplate, {
+                    eventType: {
+                        id: eventType.id.toHexString(),
+                        name: eventType.name
+                    },
+                    rule: {
+                        id: rule.id.toHexString(),
+                        name: rule.name
+                    },
+                    event: payload
+                }) : payload;
                 const response = await fetch(url, {
                     method: 'POST',
-                    body: JSON.stringify(matchResult.payload),
+                    body: JSON.stringify(body),
                     headers: {
                         ...(headers ?? {}),
                         'Content-Type': 'application/json',

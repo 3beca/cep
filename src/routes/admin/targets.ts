@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 import { Server } from 'http';
 import { TargetsService } from '../../services/targets-service';
 
-const targetschema = {
+const targetSchema = {
     type: 'object',
     properties: {
         name: { type: 'string' },
@@ -14,6 +14,10 @@ const targetschema = {
         headers: {
             type: 'object',
             additionalProperties: { type: 'string' }
+        },
+        body: {
+            type: 'object',
+            additionalProperties: true
         },
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
@@ -33,7 +37,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: targetschema
+                    items: targetSchema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -58,7 +62,7 @@ const getSchema = {
     tags: ['targets'],
     params: targetIdParam,
     response: {
-        200: targetschema
+        200: targetSchema
     }
 };
 
@@ -86,11 +90,15 @@ const createSchema = {
             headers: {
                 type: 'object',
                 additionalProperties: { type: 'string' }
+            },
+            body: {
+                type: 'object',
+                additionalProperties: true
             }
         }
     },
     response: {
-        201: targetschema
+        201: targetSchema
     }
 };
 
@@ -123,9 +131,9 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         reply.status(204).send();
     }
 
-    async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }} }>, reply: FastifyReply<Server>) {
-        const { name, url, headers } = request.body;
-        const target = await targetsService.create({ name, url, headers });
+    async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }, body: any } }>, reply: FastifyReply<Server>) {
+        const { name, url, headers, body } = request.body;
+        const target = await targetsService.create({ name, url, headers, body });
         reply.header('Location', getUrl(request, `/targets/${target.id}`));
         reply.status(201).send(target);
     }

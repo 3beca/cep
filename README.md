@@ -16,6 +16,11 @@ A simple complex event processing system.
 - [Admin Http API](#admin-http-api)
   - [Create an Event Type](#create-an-event-type)
   - [Create a Target](#create-a-target)
+    - [Target Body Template](#target-body-template)
+    - [Target Headers](#target-headers)
+    - [Examples](#examples)
+      - [Telegram Target](#telegram-target)
+      - [SendGrid Target](#sendgrid-target)
   - [Create a Rule](#create-a-rule)
     - [Rule Options](#rule-options)
     - [Rule Filters](#rule-filters)
@@ -45,19 +50,19 @@ Install the [NodeJs](https://nodejs.org) runtime. Latest LTS is recommended.
 
 Clone the repo. Install dependencies:
 
-```
+```sh
 npm ci
 ```
 
 Now, run the application prompting the following command:
 
-```
+```sh
 npm run build && npm run start
 ```
 
 or run it in watch mode prompting the following command:
 
-```
+```sh
 npm run start-watch
 ```
 
@@ -71,11 +76,19 @@ Cep provides an Admin Http API to manage event types, targets and rules. Also ca
 
 To create an event type we just need to provide an unique name:
 
+```sh
+curl --request POST \
+  --url "http://localhost:8888/event-types/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "sensor foo"
+  }'
 ```
-curl -X POST "http://localhost:8888/event-types/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"sensor foo\"}"
-```
+
 The result will give us an url of the [Event Processing Http API](#event-processing-http-api) where we will submit http post with json event payload:
-```
+
+```json
 {
   "name": "sensor foo",
   "id": "5db3730cb2684d3d135f20a4",
@@ -89,19 +102,144 @@ The result will give us an url of the [Event Processing Http API](#event-process
 
 A target represents an external system that will be called whenever a rule match.
 
-To create a target we just need to provide an **unique name** and an **url**.
+To create a target we just need to provide an **unique name** and an **url**. On a rule match an http request will be done to the provided target url.
 
+```sh
+
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org"
+  }'
 ```
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\"}"
+
+#### Target Body Template
+
+By default the Target http request body is the event payload in case the rule is of type realtime, or the group result in case the rule is type of tumbling.
+
+Targets support an optional body property to customize as you wish the http request body. This body property can be any object.
+
+Body properties of type string support templates using [liquid template language](https://shopify.github.io/liquid/).
+
+The template model will match the following structure:
+
+```typescript
+{
+   "eventType": {
+      "id": string,
+      "name": string
+   },
+   "rule": {
+      "id": string,
+      "name": string
+    },
+   "event": any
+}
 ```
+Where **event** is the event payload in case the rule is of type realtime, or the group result in case the rule is type of tumbling.
+
+Example:
+
+```sh
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org",
+    "body": {
+      "title": "the value is {{event.value}}"
+    }
+  }'
+```
+
+#### Target Headers
 
 In addition custom headers can be defined for a target as an optional parameter: **headers**.
 
-```
-curl -X POST "http://localhost:8888/targets/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"target bar\", \"url\": \"https://example.org\", \"headers\": { \"Authorization\": \"Bearer TOKEN\" }}"
+```sh
+
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "target bar",
+    "url": "https://example.org",
+    "headers": {
+      "Authorization": "Bearer <token>"
+    }
+  }'
 ```
 
 **Note**: headers not supported are Content-Type (this is always set by the system with value application/json) and Content-Length.
+
+#### Examples
+
+Here are some example of targets that using body template and headers can easily allow you to integrate CEP with other third party systems.
+
+##### Telegram Target
+
+A simple target to send a message to a Telegram Chat via a Bot using the [Telegram Bot Http API](https://core.telegram.org/bots/api#sendmessage):
+
+```sh
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Telegram Bot Target",
+    "url": "https://api.telegram.org/bot<token>/sendMessage",
+    "body": {
+      "chat_id": 123,
+      "text": "{{rule.name}} - 🌡️ your temperature sensor {{eventType.name}} value is {{event.temperature}} degrees"
+    }
+  }'
+```
+
+##### SendGrid Target
+
+A simple target to send email via the [SendGrid Http API](https://sendgrid.com/docs/API_Reference/api_v3.html):
+
+```sh
+curl --request POST \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Email Target",
+    "url": "https://api.sendgrid.com/v3/mail/send",
+    "headers": {
+      "Authorization": "Bearer <sendGridApiKey>"
+    },
+    "body": {
+      "personalizations": [
+        {
+          "to": [{
+            "email": "to@example.com"
+          }]
+        }
+      ],
+      "from": {
+        "email": "from@example.com",
+        "name": "Me"
+      },
+      "reply_to": {
+        "email": "no-reply@example.org",
+        "name": "no-reply"
+      },
+      "subject": "A new update from your sensor {{eventType.name}}",
+      "content": [{
+        "type": "text/html",
+        "value": "<h1>Your sensor value is {{event.value}}</h1>"
+      }]
+    }
+  }'
+```
 
 ### Create a Rule
 
@@ -114,8 +252,22 @@ A rule can be of the following types:
 
 i.e.: to create a realtime rule we must provide an unique name, a type, a target id, an event type id and a filter (this last one is optional).
 
-```
-curl -X POST "http://localhost:8888/rules/" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"name\": \"value greater than 42\", \"type\": \"realtime\",\"targetId\": \"5db373aeb2684dc2105f20a5\", \"eventTypeId\": \"5db3730cb2684d3d135f20a4\", \"filters\": { \"value\": { \"_gt\": 42 } }}"
+```sh
+curl --request POST \
+  --url "http://localhost:8888/rules/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "value greater than 42",
+    "type": "realtime",
+    "targetId": "5db373aeb2684dc2105f20a5",
+    "eventTypeId": "5db3730cb2684d3d135f20a4",
+    "filters": {
+      "value": {
+        "_gt": 42
+      }
+    }
+  }'
 ```
 
 #### Rule Options
@@ -152,7 +304,7 @@ The sintax has been inspired by mongodb query expression language. The operators
 
 Rules of type sliding or tumbling have a group expression that will be evaluated in a time window.
 
-The sintax has been inspired by mongodb aggregate group expression language. The grouping operators supported are the following:
+The syntax has been inspired by mongodb aggregate group expression language. The grouping operators supported are the following:
 
 |Operator|Description|Examples|
 |--------|-----------|--------|
@@ -167,7 +319,7 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 
 ##### Realtime Rule
 
-```
+```json
 {
   "name": "temperature is less than 0 degrees",
   "type": "realtime",
@@ -179,7 +331,7 @@ The sintax has been inspired by mongodb aggregate group expression language. The
 
 ##### Sliding Rule
 
-```
+```json
 {
   "name": "temperature average greater than 35 degrees on the last hour",
   "type": "sliding",
@@ -200,7 +352,7 @@ In the example above, the sliding rule will calculate on every event the average
 
 ##### Tumbling Rule
 
-```
+```json
 {
   "name": "temperature greater than 35 degrees on the last hour",
   "type": "tumbling",
@@ -229,8 +381,14 @@ This API provides an http endpoint to ingest events into the cep system.
 
 To send an event palyoad just make an http post request to the event type url
 
-```
-curl -X POST "http://localhost:8889/events/5db3730cb2684d3d135f20a4" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"value\": 43 }"
+```sh
+curl --request POST \
+  --url "http://localhost:8888/rules/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "value": 43
+  }'
 ```
 
 This event payload will make the rule "value greater than 42" match, so the target will be called.
@@ -266,7 +424,7 @@ The repository [3beca/cep-ui](https://github.com/3beca/cep-ui) hosts an awesome 
 
 We provide a docker compose to quickly have cep up and running.
 
-```
+```sh
 docker-compose up
 ```
 
@@ -292,7 +450,7 @@ When enabled, you can find the Swagger UI, json and yaml at the following urls
 
 Run the test suite with the following command:
 
-```
+```sh
 npm test
 ```
 

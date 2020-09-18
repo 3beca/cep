@@ -4,17 +4,18 @@ import { toDto } from '../utils/dto';
 import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
 import InvalidOperationError from '../errors/invalid-operation-error';
+import { TemplateEngine } from '../template-engine';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
-    create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target>;
+    create(target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target>;
     getById(id: ObjectId): Promise<Target>;
     deleteById(id: ObjectId): Promise<void>;
     getByIds(ids: ObjectId[]): Promise<Target[]>;
     registerOnBeforeDelete(beforeDelete: (id: ObjectId) => void): void;
 }
 
-export function buildTargetsService(db: Db): TargetsService {
+export function buildTargetsService(db: Db, templateEngine: TemplateEngine): TargetsService {
 
     const collection = db.collection('targets');
     const beforeDeleteEventHandlers: ((id: ObjectId) => void)[] = [];
@@ -34,13 +35,21 @@ export function buildTargetsService(db: Db): TargetsService {
         }
     }
 
+    async function assertBodyTemplateIsValid(body: any): Promise<void> {
+        try {
+            await templateEngine.render(body, {});
+        } catch (error) {
+            throw new InvalidOperationError(`body/body${error.message}`);
+        }
+    }
+
     return {
         async list(page: number, pageSize: number, search?: string): Promise<Target[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
             const targets = await collection.find(query).skip((page - 1) * pageSize).limit(pageSize).toArray();
             return targets.map(toDto);
         },
-        async create(target: Pick<Target, 'name' | 'url' | 'headers'>): Promise<Target> {
+        async create(target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target> {
             const targetToCreate = {
                 ...target,
                 createdAt: new Date(),
@@ -48,6 +57,9 @@ export function buildTargetsService(db: Db): TargetsService {
             };
             if (targetToCreate.headers) {
                 assertNoUnsupportedHeaders(targetToCreate.headers);
+            }
+            if (targetToCreate.body) {
+                await assertBodyTemplateIsValid(targetToCreate.body);
             }
             try {
                 const { insertedId } = await collection.insertOne(targetToCreate);

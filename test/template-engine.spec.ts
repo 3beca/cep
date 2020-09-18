@@ -97,14 +97,16 @@ describe('template-engine', () => {
                 title: 'My {{title}}',
                 value: '{{value}}',
                 value2: '49',
-                value3: 'the value is {{value}}'
-            }, { title: 'test', value: 4.99 });
+                value3: 'the value is {{value}}',
+                value4: '{{objectId}}'
+            }, { title: 'test', value: 4.99, objectId: '5f64c94f9e1055a117699589' });
 
             expect(result).toStrictEqual({
                 title: 'My test',
                 value: 4.99,
                 value2: '49',
-                value3: 'the value is 4.99'
+                value3: 'the value is 4.99',
+                value4: '5f64c94f9e1055a117699589'
             });
         });
 

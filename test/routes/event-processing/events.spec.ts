@@ -145,6 +145,47 @@ describe('event processing', () => {
             expect(scope.isDone()).toBe(true);
         });
 
+        it('should call target when event payload matches rule filters with target template body rendered', async () => {
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/', undefined, {
+                title: 'Notification {{eventType.name}} - rule {{rule.name}}',
+                description: 'Sensor value is {{event.value}}',
+                ruleId: '{{rule.id}}',
+                eventTypeId: '{{eventType.id}}'
+            });
+            const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
+
+            const requestId = new ObjectId().toHexString();
+            const scope = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': requestId,
+                    'X-Rule-Id': rule.id,
+                    'X-Rule-Name': rule.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name
+                }})
+                .post('/', {
+                    title: `Notification ${eventType.name} - rule ${rule.name}`,
+                    description: 'Sensor value is 2',
+                    ruleId: rule.id,
+                    eventTypeId: eventType.id
+                })
+                .reply(200);
+
+            const response = await eventProcessingServer.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': requestId
+                },
+                body: {
+                    value: 2
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(true);
+        });
+
         it('should call target twice when event payload matches 2 rules filters', async () => {
             const eventType = await createEventType(adminServer);
             const target = await createTarget(adminServer, 'http://example.org/');
@@ -460,14 +501,15 @@ describe('event processing', () => {
         expect(scope.isDone()).toBe(true);
     });
 
-    async function createTarget(adminServer, url = 'http://example.org', headers?: { [key: string]: string }) {
+    async function createTarget(adminServer, url = 'http://example.org', headers?: { [key: string]: string }, body?: any) {
         const createResponse = await adminServer.inject({
             method: 'POST',
             url: '/targets',
             body: {
                 name: 'a target',
                 url,
-                headers
+                headers,
+                body
             }
         });
         expect(createResponse.statusCode).toBe(201);
