@@ -50,8 +50,7 @@ export function buildTemplateEngine(): TemplateEngine {
         }
         try {
             const renderedValue = await engine.parseAndRender(value, model);
-            const renderedNumber = parseFloat(renderedValue);
-            return isNaN(renderedNumber) ? renderedValue : renderedNumber;
+            return canBeConvertedToFloat(renderedValue) ? parseFloat(renderedValue) : renderedValue;
         } catch (error) {
             const { message } = error;
             if (message.includes('ENOENT')) {
@@ -67,7 +66,7 @@ export function buildTemplateEngine(): TemplateEngine {
 
     function canBeConvertedToFloat(value: string): boolean {
         const number = parseFloat(value);
-        return !isNaN(number);
+        return !isNaN(number) && number.toString() === value;
     }
 
     return {

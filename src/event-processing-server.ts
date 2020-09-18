@@ -96,6 +96,7 @@ export function buildEventProcessingServer(
 			});
 			return;
 		}
+
 		request.log.error(error);
 		reply.status(500).send({
 			statusCode: 500,

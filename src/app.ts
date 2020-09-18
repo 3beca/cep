@@ -36,7 +36,7 @@ export async function buildApp(config: Config): Promise<App> {
     const rulesService = buildRulesService(db, targetsService, eventTypesService, scheduler);
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
-    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService);
+    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService, templateEngine);
     const metricsServer = buildMetricsServer(metrics);
     const adminServer = buildAdminServer({
             ...config.adminHttp,
