@@ -45,7 +45,7 @@ export function buildEventTypesService(db: Db): EventTypesService {
                 return { ...eventTypeToCreate, id: insertedId };
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(eventType.name),
-                    { itemName: 'event type', resources: 'event-types' });
+                    { message: 'Event type name must be unique and is already taken by event type with id [ID]', resources: 'event-types' });
             }
         },
         async updateById(id: ObjectId, eventType: Pick<EventType, 'name'>): Promise<EventType> {
@@ -64,7 +64,7 @@ export function buildEventTypesService(db: Db): EventTypesService {
                 return { ...eventTypeToUpdate, id };
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(eventType.name),
-                    { itemName: 'event type', resources: 'event-types' });
+                { message: 'Event type name must be unique and is already taken by event type with id [ID]', resources: 'event-types' });
             }
         },
         async getById(id: ObjectId): Promise<EventType> {

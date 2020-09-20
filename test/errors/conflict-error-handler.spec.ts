@@ -9,7 +9,7 @@ describe('conflict-error-handler', () => {
         it('should return the original input error when it is not a Mongo 11000 conflict error', async () => {
             const error = new Error('Oops, an error');
             const errorResult = await handleConflictError(error, async () => Promise.resolve({ _id: new ObjectId() }), {
-                itemName: 'rule',
+                message: 'Rule name must be unique and is already taken by rule with id [ID]',
                 resources: 'rules'
             });
             expect(errorResult).toBe(error);
@@ -18,7 +18,7 @@ describe('conflict-error-handler', () => {
         it('should return the original input error when it is a Mongo 11000 conflict error but getConflictItem function returns null', async () => {
             const error = { name: 'MongoError', code: 11000 };
             const errorResult = await handleConflictError(error, async () => Promise.resolve(null), {
-                itemName: 'rule',
+                message: 'Rule name must be unique and is already taken by rule with id [ID]',
                 resources: 'rules'
             });
             expect(errorResult).toBe(error);
@@ -28,7 +28,7 @@ describe('conflict-error-handler', () => {
             const error = { name: 'MongoError', code: 11000 };
             const conflictItemId = new ObjectId();
             const errorResult = await handleConflictError(error, async () => Promise.resolve({ _id: conflictItemId }), {
-                itemName: 'rule',
+                message: 'Rule name must be unique and is already taken by rule with id [ID]',
                 resources: 'rules'
             });
             expect(errorResult instanceof ConflictError).toBe(true);

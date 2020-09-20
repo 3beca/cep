@@ -72,7 +72,7 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 return { ...targetToCreate, id: insertedId };
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(target.name),
-                    { itemName: 'target', resources: 'targets' });
+                    { message: 'Target name must be unique and is already taken by target with id [ID]', resources: 'targets' });
             }
         },
         async updateById(id: ObjectId, target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target> {
@@ -97,7 +97,7 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 return { ...targetToUpdate, id };
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(target.name),
-                    { itemName: 'target', resources: 'targets' });
+                    { message: 'Target name must be unique and is already taken by target with id [ID]', resources: 'targets' });
             }
         },
         async getById(id: ObjectId): Promise<Target> {

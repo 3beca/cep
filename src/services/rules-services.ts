@@ -105,7 +105,7 @@ export function buildRulesService(db: Db,
                 insertedId = opResult.insertedId;
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(name),
-                    { itemName: 'rule', resources: 'rules' });
+                    { message: 'Rule name must be unique and is already taken by rule with id [ID]', resources: 'rules' });
             }
             const createdRule = {
                 ...ruleToCreate,
@@ -167,7 +167,7 @@ export function buildRulesService(db: Db,
                 return { ...ruleToUpdate, id } as Rule;
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(name),
-                    { itemName: 'rule', resources: 'rules' });
+                    { message: 'Rule name must be unique and is already taken by rule with id [ID]', resources: 'rules' });
             }
         },
         async getById(id: ObjectId): Promise<Rule> {
