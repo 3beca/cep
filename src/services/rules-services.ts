@@ -157,18 +157,24 @@ export function buildRulesService(db: Db,
                 jobId: (existingRule as TumblingRule).jobId,
             };
 
-            if (isTumblingRule(rule) && isTumblingRule(existingRule) && !isSameTimeWindow(rule, existingRule)) {
-                await unScheduleRuleExecution(existingRule);
-                ruleToUpdate.jobId = await scheduleRuleExecution(rule);
-            }
+            let updatedRule;
 
             try {
                 await collection.replaceOne({ _id: id }, ruleToUpdate);
-                return { ...ruleToUpdate, id } as Rule;
+                updatedRule = { ...ruleToUpdate, id } as Rule;
             } catch (error) {
                 throw await handleConflictError(error, () => findByName(name),
                     { message: 'Rule name must be unique and is already taken by rule with id [ID]', resources: 'rules' });
             }
+
+            if (isTumblingRule(updatedRule) && isTumblingRule(existingRule) && !isSameTimeWindow(updatedRule, existingRule)) {
+                await unScheduleRuleExecution(existingRule);
+                const jobId = await scheduleRuleExecution(updatedRule);
+                await collection.updateOne({ _id: id }, { $set: { jobId }});
+                updatedRule = { ...updatedRule, jobId };
+            }
+
+            return updatedRule;
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });

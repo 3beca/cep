@@ -945,9 +945,9 @@ describe('admin server', () => {
             });
 
             it('should return 201 with created rule type tumbling when request is valid and schedule rule execution, finally rule execution start within a second', async () => {
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
-                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
                 const targetScope = nock('https://example.org')
                     .post('/', { count: 0 })
                     .reply(200);
@@ -1700,9 +1700,11 @@ describe('admin server', () => {
             });
 
             it('should return 200 with updated tumbling rule when windowSize has been changed', async () => {
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                scheduler.cancelJob = jest.fn(scheduler.cancelJob);
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
-                const rule = await createTumblingRule(adminServer, eventType, target);
+                const { rule, jobId } = await createTumblingRule(adminServer, eventType, target);
                 const response = await adminServer.inject({
                     method: 'PUT',
                     url: '/rules/' + rule.id,
@@ -1728,12 +1730,19 @@ describe('admin server', () => {
                 });
                 expect(updatedRule.skipOnConsecutivesMatches).toBe(undefined);
                 expect(updatedRule.id).toBe(rule.id);
+                const ruleId = ObjectId.createFromHexString(rule.id);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.cancelJob).toHaveBeenCalledWith(jobId);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.scheduleJob).toHaveBeenCalledWith('10 hours', 'execute-rule', { ruleId });
             });
 
             it('should return 200 with updated tumbling rule when windowSize has not been changed', async () => {
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                scheduler.cancelJob = jest.fn(scheduler.cancelJob);
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
-                const rule = await createTumblingRule(adminServer, eventType, target);
+                const { rule } = await createTumblingRule(adminServer, eventType, target);
                 const response = await adminServer.inject({
                     method: 'PUT',
                     url: '/rules/' + rule.id,
@@ -1755,21 +1764,27 @@ describe('admin server', () => {
                     value: 5
                 });
                 expect(updatedRule.id).toBe(rule.id);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(0);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(0);
             });
 
             it('should return 409 when try to update a rule with the same name', async () => {
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                scheduler.cancelJob = jest.fn(scheduler.cancelJob);
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
-                const rule1 = await createRealTimeRule(adminServer, eventType, target, 'same name');
-                const rule2 = await createRealTimeRule(adminServer, eventType, target, 'different name');
+                const { rule: rule1 } = await createTumblingRule(adminServer, eventType, target, 'same name');
+                const { rule: rule2 } = await createTumblingRule(adminServer, eventType, target, 'different name');
                 const response = await adminServer.inject({
                     method: 'PUT',
                     url: '/rules/' + rule2.id,
                     body: {
+                        ...rule1,
                         name: 'same name',
-                        type: 'realtime',
-                        eventTypeId: eventType.id,
-                        targetId: target.id
+                        windowSize: {
+                            unit: 'minute',
+                            value: 8
+                        }
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -1783,6 +1798,8 @@ describe('admin server', () => {
                     error: 'Conflict',
                     message: `Rule name must be unique and is already taken by rule with id ${rule1.id}`
                 }));
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(0);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(0);
             });
         });
 
@@ -1899,6 +1916,57 @@ describe('admin server', () => {
                 expect(deleteResponse.statusCode).toBe(204);
                 expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
                 expect(scheduler.cancelJob).toHaveBeenCalledWith(jobId);
+            });
+
+            it('should return 204 and unscheduled rule execution when updated tumbling rule where windowSize has been changed', async () => {
+                scheduler.scheduleJob = jest.fn(scheduler.scheduleJob);
+                scheduler.cancelJob = jest.fn(scheduler.cancelJob);
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const { rule, jobId } = await createTumblingRule(adminServer, eventType, target);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/rules/' + rule.id,
+                    body: {
+                        ...rule,
+                        windowSize: {
+                            unit: 'hour',
+                            value: 10
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedRule = JSON.parse(response.payload);
+                expect(updatedRule.name).toBe('a rule');
+                expect(updatedRule.type).toBe('tumbling');
+                expect(updatedRule.windowSize).toStrictEqual({
+                    unit: 'hour',
+                    value: 10
+                });
+                expect(updatedRule.skipOnConsecutivesMatches).toBe(undefined);
+                expect(updatedRule.id).toBe(rule.id);
+                const ruleId = ObjectId.createFromHexString(rule.id);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.cancelJob).toHaveBeenCalledWith(jobId);
+                expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.scheduleJob).toHaveBeenCalledWith('10 hours', 'execute-rule', { ruleId });
+                const newJobId = await (scheduler.scheduleJob as jest.Mock).mock.results[0].value;
+                jest.clearAllMocks();
+
+                const deleteResponse = await adminServer.inject({
+                    method: 'DELETE',
+                    url: '/rules/' + rule.id,
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(deleteResponse.statusCode).toBe(204);
+                expect(scheduler.cancelJob).toHaveBeenCalledTimes(1);
+                expect(scheduler.cancelJob).toHaveBeenCalledWith(newJobId);
             });
 
             it('should return 500 and do not delete the rule if an unexpected error happened while unschedule rule execution', async () => {
@@ -2023,7 +2091,16 @@ describe('admin server', () => {
             });
             expect(createResponse.statusCode).toBe(201);
             expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
-            return JSON.parse(createResponse.payload);
+            const rule = JSON.parse(createResponse.payload);
+            const ruleId = ObjectId.createFromHexString(rule.id);
+            expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
+            expect(scheduler.scheduleJob).toHaveBeenCalledWith('5 minutes', 'execute-rule', { ruleId });
+            const jobId = await (scheduler.scheduleJob as jest.Mock).mock.results[0].value;
+            jest.clearAllMocks();
+            return {
+                rule,
+                jobId
+            };
         }
 
         async function createEventType(adminServer, name = 'an event type') {
