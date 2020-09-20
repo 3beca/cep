@@ -1,9 +1,9 @@
 import { ObjectId, Db } from 'mongodb';
-import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegexp from 'escape-string-regexp';
 import { EventType } from '../models/event-type';
 import NotFoundError from '../errors/not-found-error';
+import { handleConflictError } from '../errors/conflict-error-handler';
 
 export type EventTypesService = {
     list(page: number, pageSize: number, search: string): Promise<EventType[]>;
@@ -24,14 +24,8 @@ export function buildEventTypesService(db: Db): EventTypesService {
         return `.*${escapeStringRegexp(search)}.*`;
     }
 
-    async function handleConflictError(error, name: string): Promise<object> {
-        if (error.name === 'MongoError' && error.code === 11000) {
-            const existingEventType = await collection.findOne({ name });
-            if (existingEventType) {
-                return new ConflictError(`Event type name must be unique and is already taken by event type with id ${existingEventType._id}`, existingEventType._id, 'event-types');
-            }
-        }
-        return error;
+    function findByName(name: string): Promise<{ _id: ObjectId } | null> {
+        return collection.findOne({ name }, { projection: { _id: 1 } });
     }
 
     return {
@@ -50,7 +44,8 @@ export function buildEventTypesService(db: Db): EventTypesService {
                 const { insertedId } = await collection.insertOne(eventTypeToCreate);
                 return { ...eventTypeToCreate, id: insertedId };
             } catch (error) {
-                throw await handleConflictError(error, eventType.name);
+                throw await handleConflictError(error, () => findByName(eventType.name),
+                    { message: 'Event type name must be unique and is already taken by event type with id [ID]', resources: 'event-types' });
             }
         },
         async updateById(id: ObjectId, eventType: Pick<EventType, 'name'>): Promise<EventType> {
@@ -68,7 +63,8 @@ export function buildEventTypesService(db: Db): EventTypesService {
                 await collection.replaceOne({ _id: id }, eventTypeToUpdate);
                 return { ...eventTypeToUpdate, id };
             } catch (error) {
-                throw await handleConflictError(error, eventType.name);
+                throw await handleConflictError(error, () => findByName(eventType.name),
+                { message: 'Event type name must be unique and is already taken by event type with id [ID]', resources: 'event-types' });
             }
         },
         async getById(id: ObjectId): Promise<EventType> {

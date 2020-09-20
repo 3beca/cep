@@ -1,5 +1,4 @@
 import { ObjectId, Db } from 'mongodb';
-import ConflictError from '../errors/conflict-error';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { toDto } from '../utils/dto';
@@ -9,10 +8,13 @@ import { TargetsService } from './targets-service';
 import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
 import { Scheduler } from '../scheduler';
+import NotFoundError from '../errors/not-found-error';
+import { handleConflictError } from '../errors/conflict-error-handler';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
     create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
+    updateById(id: ObjectId, rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
     getById(id: ObjectId): Promise<Rule>;
     deleteById(id: ObjectId): Promise<void>;
     getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]>;
@@ -61,6 +63,15 @@ export function buildRulesService(db: Db,
         return scheduler.cancelJob(rule.jobId);
     }
 
+    function findByName(name: string): Promise<{ _id: ObjectId } | null> {
+        return collection.findOne({ name }, { projection: { _id: 1 } });
+    }
+
+    function isSameTimeWindow(ruleA: TumblingRule, ruleB: TumblingRule): boolean {
+        return ruleA.windowSize.unit === ruleB.windowSize.unit &&
+            ruleA.windowSize.value === ruleB.windowSize.value;
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -93,13 +104,8 @@ export function buildRulesService(db: Db,
                 const opResult = await collection.insertOne(ruleToCreate);
                 insertedId = opResult.insertedId;
             } catch (error) {
-                if (error.name === 'MongoError' && error.code === 11000) {
-                    const existingRule = await collection.findOne({ name });
-                    if (existingRule) {
-                        throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id, 'rules');
-                    }
-                }
-                throw error;
+                throw await handleConflictError(error, () => findByName(name),
+                    { message: 'Rule name must be unique and is already taken by rule with id [ID]', resources: 'rules' });
             }
             const createdRule = {
                 ...ruleToCreate,
@@ -117,6 +123,58 @@ export function buildRulesService(db: Db,
                 createdRule.jobId = jobId;
             }
             return createdRule as Rule;
+        },
+        async updateById(id: ObjectId, rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
+            const existingRule = await this.getById(id);
+            if (!existingRule) {
+                throw new NotFoundError(`Rule ${id} cannot be found`);
+            }
+            const { filters, name, eventTypeId, targetId } = rule;
+
+            if (existingRule.type !== rule.type) {
+                throw new InvalidOperationError('rule type cannot be changed. Please consider delete and create a new rule.');
+            }
+
+            if (isSlidingRule(rule) || isTumblingRule(rule)) {
+                assertIsValid(rule.group);
+            }
+            Filter.assertIsValid(filters);
+
+            const eventType = await eventTypesService.getById(eventTypeId);
+            if (!eventType) {
+                throw new InvalidOperationError(`event type with identifier ${eventTypeId} does not exists`);
+            }
+            const target = await targetsService.getById(targetId);
+            if (!target) {
+                throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
+            }
+
+            const ruleToUpdate = {
+                ...rule,
+                id: undefined,
+                updatedAt: new Date(),
+                createdAt: existingRule.createdAt,
+                jobId: (existingRule as TumblingRule).jobId,
+            };
+
+            let updatedRule;
+
+            try {
+                await collection.replaceOne({ _id: id }, ruleToUpdate);
+                updatedRule = { ...ruleToUpdate, id } as Rule;
+            } catch (error) {
+                throw await handleConflictError(error, () => findByName(name),
+                    { message: 'Rule name must be unique and is already taken by rule with id [ID]', resources: 'rules' });
+            }
+
+            if (isTumblingRule(updatedRule) && isTumblingRule(existingRule) && !isSameTimeWindow(updatedRule, existingRule)) {
+                await unScheduleRuleExecution(existingRule);
+                const jobId = await scheduleRuleExecution(updatedRule);
+                await collection.updateOne({ _id: id }, { $set: { jobId }});
+                updatedRule = { ...updatedRule, jobId };
+            }
+
+            return updatedRule;
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });
