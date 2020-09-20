@@ -176,10 +176,10 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
 
     return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
+        fastify.post('/', { ...opts, schema: createSchema }, create);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
         fastify.put('/:id', { ...opts, schema: updateSchema }, updateById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
-        fastify.post('/', { ...opts, schema: createSchema }, create);
         next();
     };
 }
