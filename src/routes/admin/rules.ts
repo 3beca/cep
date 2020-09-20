@@ -100,6 +100,7 @@ const createUpdateRuleSchemaBody = {
         group: { type: 'object' },
         windowSize: {
             type: 'object',
+            required: ['unit', 'value' ],
             properties: {
                 unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
                 value: { type: 'integer' }

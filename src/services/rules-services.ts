@@ -67,6 +67,11 @@ export function buildRulesService(db: Db,
         return collection.findOne({ name }, { projection: { _id: 1 } });
     }
 
+    function isSameTimeWindow(ruleA: TumblingRule, ruleB: TumblingRule): boolean {
+        return ruleA.windowSize.unit === ruleB.windowSize.unit &&
+            ruleA.windowSize.value === ruleB.windowSize.value;
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -143,12 +148,20 @@ export function buildRulesService(db: Db,
             if (!target) {
                 throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
             }
+
             const ruleToUpdate = {
                 ...rule,
                 id: undefined,
                 updatedAt: new Date(),
-                createdAt: existingRule.createdAt
+                createdAt: existingRule.createdAt,
+                jobId: (existingRule as TumblingRule).jobId,
             };
+
+            if (isTumblingRule(rule) && isTumblingRule(existingRule) && !isSameTimeWindow(rule, existingRule)) {
+                await unScheduleRuleExecution(existingRule);
+                ruleToUpdate.jobId = await scheduleRuleExecution(rule);
+            }
+
             try {
                 await collection.replaceOne({ _id: id }, ruleToUpdate);
                 return { ...ruleToUpdate, id } as Rule;

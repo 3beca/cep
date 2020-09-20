@@ -1183,7 +1183,7 @@ describe('admin server', () => {
                         targetId: target.id,
                         group: { count: { _sum: 1 } },
                         windowSize: {
-                            size: 'minute',
+                            unit: 'minute',
                             value: 10
                         }
                     },
@@ -1533,6 +1533,36 @@ describe('admin server', () => {
                 }));
             });
 
+            it('should return 400 when windowSize.unit is undefined in rule of type sliding', async () => {
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/rules/' + new ObjectId(),
+                    body: {
+                        name: 'a rule',
+                        type: 'sliding',
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: undefined,
+                            value: 5
+                        },
+                        eventTypeId: new ObjectId(),
+                        targetId: new ObjectId()
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/windowSize should have required property \'unit\''
+                }));
+            });
+
             it('should return 400 when windowSize.unit is not supported in rule of type sliding', async () => {
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
@@ -1599,21 +1629,88 @@ describe('admin server', () => {
                 }));
             });
 
-            it('should return 200 with updated realtime rule when request is valid', async () => {
+            it('should return 400 when windowSize.value is undefined in rule of type sliding', async () => {
                 const eventType = await createEventType(adminServer);
                 const target = await createTarget(adminServer);
-                const rule = await createRealTimeRule(adminServer, eventType, target);
+                const rule = await createSlidingRule(adminServer, eventType, target);
                 const response = await adminServer.inject({
                     method: 'PUT',
                     url: '/rules/' + rule.id,
                     body: {
                         name: 'a rule',
-                        type: 'realtime',
+                        type: 'sliding',
+                        group: {
+                            count: { _sum: 1 }
+                        },
+                        windowSize: {
+                            unit: 'hour',
+                            value: undefined
+                        },
                         eventTypeId: eventType.id,
-                        targetId: target.id,
+                        targetId: target.id
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(400);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                expect(response.payload).toBe(JSON.stringify({
+                    statusCode: 400,
+                    error: 'Bad Request',
+                    message: 'body/windowSize should have required property \'value\''
+                }));
+            });
+
+            it('should return 200 with updated realtime rule when request is valid', async () => {
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const rule = await createRealTimeRule(adminServer, eventType, target);
+                const newEventType = await createEventType(adminServer, 'a new event type');
+                const newTarget = await createTarget(adminServer, 'a new target');
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/rules/' + rule.id,
+                    body: {
+                        name: 'an updated rule',
+                        type: 'realtime',
+                        eventTypeId: newEventType.id,
+                        targetId: newTarget.id,
                         skipOnConsecutivesMatches: true,
                         filters: {
-                            value: 8
+                            value: 10
+                        }
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedRule = JSON.parse(response.payload);
+                expect(updatedRule.name).toBe('an updated rule');
+                expect(updatedRule.type).toBe('realtime');
+                expect(updatedRule.filters).toEqual({ value: 10 });
+                expect(updatedRule.eventTypeId).toBe(newEventType.id);
+                expect(updatedRule.eventTypeName).toBe(newEventType.name);
+                expect(updatedRule.targetId).toBe(newTarget.id);
+                expect(updatedRule.targetName).toBe(newTarget.name);
+                expect(updatedRule.skipOnConsecutivesMatches).toBe(true);
+                expect(updatedRule.id).toBe(rule.id);
+            });
+
+            it('should return 200 with updated tumbling rule when windowSize has been changed', async () => {
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const rule = await createTumblingRule(adminServer, eventType, target);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/rules/' + rule.id,
+                    body: {
+                        ...rule,
+                        windowSize: {
+                            unit: 'hour',
+                            value: 10
                         }
                     },
                     headers: {
@@ -1624,14 +1721,40 @@ describe('admin server', () => {
                 expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
                 const updatedRule = JSON.parse(response.payload);
                 expect(updatedRule.name).toBe('a rule');
-                expect(updatedRule.type).toBe('realtime');
-                expect(updatedRule.filters).toEqual({ value: 8 });
-                expect(updatedRule.eventTypeId).toBe(eventType.id);
-                expect(updatedRule.eventTypeName).toBe(eventType.name);
-                expect(updatedRule.targetId).toBe(target.id);
-                expect(updatedRule.targetName).toBe(target.name);
-                expect(updatedRule.skipOnConsecutivesMatches).toBe(true);
-                expect(ObjectId.isValid(updatedRule.id)).toBe(true);
+                expect(updatedRule.type).toBe('tumbling');
+                expect(updatedRule.windowSize).toStrictEqual({
+                    unit: 'hour',
+                    value: 10
+                });
+                expect(updatedRule.skipOnConsecutivesMatches).toBe(undefined);
+                expect(updatedRule.id).toBe(rule.id);
+            });
+
+            it('should return 200 with updated tumbling rule when windowSize has not been changed', async () => {
+                const eventType = await createEventType(adminServer);
+                const target = await createTarget(adminServer);
+                const rule = await createTumblingRule(adminServer, eventType, target);
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/rules/' + rule.id,
+                    body: {
+                        ...rule,
+                        name: 'new rule name'
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedRule = JSON.parse(response.payload);
+                expect(updatedRule.name).toBe('new rule name');
+                expect(updatedRule.type).toBe('tumbling');
+                expect(updatedRule.windowSize).toStrictEqual({
+                    unit: 'minute',
+                    value: 5
+                });
+                expect(updatedRule.id).toBe(rule.id);
             });
 
             it('should return 409 when try to update a rule with the same name', async () => {
@@ -1862,7 +1985,7 @@ describe('admin server', () => {
                         count: { _sum: 1 }
                     },
                     windowSize: {
-                        size: 'minute',
+                        unit: 'minute',
                         value: 5
                     },
                     eventTypeId: eventType.id,
@@ -1877,12 +2000,22 @@ describe('admin server', () => {
             return JSON.parse(createResponse.payload);
         }
 
-        async function createEventType(adminServer) {
+        async function createTumblingRule(adminServer, eventType, target, name = 'a rule') {
             const createResponse = await adminServer.inject({
                 method: 'POST',
-                url: '/event-types',
+                url: '/rules',
                 body: {
-                    name: 'an event type'
+                    name,
+                    type: 'tumbling',
+                    group: {
+                        count: { _sum: 1 }
+                    },
+                    windowSize: {
+                        unit: 'minute',
+                        value: 5
+                    },
+                    eventTypeId: eventType.id,
+                    targetId: target.id
                 },
                 headers: {
                     authorization: 'apiKey myApiKey'
@@ -1893,12 +2026,28 @@ describe('admin server', () => {
             return JSON.parse(createResponse.payload);
         }
 
-        async function createTarget(adminServer) {
+        async function createEventType(adminServer, name = 'an event type') {
+            const createResponse = await adminServer.inject({
+                method: 'POST',
+                url: '/event-types',
+                body: {
+                    name
+                },
+                headers: {
+                    authorization: 'apiKey myApiKey'
+                }
+            });
+            expect(createResponse.statusCode).toBe(201);
+            expect(createResponse.headers['content-type']).toBe('application/json; charset=utf-8');
+            return JSON.parse(createResponse.payload);
+        }
+
+        async function createTarget(adminServer, name = 'a target') {
             const createResponse = await adminServer.inject({
                 method: 'POST',
                 url: '/targets',
                 body: {
-                    name: 'a target',
+                    name,
                     url: 'https://example.org'
                 },
                 headers: {
