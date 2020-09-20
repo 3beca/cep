@@ -10,7 +10,7 @@ import { EventTypesService } from '../../services/event-types-service';
 import { Target } from '../../models/target';
 import { EventType } from '../../models/event-type';
 
-const ruleschema = {
+const ruleSchema = {
     type: 'object',
     properties: {
         id: { type: 'string' },
@@ -48,7 +48,7 @@ const listSchema = {
             properties: {
                 results: {
                     type: 'array',
-                    items: ruleschema
+                    items: ruleSchema
                 },
                 next: { type: 'string' },
                 prev: { type: 'string' }
@@ -73,7 +73,7 @@ const getSchema = {
     tags: ['rules'],
     params: ruleIdParam,
     response: {
-        200: ruleschema
+        200: ruleSchema
     }
 };
 
@@ -87,49 +87,60 @@ const deleteSchema = {
     }
 };
 
+const createUpdateRuleSchemaBody = {
+    type: 'object',
+    required: ['name', 'eventTypeId', 'targetId', 'type' ],
+    properties: {
+        name: { type: 'string', maxLength: 100 },
+        type: { type: 'string', enum: ['realtime', 'sliding', 'tumbling'] },
+        targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
+        eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
+        skipOnConsecutivesMatches: { type: 'boolean' },
+        filters: { type: 'object' },
+        group: { type: 'object' },
+        windowSize: {
+            type: 'object',
+            properties: {
+                unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
+                value: { type: 'integer' }
+            }
+        }
+    },
+    oneOf: [
+        {
+            properties: {
+                type: { const: 'sliding' }
+            },
+            required: ['group', 'windowSize']
+        },
+        {
+            properties: {
+                type: { const: 'tumbling' }
+            },
+            required: ['group', 'windowSize']
+        },
+        {
+            properties: {
+                type: { const: 'realtime' }
+            }
+        }
+    ]
+};
+
 const createSchema = {
     tags: ['rules'],
-    body: {
-        type: 'object',
-        required: ['name', 'eventTypeId', 'targetId', 'type' ],
-        properties: {
-            name: { type: 'string', maxLength: 100 },
-            type: { type: 'string', enum: ['realtime', 'sliding', 'tumbling'] },
-            targetId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
-            eventTypeId: { type: 'string', pattern: '^[a-f0-9]{24}$', errorMessage: 'should be a valid ObjectId' },
-            skipOnConsecutivesMatches: { type: 'boolean' },
-            filters: { type: 'object' },
-            group: { type: 'object' },
-            windowSize: {
-                type: 'object',
-                properties: {
-                    unit: { type: 'string', enum: ['second', 'minute', 'hour'] },
-                    value: { type: 'integer' }
-                }
-            }
-        },
-        oneOf: [
-            {
-                properties: {
-                    type: { const: 'sliding' }
-                },
-                required: ['group', 'windowSize']
-            },
-            {
-                properties: {
-                    type: { const: 'tumbling' }
-                },
-                required: ['group', 'windowSize']
-            },
-            {
-                properties: {
-                    type: { const: 'realtime' }
-                }
-            }
-        ]
-    },
+    body: createUpdateRuleSchemaBody,
     response: {
-        201: ruleschema
+        201: ruleSchema
+    }
+};
+
+const updateSchema = {
+    tags: ['rules'],
+    params: ruleIdParam,
+    body: createUpdateRuleSchemaBody,
+    response: {
+        200: ruleSchema
     }
 };
 
@@ -221,10 +232,31 @@ export function buildRulesRoutes(
         reply.status(201).send(await toRuleDto(rule));
     }
 
+    async function updateById(request: FastifyRequest<{ Params: { id: string }, Body: {
+        eventTypeId: string,
+        targetId: string,
+        name: string,
+        filters: any,
+        skipOnConsecutivesMatches: boolean,
+        type: RuleTypes,
+    } }>) {
+        const { id } = request.params;
+        const ruleId = ObjectId.createFromHexString(id);
+        const { eventTypeId, targetId } = request.body;
+        const ruleToUpdate = {
+            ...request.body,
+            eventTypeId: ObjectId.createFromHexString(eventTypeId),
+            targetId: ObjectId.createFromHexString(targetId),
+        };
+        const rule = await rulesService.updateById(ruleId, ruleToUpdate);
+        return toRuleDto(rule);
+    }
+
     return function(fastify: FastifyInstance, opts, next) {
         fastify.get('/', { ...opts, schema: listSchema }, list);
         fastify.get('/:id', { ...opts, schema: getSchema }, getById);
         fastify.delete('/:id', { ...opts, schema: deleteSchema }, deleteById);
+        fastify.put('/:id', { ...opts, schema: updateSchema }, updateById);
         fastify.post('/', { ...opts, schema: createSchema }, create);
         next();
     };

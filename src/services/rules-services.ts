@@ -9,10 +9,12 @@ import { TargetsService } from './targets-service';
 import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
 import { Scheduler } from '../scheduler';
+import NotFoundError from '../errors/not-found-error';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
     create(rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
+    updateById(id: ObjectId, rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule>;
     getById(id: ObjectId): Promise<Rule>;
     deleteById(id: ObjectId): Promise<void>;
     getByEventTypeId(eventTypeId: ObjectId, types: RuleTypes[]): Promise<Rule[]>;
@@ -61,6 +63,16 @@ export function buildRulesService(db: Db,
         return scheduler.cancelJob(rule.jobId);
     }
 
+    async function handleConflictError(error, name: string): Promise<object> {
+        if (error.name === 'MongoError' && error.code === 11000) {
+            const existingRule = await collection.findOne({ name });
+            if (existingRule) {
+                return new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id, 'rules');
+            }
+        }
+        return error;
+    }
+
     return {
         async list(page: number, pageSize: number, search: string): Promise<Rule[]> {
             const query = search ? { name: { $regex: getContainsRegex(search), $options: 'i' } } : {};
@@ -93,13 +105,7 @@ export function buildRulesService(db: Db,
                 const opResult = await collection.insertOne(ruleToCreate);
                 insertedId = opResult.insertedId;
             } catch (error) {
-                if (error.name === 'MongoError' && error.code === 11000) {
-                    const existingRule = await collection.findOne({ name });
-                    if (existingRule) {
-                        throw new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id, 'rules');
-                    }
-                }
-                throw error;
+                throw await handleConflictError(error, name);
             }
             const createdRule = {
                 ...ruleToCreate,
@@ -117,6 +123,43 @@ export function buildRulesService(db: Db,
                 createdRule.jobId = jobId;
             }
             return createdRule as Rule;
+        },
+        async updateById(id: ObjectId, rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Rule> {
+            const existingRule = await this.getById(id);
+            if (!existingRule) {
+                throw new NotFoundError(`Rule ${id} cannot be found`);
+            }
+            const { filters, name, eventTypeId, targetId } = rule;
+
+            if (existingRule.type !== rule.type) {
+                throw new InvalidOperationError('rule type cannot be changed. Please consider delete and create a new rule.');
+            }
+
+            if (isSlidingRule(rule) || isTumblingRule(rule)) {
+                assertIsValid(rule.group);
+            }
+            Filter.assertIsValid(filters);
+
+            const eventType = await eventTypesService.getById(eventTypeId);
+            if (!eventType) {
+                throw new InvalidOperationError(`event type with identifier ${eventTypeId} does not exists`);
+            }
+            const target = await targetsService.getById(targetId);
+            if (!target) {
+                throw new InvalidOperationError(`target with identifier ${targetId} does not exists`);
+            }
+            const ruleToUpdate = {
+                ...rule,
+                id: undefined,
+                updatedAt: new Date(),
+                createdAt: existingRule.createdAt
+            };
+            try {
+                await collection.replaceOne({ _id: id }, ruleToUpdate);
+                return { ...ruleToUpdate, id } as Rule;
+            } catch (error) {
+                throw await handleConflictError(error, name);
+            }
         },
         async getById(id: ObjectId): Promise<Rule> {
             const rule = await collection.findOne({ _id: id });
