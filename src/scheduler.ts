@@ -13,6 +13,7 @@ export type Scheduler = {
     scheduleJob(interval: string, name: string, data: JobData): Promise<ObjectId>;
     cancelJob(id: ObjectId): Promise<void>;
     onJobComplete(fn: (id: ObjectId, name: string, data: JobData) => void): void;
+    onJobError(fn: (id: ObjectId, name: string, data: JobData, error: Error) => void): void
 }
 
 export function buildScheduler(db: Db): Scheduler {
@@ -55,6 +56,11 @@ export function buildScheduler(db: Db): Scheduler {
         onJobComplete(fn: (id: ObjectId, name: string, data: JobData) => void): void {
             agenda.on('complete', (job: Job) => {
                 fn(job.attrs._id, job.attrs.name, job.attrs.data);
+            });
+        },
+        onJobError(fn: (id: ObjectId, name: string, data: JobData, error: Error) => void): void {
+            agenda.on('fail', (err: Error, job: Job) => {
+                fn(job.attrs._id, job.attrs.name, job.attrs.data, err);
             });
         }
     };

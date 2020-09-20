@@ -8,7 +8,7 @@ export default function gracefulShutdown(app) {
             logger.info('graceful shutdown complete.');
             process.exit(0);
         } catch (error) {
-            logger.error('error while graceful shuttingdown.', error);
+            logger.error('error while graceful shutting down.', error);
             process.exit(1);
         }
     };
