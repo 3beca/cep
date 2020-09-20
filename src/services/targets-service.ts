@@ -1,11 +1,11 @@
 import { ObjectId, Db } from 'mongodb';
-import ConflictError from '../errors/conflict-error';
 import { toDto } from '../utils/dto';
 import escapeStringRegex from 'escape-string-regexp';
 import { Target } from '../models/target';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { TemplateEngine } from '../template-engine';
 import NotFoundError from '../errors/not-found-error';
+import { handleConflictError } from '../errors/conflict-error-handler';
 
 export type TargetsService = {
     list(page: number, pageSize: number, search?: string): Promise<Target[]>;
@@ -45,14 +45,8 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
         }
     }
 
-    async function handleConflictError(error, name: string): Promise<object> {
-        if (error.name === 'MongoError' && error.code === 11000) {
-            const existingTarget = await collection.findOne({ name });
-            if (existingTarget) {
-                return new ConflictError(`Target name must be unique and is already taken by target with id ${existingTarget._id}`, existingTarget._id, 'targets');
-            }
-        }
-        return error;
+    function findByName(name: string): Promise<{ _id: ObjectId } | null> {
+        return collection.findOne({ name }, { projection: { _id: 1 } });
     }
 
     return {
@@ -77,7 +71,8 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 const { insertedId } = await collection.insertOne(targetToCreate);
                 return { ...targetToCreate, id: insertedId };
             } catch (error) {
-                throw await handleConflictError(error, target.name);
+                throw await handleConflictError(error, () => findByName(target.name),
+                    { itemName: 'target', resources: 'targets' });
             }
         },
         async updateById(id: ObjectId, target: Pick<Target, 'name' | 'url' | 'headers' | 'body'>): Promise<Target> {
@@ -101,7 +96,8 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
                 await collection.replaceOne({ _id: id }, targetToUpdate);
                 return { ...targetToUpdate, id };
             } catch (error) {
-                throw await handleConflictError(error, target.name);
+                throw await handleConflictError(error, () => findByName(target.name),
+                    { itemName: 'target', resources: 'targets' });
             }
         },
         async getById(id: ObjectId): Promise<Target> {

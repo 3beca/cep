@@ -1,5 +1,4 @@
 import { ObjectId, Db } from 'mongodb';
-import ConflictError from '../errors/conflict-error';
 import Filter from '../filters/filter';
 import InvalidOperationError from '../errors/invalid-operation-error';
 import { toDto } from '../utils/dto';
@@ -10,6 +9,7 @@ import { Rule, RuleTypes, SlidingRule, TumblingRule } from '../models/rule';
 import { assertIsValid } from '../windowing/group';
 import { Scheduler } from '../scheduler';
 import NotFoundError from '../errors/not-found-error';
+import { handleConflictError } from '../errors/conflict-error-handler';
 
 export type RulesService = {
     list(page: number, pageSize: number, search: string): Promise<Rule[]>;
@@ -63,14 +63,8 @@ export function buildRulesService(db: Db,
         return scheduler.cancelJob(rule.jobId);
     }
 
-    async function handleConflictError(error, name: string): Promise<object> {
-        if (error.name === 'MongoError' && error.code === 11000) {
-            const existingRule = await collection.findOne({ name });
-            if (existingRule) {
-                return new ConflictError(`Rule name must be unique and is already taken by rule with id ${existingRule._id}`, existingRule._id, 'rules');
-            }
-        }
-        return error;
+    function findByName(name: string): Promise<{ _id: ObjectId } | null> {
+        return collection.findOne({ name }, { projection: { _id: 1 } });
     }
 
     return {
@@ -105,7 +99,8 @@ export function buildRulesService(db: Db,
                 const opResult = await collection.insertOne(ruleToCreate);
                 insertedId = opResult.insertedId;
             } catch (error) {
-                throw await handleConflictError(error, name);
+                throw await handleConflictError(error, () => findByName(name),
+                    { itemName: 'rule', resources: 'rules' });
             }
             const createdRule = {
                 ...ruleToCreate,
@@ -158,7 +153,8 @@ export function buildRulesService(db: Db,
                 await collection.replaceOne({ _id: id }, ruleToUpdate);
                 return { ...ruleToUpdate, id } as Rule;
             } catch (error) {
-                throw await handleConflictError(error, name);
+                throw await handleConflictError(error, () => findByName(name),
+                    { itemName: 'rule', resources: 'rules' });
             }
         },
         async getById(id: ObjectId): Promise<Rule> {
