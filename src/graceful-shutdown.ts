@@ -1,6 +1,7 @@
 import logger from './logger';
+import { App } from './app';
 
-export default function gracefulShutdown(app) {
+export default function gracefulShutdown(app: App) {
     return async () => {
         try {
             logger.info('starting graceful shutdown.');
