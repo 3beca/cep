@@ -21,7 +21,7 @@ describe('graceful-shutdown', () => {
         expect(exitStub).toHaveBeenCalledWith(0);
     });
 
-    it('should call app.close and process exit 1 when app.close throw an error', async () => {
+    it('should call app.close and process exit 1 when app.close throws an error', async () => {
         const app = {
             close: jest.fn(() => Promise.reject('Oops, an error'))
         } as unknown as App;
