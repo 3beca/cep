@@ -337,7 +337,7 @@ The syntax has been inspired by mongodb aggregate group expression language. The
   "type": "sliding",
   "targetId": "5db373aeb2684dc2105f20a5",
   "eventTypeId": "5db3730cb2684d3d135f20a4",
-  "filters": { "maxTemperature": { "_gt": 35 } },
+  "filters": { "avgTemperature": { "_gt": 35 } },
   "group": {
     "avgTemperature": { "_avg": "_temperature" }
   },
