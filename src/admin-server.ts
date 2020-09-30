@@ -64,24 +64,6 @@ export function buildAdminServer(
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
-	// Fastify currently does not expose req.protocol in request object.
-	// Also it does not have support for X-Forwarded-Proto when trustProxy.
-	// Added code below inspired by https://github.com/fastify/fastify/pull/1805
-	if (trustProxy) {
-		app.decorateRequest('protocol', {
-			getter() {
-				return (this.headers['x-forwarded-proto'] ?? 'http').startsWith('https') ? 'https' : 'http';
-			}
-		});
-	} else {
-		app.decorateRequest('protocol', {
-			getter() {
-				// we only provide https support using a reverse proxy.
-				return 'http';
-			}
-		});
-	}
-
 	if (enableSwagger) {
 		app.register(fastifySwagger, {
 			routePrefix: '/documentation',
