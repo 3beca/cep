@@ -140,7 +140,7 @@ export function buildEngine(
         return rulesExecutionsService.createMany([ruleExecution]);
     }
 
-    function storeRuleExecutions(rulesExecutions: Omit<RuleExecution, 'id'>[]): Promise<void> {
+    function storeRulesExecutions(rulesExecutions: Omit<RuleExecution, 'id'>[]): Promise<void> {
         if (rulesExecutions.length === 0) {
             return Promise.resolve();
         }
@@ -174,7 +174,7 @@ export function buildEngine(
             const executeRulePromises = rules.map(rule => executeRule(rule, eventType, requestId, event));
             const rulesExecutions = await Promise.all(executeRulePromises);
             const orderedRulesExecutions = orderRulesExecutionsByExecutedAt(rulesExecutions);
-            await storeRuleExecutions(orderedRulesExecutions);
+            await storeRulesExecutions(orderedRulesExecutions);
         },
         async executeTumblingRule(ruleId: ObjectId, requestId: string): Promise<void> {
             const rule = await getRule(ruleId);
