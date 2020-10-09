@@ -140,11 +140,11 @@ export function buildEngine(
         return rulesExecutionsService.createMany([ruleExecution]);
     }
 
-    function storeRuleExecutions(ruleExecutions: Omit<RuleExecution, 'id'>[]): Promise<void> {
-        if (ruleExecutions.length === 0) {
+    function storeRuleExecutions(rulesExecutions: Omit<RuleExecution, 'id'>[]): Promise<void> {
+        if (rulesExecutions.length === 0) {
             return Promise.resolve();
         }
-        return rulesExecutionsService.createMany(ruleExecutions);
+        return rulesExecutionsService.createMany(rulesExecutions);
     }
 
     function getEventTypeRealTimeAndSlidingRules(eventTypeId: ObjectId): Promise<Rule[]> {
@@ -159,6 +159,10 @@ export function buildEngine(
         return rulesService.getById(ruleId);
     }
 
+    function orderRulesExecutionsByExecutedAt(rulesExecutions: Omit<RuleExecution, 'id'>[]): Omit<RuleExecution, 'id'>[] {
+        return rulesExecutions.sort((r1, r2) => r1.executedAt.getTime() - r2.executedAt.getTime());
+    }
+
     return {
         async processEvent(eventTypeId: ObjectId, eventPayload, requestId: string): Promise<void> {
             const eventType = await getEventType(eventTypeId);
@@ -168,8 +172,9 @@ export function buildEngine(
             const event = await storeEvent(eventType, eventPayload, requestId);
             const rules = await getEventTypeRealTimeAndSlidingRules(eventTypeId);
             const executeRulePromises = rules.map(rule => executeRule(rule, eventType, requestId, event));
-            const ruleExecutions = await Promise.all(executeRulePromises);
-            await storeRuleExecutions(ruleExecutions);
+            const rulesExecutions = await Promise.all(executeRulePromises);
+            const orderedRulesExecutions = orderRulesExecutionsByExecutedAt(rulesExecutions);
+            await storeRuleExecutions(orderedRulesExecutions);
         },
         async executeTumblingRule(ruleId: ObjectId, requestId: string): Promise<void> {
             const rule = await getRule(ruleId);
