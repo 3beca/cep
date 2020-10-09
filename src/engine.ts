@@ -78,7 +78,7 @@ export function buildEngine(
 
     async function executeRule(rule: Rule, eventType: EventType, requestId: string, event?: Event) : Promise<Omit<RuleExecution, 'id'>> {
         let matchResult = await getRuleMatchResult(rule, event as Event);
-        if (rule.skipOnConsecutivesMatches) {
+        if (matchResult.match && rule.skipOnConsecutivesMatches) {
             const lastRuleExecution = await rulesExecutionsService.getLastRuleExecution(rule.id);
             matchResult = { ...matchResult, skip: lastRuleExecution?.match };
         }
