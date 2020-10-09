@@ -5,6 +5,6 @@ import { ExecuteRuleJobData } from './execute-rule-job-data';
 export default function buildExecuteRuleJobHandler(engine: Engine): JobHandler {
     let i = 0;
     return function executeRuleJobHandler(data: ExecuteRuleJobData): Promise<void> {
-        return engine.executeRule(data.ruleId, (i++).toString());
+        return engine.executeTumblingRule(data.ruleId, (i++).toString());
     };
 }
