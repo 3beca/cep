@@ -14,6 +14,5 @@ export type RuleExecution = {
     targetName?: string;
     targetSuccess?: boolean;
     targetStatusCode?: number;
-    targetError?: string;
     executedAt: Date;
 }

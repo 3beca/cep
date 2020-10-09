@@ -202,7 +202,6 @@ describe('admin server', () => {
             expect(ruleExecution1.targetName).toBe(undefined);
             expect(ruleExecution1.targetSuccess).toBe(undefined);
             expect(ruleExecution1.targetStatusCode).toBe(undefined);
-            expect(ruleExecution1.targetError).toBe(undefined);
 
             const ruleExecution2 = rulesExecutions.find(r => r.ruleId === rule1.id && r.targetStatusCode === 500);
             expect(ruleExecution2).not.toBe(undefined);
