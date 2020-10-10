@@ -15,6 +15,7 @@ import buildExecuteRuleJobHandler from './jobs-handlers/execute-rule-job-handler
 import { buildEventProcessingServer } from './event-processing-server';
 import { Config } from './config';
 import { buildTemplateEngine } from './template-engine';
+import { buildEngineMetrics } from './engine-metrics';
 
 export type App = {
     close(): Promise<void>;
@@ -36,7 +37,8 @@ export async function buildApp(config: Config): Promise<App> {
     const rulesService = buildRulesService(db, targetsService, eventTypesService, scheduler);
     const eventsService = buildEventsService(db);
     const rulesExecutionsService = buildRulesExecutionsService(db);
-    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService, templateEngine);
+    const engineMetrics = buildEngineMetrics(metrics);
+    const engine = buildEngine(eventTypesService, rulesService, targetsService, eventsService, rulesExecutionsService, templateEngine, engineMetrics);
     const metricsServer = buildMetricsServer(metrics);
     const adminServer = buildAdminServer({
             ...config.adminHttp,

@@ -13,6 +13,7 @@ import InvalidOperationError from './errors/invalid-operation-error';
 import { EventType } from './models/event-type';
 import { TemplateEngine } from './template-engine';
 import { RuleExecution } from './models/rule-execution';
+import { EngineMetrics } from './engine-metrics';
 
 export type Engine = {
     processEvent(eventTypeId: ObjectId, eventPayload: any, requestId: string): Promise<void>;
@@ -35,7 +36,8 @@ export function buildEngine(
     targetsService: TargetsService,
     eventsService: EventsService,
     rulesExecutionsService: RulesExecutionsService,
-    templateEngine: TemplateEngine): Engine {
+    templateEngine: TemplateEngine,
+    engineMetrics: EngineMetrics): Engine {
 
     function storeEvent(eventType, payload, requestId: string): Promise<Event> {
         const event = {
@@ -77,10 +79,11 @@ export function buildEngine(
     }
 
     async function executeRule(rule: Rule, eventType: EventType, requestId: string, event?: Event) : Promise<Omit<RuleExecution, 'id'>> {
+        const startTime = new Date().getTime();
         let matchResult = await getRuleMatchResult(rule, event as Event);
         if (matchResult.match && rule.skipOnConsecutivesMatches) {
             const lastRuleExecution = await rulesExecutionsService.getLastRuleExecution(rule.id);
-            matchResult = { ...matchResult, skip: lastRuleExecution?.match };
+            matchResult = { ...matchResult, skip: !!lastRuleExecution?.match };
         }
         if (matchResult.match && !matchResult.skip) {
             const target = await targetsService.getById(rule.targetId);
@@ -119,6 +122,8 @@ export function buildEngine(
             };
         }
         const { match, skip, targetId, targetName, targetSuccess, targetStatusCode } = matchResult;
+        const endTime = new Date().getTime();
+        engineMetrics.logRuleExecution(rule, match, skip, targetSuccess, (endTime - startTime) / 1000);
         return {
             executedAt: new Date(),
             requestId,

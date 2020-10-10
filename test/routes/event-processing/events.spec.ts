@@ -8,6 +8,7 @@ describe('event processing', () => {
     let app: App;
     let adminServer;
     let eventProcessingServer;
+    let metricsServer;
 
     beforeEach(async () => {
         const config = buildConfig();
@@ -20,6 +21,7 @@ describe('event processing', () => {
         });
         adminServer = app.getAdminServer();
         eventProcessingServer = app.getEventProcessingServer();
+        metricsServer = app.getMetricsServer();
     });
 
     afterEach(async () => {
@@ -143,6 +145,56 @@ describe('event processing', () => {
             });
             expect(response.statusCode).toBe(204);
             expect(scope.isDone()).toBe(true);
+        });
+
+        it('should call target and store metrics', async () => {
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/');
+            const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
+
+            const requestId = new ObjectId().toHexString();
+            const scope = nock('http://example.org')
+                .post('/', { value: 2 })
+                .reply(200);
+
+            const response = await eventProcessingServer.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': requestId
+                },
+                body: {
+                    value: 2
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(true);
+
+            const metricsResponse = await metricsServer.inject({
+                method: 'GET',
+                url: '/metrics'
+            });
+            expect(metricsResponse.statusCode).toBe(200);
+            expect(metricsResponse.headers['content-type']).toBe('text/plain');
+            const labels = {
+                eventTypeId: eventType.id,
+                ruleId: rule.id,
+                ruleType: rule.type,
+                match: 'true',
+                skip: 'false',
+                targetId: target.id,
+                targetSuccess: 'true'
+            };
+            const labelsString = Object.keys(labels).map(l => `${l}="${labels[l]}"`).join(',');
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_count{${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="0.05",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="0.1",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="0.5",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="1",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="3",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="5",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="10",${labelsString}} 1\n`);
+            expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="+Inf",${labelsString}} 1\n`);
         });
 
         it('should call target when event payload matches rule filters with target template body rendered', async () => {
