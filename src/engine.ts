@@ -159,10 +159,6 @@ export function buildEngine(
         return rulesService.getById(ruleId);
     }
 
-    function orderRulesExecutionsByExecutedAt(rulesExecutions: Omit<RuleExecution, 'id'>[]): Omit<RuleExecution, 'id'>[] {
-        return rulesExecutions.sort((r1, r2) => r1.executedAt.getTime() - r2.executedAt.getTime());
-    }
-
     return {
         async processEvent(eventTypeId: ObjectId, eventPayload, requestId: string): Promise<void> {
             const eventType = await getEventType(eventTypeId);
@@ -173,8 +169,7 @@ export function buildEngine(
             const rules = await getEventTypeRealTimeAndSlidingRules(eventTypeId);
             const executeRulePromises = rules.map(rule => executeRule(rule, eventType, requestId, event));
             const rulesExecutions = await Promise.all(executeRulePromises);
-            const orderedRulesExecutions = orderRulesExecutionsByExecutedAt(rulesExecutions);
-            await storeRulesExecutions(orderedRulesExecutions);
+            await storeRulesExecutions(rulesExecutions);
         },
         async executeTumblingRule(ruleId: ObjectId, requestId: string): Promise<void> {
             const rule = await getRule(ruleId);
