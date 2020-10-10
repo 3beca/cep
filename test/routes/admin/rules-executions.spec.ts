@@ -201,7 +201,6 @@ describe('admin server', () => {
             expect(new Date(secondRuleExecution.executedAt).getTime()).toBeGreaterThan(new Date(firstRuleExecution.executedAt).getTime());
 
             const rule1FirstExecution = secondRuleExecution;
-            expect(rule1FirstExecution).not.toBe(undefined);
             expect(rule1FirstExecution.eventTypeId).toBe(eventType.id);
             expect(rule1FirstExecution.eventTypeName).toBe(eventType.name);
             expect(rule1FirstExecution.ruleName).toBe(rule1.name);
@@ -213,7 +212,6 @@ describe('admin server', () => {
             expect(rule1FirstExecution.targetStatusCode).toBe(200);
 
             const rule2FirstExecution = firstRuleExecution;
-            expect(rule2FirstExecution).not.toBe(undefined);
             expect(rule2FirstExecution.eventTypeId).toBe(eventType.id);
             expect(rule2FirstExecution.eventTypeName).toBe(eventType.name);
             expect(rule2FirstExecution.ruleName).toBe(rule2.name);
@@ -225,7 +223,6 @@ describe('admin server', () => {
             expect(rule2FirstExecution.targetStatusCode).toBe(202);
 
             const rule1LastExecution = forthRuleExecution;
-            expect(rule1LastExecution).not.toBe(undefined);
             expect(rule1LastExecution.eventTypeId).toBe(eventType.id);
             expect(rule1LastExecution.eventTypeName).toBe(eventType.name);
             expect(rule1LastExecution.ruleName).toBe(rule1.name);
@@ -237,7 +234,6 @@ describe('admin server', () => {
             expect(rule1LastExecution.targetStatusCode).toBe(500);
 
             const rule2LastExecution = thirdRuleExecution;
-            expect(rule2LastExecution).not.toBe(undefined);
             expect(rule2LastExecution.eventTypeId).toBe(eventType.id);
             expect(rule2LastExecution.eventTypeName).toBe(eventType.name);
             expect(rule2LastExecution.ruleName).toBe(rule2.name);
