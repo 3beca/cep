@@ -153,7 +153,7 @@ describe('admin server', () => {
             expect(listResponse.prev).toBe(undefined);
         });
 
-        it('should return a list of rules executions', async () => {
+        it('should return a list of rules executions ordered by executedAt descending', async () => {
             const eventType = await createEventType(adminServer);
             const target1 = await createTarget(adminServer, 'https://target1.com');
             const target2 = await createTarget(adminServer, 'https://target2.com');
@@ -163,9 +163,11 @@ describe('admin server', () => {
             const scope2 = nock('https://target1.com')
                 .post('/', { value: 2 })
                 .once()
+                .delayConnection(10)
                 .reply(200, { ok: true })
                 .post('/', { value: 2 })
                 .once()
+                .delayConnection(10)
                 .reply(500, { error: 'server error' });
 
             const scope1 = nock('https://target2.com')
@@ -192,50 +194,59 @@ describe('admin server', () => {
             const rulesExecutions = listResponse.results.filter(r => r.match);
             expect(rulesExecutions.length).toBe(4);
 
-            const ruleExecution1 = rulesExecutions.find(r => r.ruleId === rule2.id && r.skip);
-            expect(ruleExecution1).not.toBe(undefined);
-            expect(ruleExecution1.eventTypeId).toBe(eventType.id);
-            expect(ruleExecution1.eventTypeName).toBe(eventType.name);
-            expect(ruleExecution1.ruleName).toBe(rule2.name);
-            expect(ruleExecution1.executedAt).not.toBe(undefined);
-            expect(ruleExecution1.targetId).toBe(undefined);
-            expect(ruleExecution1.targetName).toBe(undefined);
-            expect(ruleExecution1.targetSuccess).toBe(undefined);
-            expect(ruleExecution1.targetStatusCode).toBe(undefined);
+            const [ forthRuleExecution, thirdRuleExecution, secondRuleExecution, firstRuleExecution ] = rulesExecutions;
 
-            const ruleExecution2 = rulesExecutions.find(r => r.ruleId === rule1.id && r.targetStatusCode === 500);
-            expect(ruleExecution2).not.toBe(undefined);
-            expect(ruleExecution2.eventTypeId).toBe(eventType.id);
-            expect(ruleExecution2.eventTypeName).toBe(eventType.name);
-            expect(ruleExecution2.ruleName).toBe(rule1.name);
-            expect(ruleExecution2.skip).toBe(false);
-            expect(ruleExecution2.executedAt).not.toBe(undefined);
-            expect(ruleExecution2.targetId).toBe(target1.id);
-            expect(ruleExecution2.targetName).toBe(target1.name);
-            expect(ruleExecution2.targetSuccess).toBe(false);
+            expect(new Date(forthRuleExecution.executedAt).getTime()).toBeGreaterThan(new Date(thirdRuleExecution.executedAt).getTime());
+            expect(new Date(thirdRuleExecution.executedAt).getTime()).toBeGreaterThan(new Date(secondRuleExecution.executedAt).getTime());
+            expect(new Date(secondRuleExecution.executedAt).getTime()).toBeGreaterThan(new Date(firstRuleExecution.executedAt).getTime());
 
-            const ruleExecution3 = rulesExecutions.find(r => r.ruleId === rule2.id && !r.skip);
-            expect(ruleExecution3).not.toBe(undefined);
-            expect(ruleExecution3.eventTypeId).toBe(eventType.id);
-            expect(ruleExecution3.eventTypeName).toBe(eventType.name);
-            expect(ruleExecution3.ruleName).toBe(rule2.name);
-            expect(ruleExecution3.executedAt).not.toBe(undefined);
-            expect(ruleExecution3.targetId).toBe(target2.id);
-            expect(ruleExecution3.targetName).toBe(target2.name);
-            expect(ruleExecution3.targetSuccess).toBe(true);
-            expect(ruleExecution3.targetStatusCode).toBe(202);
+            const rule1FirstExecution = secondRuleExecution;
+            expect(rule1FirstExecution).not.toBe(undefined);
+            expect(rule1FirstExecution.eventTypeId).toBe(eventType.id);
+            expect(rule1FirstExecution.eventTypeName).toBe(eventType.name);
+            expect(rule1FirstExecution.ruleName).toBe(rule1.name);
+            expect(rule1FirstExecution.skip).toBe(false);
+            expect(rule1FirstExecution.executedAt).not.toBe(undefined);
+            expect(rule1FirstExecution.targetId).toBe(target1.id);
+            expect(rule1FirstExecution.targetName).toBe(target1.name);
+            expect(rule1FirstExecution.targetSuccess).toBe(true);
+            expect(rule1FirstExecution.targetStatusCode).toBe(200);
 
-            const ruleExecution4 = rulesExecutions.find(r => r.ruleId === rule1.id && r.targetStatusCode === 200);
-            expect(ruleExecution4).not.toBe(undefined);
-            expect(ruleExecution4.eventTypeId).toBe(eventType.id);
-            expect(ruleExecution4.eventTypeName).toBe(eventType.name);
-            expect(ruleExecution4.ruleName).toBe(rule1.name);
-            expect(ruleExecution4.skip).toBe(false);
-            expect(ruleExecution4.executedAt).not.toBe(undefined);
-            expect(ruleExecution4.targetId).toBe(target1.id);
-            expect(ruleExecution4.targetName).toBe(target1.name);
-            expect(ruleExecution4.targetSuccess).toBe(true);
-            expect(ruleExecution4.targetStatusCode).toBe(200);
+            const rule2FirstExecution = firstRuleExecution;
+            expect(rule2FirstExecution).not.toBe(undefined);
+            expect(rule2FirstExecution.eventTypeId).toBe(eventType.id);
+            expect(rule2FirstExecution.eventTypeName).toBe(eventType.name);
+            expect(rule2FirstExecution.ruleName).toBe(rule2.name);
+            expect(rule2FirstExecution.skip).toBe(false);
+            expect(rule2FirstExecution.executedAt).not.toBe(undefined);
+            expect(rule2FirstExecution.targetId).toBe(target2.id);
+            expect(rule2FirstExecution.targetName).toBe(target2.name);
+            expect(rule2FirstExecution.targetSuccess).toBe(true);
+            expect(rule2FirstExecution.targetStatusCode).toBe(202);
+
+            const rule1LastExecution = forthRuleExecution;
+            expect(rule1LastExecution).not.toBe(undefined);
+            expect(rule1LastExecution.eventTypeId).toBe(eventType.id);
+            expect(rule1LastExecution.eventTypeName).toBe(eventType.name);
+            expect(rule1LastExecution.ruleName).toBe(rule1.name);
+            expect(rule1LastExecution.skip).toBe(false);
+            expect(rule1LastExecution.executedAt).not.toBe(undefined);
+            expect(rule1LastExecution.targetId).toBe(target1.id);
+            expect(rule1LastExecution.targetName).toBe(target1.name);
+            expect(rule1LastExecution.targetSuccess).toBe(false);
+            expect(rule1LastExecution.targetStatusCode).toBe(500);
+
+            const rule2LastExecution = thirdRuleExecution;
+            expect(rule2LastExecution).not.toBe(undefined);
+            expect(rule2LastExecution.eventTypeId).toBe(eventType.id);
+            expect(rule2LastExecution.eventTypeName).toBe(eventType.name);
+            expect(rule2LastExecution.ruleName).toBe(rule2.name);
+            expect(rule2LastExecution.skip).toBe(true);
+            expect(rule2LastExecution.executedAt).not.toBe(undefined);
+            expect(rule2LastExecution.targetId).toBe(undefined);
+            expect(rule2LastExecution.targetName).toBe(undefined);
+            expect(rule2LastExecution.targetSuccess).toBe(undefined);
+            expect(rule2LastExecution.targetStatusCode).toBe(undefined);
 
             expect(scope1.isDone()).toBe(true);
             expect(scope2.isDone()).toBe(true);
