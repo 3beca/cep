@@ -30,5 +30,5 @@ export function buildEngineMetrics(metrics: Metrics): EngineMetrics {
                     targetSuccess !== undefined ? targetSuccess.toString() : 'n/a')
                 .observe(duration);
         }
-    }
+    };
 }
