@@ -26,7 +26,7 @@ export function buildRulesExecutionsService(db: Db): RulesExecutionsService {
             return toDto(results[0]);
         },
         async createMany(rulesExecutions: Omit<RuleExecution, 'id'>[]): Promise<void> {
-            await collection.insertMany(rulesExecutions, { ordered: true });
+            await collection.insertMany(rulesExecutions);
         }
     };
 }
