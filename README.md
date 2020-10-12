@@ -249,9 +249,16 @@ A simple target to send messages to a Slack channel using Incoming Web Hooks:
 
 ```sh
 curl --request POST \
-  --url https://hooks.slack.com/services/<incomingWebhookToken> \
-  --header 'content-type: application/json' \
-  --data '{"text": "The temperature of your home is now {{event.temperature}} degrees.", "channel": "#random"}'
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "Slack Target",
+    "url": "https://hooks.slack.com/services/<incomingWebhookToken>",
+    "body": {
+      "text": "The temperature of your home is now {{event.temperature}} degrees.", "channel": "#random"
+    }
+  }
 ```
 
 ##### Trello Target
@@ -260,16 +267,21 @@ A simple target to create cards in a Trello Board via the [Trello Rest API](http
 
 ```sh
 curl --request POST \
-  --url https://api.trello.com/1/cards \
-  --header 'content-type: application/json' \
+  --url "http://localhost:8888/targets/" \
+  --header "accept: application/json" \
+  --header "Content-Type: application/json" \
   --data '{
-	"key": "<key>",
-	"token": "<token>",
-	"idList": "<listId>",
-	"name":"Refill water {{eventType.name}}",
-	"desc": "This task is about re-fill the water tank {{eventType.name}}. The current water volume is {{event.value}}. Please refill it asap.",
-	"idMembers": ["<memberId>"]
-}'
+    "name": "Slack Target",
+    "url": "https://api.trello.com/1/cards",
+    "body": {
+      "key": "<key>",
+      "token": "<token>",
+      "idList": "<listId>",
+      "name":"Refill water {{eventType.name}}",
+      "desc": "This task is about re-fill the water tank {{eventType.name}}. The current water volume is {{event.value}}. Please refill it asap.",
+      "idMembers": ["<memberId>"]
+    }
+  }'
 ```
 
 ### Create a Rule
