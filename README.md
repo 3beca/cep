@@ -21,6 +21,7 @@ A simple complex event processing system.
     - [Examples](#examples)
       - [Telegram Target](#telegram-target)
       - [SendGrid Target](#sendgrid-target)
+      - [Slack Target](#slack-target)
   - [Create a Rule](#create-a-rule)
     - [Rule Options](#rule-options)
     - [Rule Filters](#rule-filters)
@@ -239,6 +240,17 @@ curl --request POST \
       }]
     }
   }'
+```
+
+##### Slack Target
+
+A simple target to send messages to a Slack channel using Incoming Web Hooks
+
+```sh
+curl --request POST \
+  --url https://hooks.slack.com/services/<incomingWebhookToken> \
+  --header 'content-type: application/json' \
+  --data '{"text": "The temperature of your home is now {{event.temperature}} degrees.", "channel": "#random"}'
 ```
 
 ### Create a Rule
