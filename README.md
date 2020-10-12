@@ -22,6 +22,7 @@ A simple complex event processing system.
       - [Telegram Target](#telegram-target)
       - [SendGrid Target](#sendgrid-target)
       - [Slack Target](#slack-target)
+      - [Trello Target](#trello-target)
   - [Create a Rule](#create-a-rule)
     - [Rule Options](#rule-options)
     - [Rule Filters](#rule-filters)
@@ -244,13 +245,31 @@ curl --request POST \
 
 ##### Slack Target
 
-A simple target to send messages to a Slack channel using Incoming Web Hooks
+A simple target to send messages to a Slack channel using Incoming Web Hooks:
 
 ```sh
 curl --request POST \
   --url https://hooks.slack.com/services/<incomingWebhookToken> \
   --header 'content-type: application/json' \
   --data '{"text": "The temperature of your home is now {{event.temperature}} degrees.", "channel": "#random"}'
+```
+
+##### Trello Target
+
+A simple target to create cards in a Trello Board via the [Trello Rest API](https://developer.atlassian.com/cloud/trello/rest/api-group-cards/#api-cards-post):
+
+```sh
+curl --request POST \
+  --url https://api.trello.com/1/cards \
+  --header 'content-type: application/json' \
+  --data '{
+	"key": "<key>",
+	"token": "<token>",
+	"idList": "<listId>",
+	"name":"Refill water {{eventType.name}}",
+	"desc": "This task is about re-fill the water tank {{eventType.name}}. The current water volume is {{event.value}}. Please refill it asap.",
+	"idMembers": ["<memberId>"]
+}'
 ```
 
 ### Create a Rule
