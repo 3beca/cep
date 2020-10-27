@@ -1,4 +1,4 @@
-FROM node:14.11.0-alpine
+FROM node:15.0.1-alpine
 
 ENV NODE_ENV=production
 
