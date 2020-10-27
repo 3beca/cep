@@ -19,8 +19,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
-        mongodb-version: [4.2]
+        node-version: [15.x]
+        mongodb-version: [4.4]
 
     steps:
     - name: Git checkout
