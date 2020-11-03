@@ -29,12 +29,6 @@ import { buildEventsRoutes } from './routes/admin/events';
 import { Config } from './config';
 import { getUrl } from './utils/url';
 
-declare module 'fastify' {
-	interface FastifyRequest {
-		protocol: 'http' | 'https'
-	}
-}
-
 export function buildAdminServer(
 	config: Config['adminHttp'] & { eventProcessingHttpBaseUrl: string },
 	eventTypesService: EventTypesService,
