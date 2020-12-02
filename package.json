@@ -54,7 +54,7 @@
     "ajv-errors": "^1.0.1",
     "convict": "^6.0.0",
     "escape-string-regexp": "^4.0.0",
-    "fastify": "^3.7.0",
+    "fastify": "^3.9.0",
     "fastify-bearer-auth": "^5.0.2",
     "fastify-cors": "^5.0.0",
     "fastify-metrics": "^6.0.3",
