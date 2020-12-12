@@ -37,7 +37,7 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
         }
     }
 
-    async function assertBodyTemplateIsValid(body: any): Promise<void> {
+    async function assertBodyTemplateIsValid(body: object | []): Promise<void> {
         try {
             await templateEngine.render(body, {});
         } catch (error) {

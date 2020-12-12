@@ -7,7 +7,7 @@ export type Target = {
     headers?: {
         [key: string]: string;
     };
-    body?: any;
+    body?: object | [];
     createdAt: Date;
     updatedAt: Date;
 }

@@ -585,7 +585,7 @@ describe('admin server', () => {
                     body: {
                         name: 'test',
                         url: 'https://example.org',
-                        body: []
+                        body: 2
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -596,7 +596,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/body should be object'
+                    message: 'body/body should be object,array'
                 }));
             });
 
@@ -645,7 +645,7 @@ describe('admin server', () => {
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
-            it('should return 201 with created target when request includes valid headers and body', async () => {
+            it('should return 201 with created target when request includes valid headers and body as object', async () => {
                 const response = await adminServer.inject({
                     method: 'POST',
                     url: '/targets',
@@ -679,6 +679,43 @@ describe('admin server', () => {
                     title: 'Notification',
                     description: 'your sensor value is {{event.value}}'
                 });
+                expect(ObjectId.isValid(target.id)).toBe(true);
+            });
+
+            it('should return 201 with created target when request includes valid headers and body as array', async () => {
+                const response = await adminServer.inject({
+                    method: 'POST',
+                    url: '/targets',
+                    body: {
+                        name: 'a target',
+                        url: 'http://example.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-custom-header': 5
+                        },
+                        body: [{
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
+                        }]
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(201);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const target = JSON.parse(response.payload);
+                expect(response.headers.location).toBe(`http://localhost:80/targets/${target.id}`);
+                expect(target.name).toBe('a target');
+                expect(target.url).toBe('http://example.org');
+                expect(target.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-custom-header': '5'
+                });
+                expect(target.body).toStrictEqual([{
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
+                }]);
                 expect(ObjectId.isValid(target.id)).toBe(true);
             });
 
@@ -974,7 +1011,7 @@ describe('admin server', () => {
                     body: {
                         name: 'test',
                         url: 'https://example.org',
-                        body: []
+                        body: 'not an object'
                     },
                     headers: {
                         authorization: 'apiKey myApiKey'
@@ -985,7 +1022,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/body should be object'
+                    message: 'body/body should be object,array'
                 }));
             });
 
@@ -1038,7 +1075,7 @@ describe('admin server', () => {
                 expect(updatedTarget.updatedAt).not.toBe(target.updatedAt);
             });
 
-            it('should return 200 with updated target when request includes valid headers and body', async () => {
+            it('should return 200 with updated target when request includes valid headers and body as object', async () => {
                 const target = await createTarget(adminServer, 'my target');
                 const response = await adminServer.inject({
                     method: 'PUT',
@@ -1074,6 +1111,46 @@ describe('admin server', () => {
                     title: 'Notification',
                     description: 'your sensor value is {{event.value}}'
                 });
+                expect(updatedTarget.createdAt).toBe(target.createdAt);
+                expect(updatedTarget.updatedAt).not.toBe(target.updatedAt);
+            });
+
+            it('should return 200 with updated target when request includes valid headers and body as array', async () => {
+                const target = await createTarget(adminServer, 'my target');
+                const response = await adminServer.inject({
+                    method: 'PUT',
+                    url: '/targets/' + target.id,
+                    body: {
+                        name: 'an updatedTarget',
+                        url: 'http://example-changed.org',
+                        headers: {
+                            authorization: 'Bearer myKey',
+                            'x-custom-header': 5
+                        },
+                        body: [{
+                            title: 'Notification',
+                            description: 'your sensor value is {{event.value}}'
+                        }]
+                    },
+                    headers: {
+                        authorization: 'apiKey myApiKey'
+                    }
+                });
+                expect(response.statusCode).toBe(200);
+                expect(response.headers['content-type']).toBe('application/json; charset=utf-8');
+                const updatedTarget = JSON.parse(response.payload);
+                expect(ObjectId.isValid(updatedTarget.id)).toBe(true);
+                expect(updatedTarget.id).toBe(target.id);
+                expect(updatedTarget.name).toBe('an updatedTarget');
+                expect(updatedTarget.url).toBe('http://example-changed.org');
+                expect(updatedTarget.headers).toStrictEqual({
+                    authorization: 'Bearer myKey',
+                    'x-custom-header': '5'
+                });
+                expect(updatedTarget.body).toStrictEqual([{
+                    title: 'Notification',
+                    description: 'your sensor value is {{event.value}}'
+                }]);
                 expect(updatedTarget.createdAt).toBe(target.createdAt);
                 expect(updatedTarget.updatedAt).not.toBe(target.updatedAt);
             });

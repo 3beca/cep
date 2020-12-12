@@ -197,7 +197,7 @@ describe('event processing', () => {
             expect(metricsResponse.payload).toContain(`cep_rule_executions_duration_seconds_bucket{le="+Inf",${labelsString}} 1\n`);
         });
 
-        it('should call target when event payload matches rule filters with target template body rendered', async () => {
+        it('should call target when event payload matches rule filters with target object template body rendered', async () => {
             const eventType = await createEventType(adminServer);
             const target = await createTarget(adminServer, 'http://example.org/', undefined, {
                 title: 'Notification {{eventType.name}} - rule {{rule.name}}',
@@ -222,6 +222,47 @@ describe('event processing', () => {
                     ruleId: rule.id,
                     eventTypeId: eventType.id
                 })
+                .reply(200);
+
+            const response = await eventProcessingServer.inject({
+                method: 'POST',
+                url: '/events/' + eventType.id,
+                headers: {
+                    'request-id': requestId
+                },
+                body: {
+                    value: 2
+                }
+            });
+            expect(response.statusCode).toBe(204);
+            expect(scope.isDone()).toBe(true);
+        });
+
+        it('should call target when event payload matches rule filters with target array template body rendered', async () => {
+            const eventType = await createEventType(adminServer);
+            const target = await createTarget(adminServer, 'http://example.org/', undefined, [{
+                title: 'Notification {{eventType.name}} - rule {{rule.name}}',
+                description: 'Sensor value is {{event.value}}',
+                ruleId: '{{rule.id}}',
+                eventTypeId: '{{eventType.id}}'
+            }]);
+            const rule = await createRule(adminServer, target.id, eventType.id, { filters: { value: 2 }});
+
+            const requestId = new ObjectId().toHexString();
+            const scope = nock('http://example.org', {
+                reqheaders: {
+                    'request-id': requestId,
+                    'X-Rule-Id': rule.id,
+                    'X-Rule-Name': rule.name,
+                    'X-Target-Id': target.id,
+                    'X-Target-Name': target.name
+                }})
+                .post('/', [{
+                    title: `Notification ${eventType.name} - rule ${rule.name}`,
+                    description: 'Sensor value is 2',
+                    ruleId: rule.id,
+                    eventTypeId: eventType.id
+                }])
                 .reply(200);
 
             const response = await eventProcessingServer.inject({
@@ -553,7 +594,7 @@ describe('event processing', () => {
         expect(scope.isDone()).toBe(true);
     });
 
-    async function createTarget(adminServer, url = 'http://example.org', headers?: { [key: string]: string }, body?: any) {
+    async function createTarget(adminServer, url = 'http://example.org', headers?: { [key: string]: string }, body?: object | []) {
         const createResponse = await adminServer.inject({
             method: 'POST',
             url: '/targets',

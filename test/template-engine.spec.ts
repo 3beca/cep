@@ -9,16 +9,25 @@ describe('template-engine', () => {
     });
 
     describe('render', () => {
-        it('should throw an error if template object is not an object', async () => {
+        it('should throw an error if template is null', async () => {
             expect.assertions(1);
             try {
                 await templateEngine.render(null, {});
             } catch (error) {
-                expect(error.message).toBe('template object must be an object');
+                expect(error.message).toBe('template must be an object or an array');
             }
         });
 
-        it('should return template object with no modification when no template string', async () => {
+        it('should throw an error if template is not an object or an array', async () => {
+            expect.assertions(1);
+            try {
+                await templateEngine.render(1 as unknown, {});
+            } catch (error) {
+                expect(error.message).toBe('template must be an object or an array');
+            }
+        });
+
+        it('should return rendered template with no modification when no template string', async () => {
             const result = await templateEngine.render({
                 title: 'My title',
                 value: 5,
@@ -40,7 +49,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object with variable resolved when template string', async () => {
+        it('should return rendered template with variable resolved when template string', async () => {
             const result = await templateEngine.render({
                 title: 'My {{title}}',
                 value: 5,
@@ -76,7 +85,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object honoring undefined and null values', async () => {
+        it('should return rendered template honoring undefined and null values', async () => {
             const result = await templateEngine.render({
                 title: 'My {{title}}',
                 value: null,
@@ -92,7 +101,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object converting to number string values that after rendering are numbers', async () => {
+        it('should return rendered template converting to number string values that after rendering are numbers', async () => {
             const result = await templateEngine.render({
                 title: 'My {{title}}',
                 value: '{{value}}',
@@ -166,7 +175,7 @@ describe('template-engine', () => {
             }
         });
 
-        it('should return template object replacing with empty string when variable does not exist in the model', async () => {
+        it('should return rendered template replacing with empty string when variable does not exist in the model', async () => {
             const result = await templateEngine.render({
                 title: 'My {{a}}',
                 value: '{{a.b.c}}',
@@ -182,7 +191,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object skip invalid filters', async () => {
+        it('should return rendered template skip invalid filters', async () => {
             const result = await templateEngine.render({
                 title: 'My {{ title | invalidFilter | capitalize }}'
             }, { title: 'test' });
@@ -192,7 +201,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object applying valid filters', async () => {
+        it('should return rendered template applying valid filters', async () => {
             const result = await templateEngine.render({
                 title: 'My {{ title | upcase }}'
             }, { title: 'test' });
@@ -202,7 +211,7 @@ describe('template-engine', () => {
             });
         });
 
-        it('should return template object applying if logic', async () => {
+        it('should return rendered template applying if logic', async () => {
             const result = await templateEngine.render({
                 title: 'Value is {% if value > 5 %}HIGH{% endif %}'
             }, { value: 7 });
@@ -210,6 +219,16 @@ describe('template-engine', () => {
             expect(result).toStrictEqual({
                 title: 'Value is HIGH',
             });
+        });
+
+        it('should return a rendered template when is an array', async () => {
+            const result = await templateEngine.render([{
+                title: 'Value is {% if value > 5 %}HIGH{% endif %}'
+            }], { value: 7 });
+
+            expect(result).toStrictEqual([{
+                title: 'Value is HIGH',
+            }]);
         });
     });
 });

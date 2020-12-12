@@ -16,10 +16,7 @@ const targetSchema = {
             type: 'object',
             additionalProperties: { type: 'string' }
         },
-        body: {
-            type: 'object',
-            additionalProperties: true
-        },
+        body: {},
         createdAt: { type: 'string' },
         updatedAt: { type: 'string' }
     }
@@ -93,7 +90,7 @@ const createSchema = {
                 additionalProperties: { type: 'string' }
             },
             body: {
-                type: 'object',
+                type: ['object', 'array'],
                 additionalProperties: true
             }
         }
@@ -121,7 +118,7 @@ const updateSchema = {
                 additionalProperties: { type: 'string' }
             },
             body: {
-                type: 'object',
+                type: ['object', 'array'],
                 additionalProperties: true
             }
         }
@@ -160,14 +157,14 @@ export function buildTargetsRoutes(targetsService: TargetsService) {
         reply.status(204).send();
     }
 
-    function updateById(request: FastifyRequest<{ Params: { id: string }, Body: { name:string, url: string, headers: { [key:string]: string }, body: any } }>, reply: FastifyReply<Server>): Promise<Target> {
+    function updateById(request: FastifyRequest<{ Params: { id: string }, Body: { name:string, url: string, headers: { [key:string]: string }, body: object | [] } }>, reply: FastifyReply<Server>): Promise<Target> {
         const { id } = request.params;
         const { name, url, headers, body } = request.body;
         const targetId = ObjectId.createFromHexString(id);
         return targetsService.updateById(targetId, { name, url, headers, body });
     }
 
-    async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }, body: any } }>, reply: FastifyReply<Server>) {
+    async function create(request: FastifyRequest<{ Body: { name:string, url: string, headers: { [key:string]: string }, body: object | [] } }>, reply: FastifyReply<Server>) {
         const { name, url, headers, body } = request.body;
         const target = await targetsService.create({ name, url, headers, body });
         reply.header('Location', getUrl(request, `/targets/${target.id}`));

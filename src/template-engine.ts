@@ -3,7 +3,7 @@ import { isArray } from 'util';
 import { FS } from 'liquidjs/dist/fs/fs';
 
 export type TemplateEngine = {
-    render: (templateObject: object, model: any) => Promise<object>;
+    render: (template: object | [], model: any) => Promise<object | []>;
 }
 
 export function buildTemplateEngine(): TemplateEngine {
@@ -17,14 +17,17 @@ export function buildTemplateEngine(): TemplateEngine {
         } as unknown as FS
     });
 
-    function render(templateObject: object, model: any) : Promise<object> {
-        return renderObject(templateObject, model);
+    function render(template: object | [], model: any) : Promise<object | []> {
+        if (!template || (typeof template !== 'object' && !isArray(template))) {
+            throw Error('template must be an object or an array');
+        }
+        if (isArray(template)) {
+            return renderArray(template, model, '/');
+        }
+        return renderObject(template, model);
     }
 
     async function renderObject(object: object, model: any, baseKey: string = '/'): Promise<object> {
-        if (!object || typeof object !== 'object') {
-            throw Error('template object must be an object');
-        }
         const keys = Object.keys(object);
         const result = {};
         for (const key of keys) {
