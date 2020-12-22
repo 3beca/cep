@@ -11,6 +11,7 @@ import fastifyMetrics from 'fastify-metrics';
 import fastifyBearerAuth from 'fastify-bearer-auth';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
+import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 import { RulesExecutionsService } from './services/rules-executions-service';
 import { EventsService } from './services/events-service';
@@ -52,9 +53,9 @@ export function buildAdminServer(
 		useDefaults: true,
 		coerceTypes: true,
 		allErrors: true,
-		nullable: true,
-		jsonPointers: true
+		allowUnionTypes: true
 	});
+	addFormats(ajv);
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 

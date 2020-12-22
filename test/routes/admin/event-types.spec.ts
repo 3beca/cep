@@ -415,7 +415,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/name should NOT be longer than 100 characters'
+                    message: 'body/name should NOT have more than 100 characters'
                 }));
             });
 
@@ -561,7 +561,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/name should NOT be longer than 100 characters'
+                    message: 'body/name should NOT have more than 100 characters'
                 }));
             });
 

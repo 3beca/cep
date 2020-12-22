@@ -493,7 +493,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/type should be equal to one of the allowed values, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match exactly one schema in oneOf'
+                    message: 'body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body should have required property \'group\', body should have required property \'windowSize\', body/type should be equal to constant, body/type should be equal to constant, body should match exactly one schema in oneOf, body/type should be equal to one of the allowed values'
                 }));
             });
 
@@ -516,7 +516,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/name should NOT be longer than 100 characters'
+                    message: 'body/name should NOT have more than 100 characters'
                 }));
             });
 
@@ -1219,7 +1219,7 @@ describe('admin server', () => {
                 expect(response.payload).toBe(JSON.stringify({
                     statusCode: 400,
                     error: 'Bad Request',
-                    message: 'body/name should NOT be longer than 100 characters'
+                    message: 'body/name should NOT have more than 100 characters'
                 }));
             });
 
