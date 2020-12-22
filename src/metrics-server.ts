@@ -13,7 +13,7 @@ export function buildMetricsServer(metrics: Metrics): FastifyInstance {
     });
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
-		request.log.error(error);
+		request.log.error(error.message);
 		reply.status(500).send(error);
 	});
 
