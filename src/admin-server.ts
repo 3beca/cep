@@ -147,7 +147,7 @@ export function buildAdminServer(
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
-			request.log.info(error);
+			request.log.info(error.message);
 			reply.status(404).send({
 				statusCode: 404,
 				error: 'Not Found',
@@ -156,7 +156,7 @@ export function buildAdminServer(
 			return;
 		}
 		if (error instanceof ConflictError) {
-			request.log.info(error);
+			request.log.info(error.message);
 			reply.header('Location', getUrl(request, `/${error.resources}/${error.id}`));
 			reply.status(409).send({
 				statusCode: 409,
@@ -170,7 +170,7 @@ export function buildAdminServer(
 			error instanceof GroupError ||
 			error.validation ||
 			error.statusCode === 400) {
-			request.log.info(error);
+			request.log.info(error.message);
 			reply.status(400).send({
 				statusCode: 400,
 				error: 'Bad Request',
@@ -178,7 +178,7 @@ export function buildAdminServer(
 			});
 			return;
 		}
-		request.log.error(error);
+		request.log.error(error.message);
 		reply.status(500).send({
 			statusCode: 500,
 			error: 'Internal Server Error',

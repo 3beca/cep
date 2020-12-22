@@ -78,7 +78,7 @@ export function buildEventProcessingServer(
 
 	app.setErrorHandler((error, request: FastifyRequest, reply: FastifyReply<Server>) => {
 		if (error instanceof NotFoundError) {
-			request.log.info(error);
+			request.log.info(error.message);
 			reply.status(404).send({
 				statusCode: 404,
 				error: 'Not Found',
@@ -88,7 +88,7 @@ export function buildEventProcessingServer(
 		}
 		if (error.validation ||
 			error.statusCode === 400) {
-			request.log.info(error);
+			request.log.info(error.message);
 			reply.status(400).send({
 				statusCode: 400,
 				error: 'Bad Request',
@@ -96,7 +96,7 @@ export function buildEventProcessingServer(
 			});
 			return;
 		}
-		request.log.error(error);
+		request.log.error(error.message);
 		reply.status(500).send({
 			statusCode: 500,
 			error: 'Internal Server Error',
