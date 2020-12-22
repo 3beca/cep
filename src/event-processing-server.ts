@@ -5,6 +5,7 @@ import NotFoundError from './errors/not-found-error';
 import fastifyMetrics from 'fastify-metrics';
 import logger from './logger';
 import AjvErrors from 'ajv-errors';
+import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 import { Server } from 'http';
 import { Metrics } from './metrics';
@@ -28,10 +29,9 @@ export function buildEventProcessingServer(
 		removeAdditional: true,
 		useDefaults: true,
 		coerceTypes: true,
-		allErrors: true,
-		nullable: true,
-		jsonPointers: true
+		allErrors: true
 	});
+	addFormats(ajv);
 	AjvErrors(ajv);
 	app.setValidatorCompiler(({ schema }) => ajv.compile(schema));
 
