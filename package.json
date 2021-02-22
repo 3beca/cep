@@ -61,7 +61,7 @@
     "fastify-metrics": "^6.0.3",
     "fastify-swagger": "^4.3.1",
     "geolib": "^3.3.1",
-    "liquidjs": "^9.23.0",
+    "liquidjs": "^9.23.1",
     "make-promises-safe": "^5.1.0",
     "mongodb": "^3.6.4",
     "node-fetch": "^2.6.1",
