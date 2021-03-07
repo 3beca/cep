@@ -7,8 +7,8 @@ export function buildMetricsServer(metrics: Metrics): FastifyInstance {
 
 	const app = fastify({ logger });
 
-    app.get('/metrics', { logLevel: 'warn' }, (request, reply) => {
-		const data = metrics.metrics();
+    app.get('/metrics', { logLevel: 'warn' }, async (request, reply) => {
+		const data = await metrics.metrics();
         reply.type('text/plain').send(data);
     });
 

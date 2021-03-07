@@ -1,7 +1,7 @@
 import promClient, { Registry } from 'prom-client';
 
 export type Metrics = {
-    metrics(): string;
+    metrics(): Promise<string>;
     getRegister(): Registry;
 }
 
@@ -11,7 +11,7 @@ export function buildMetrics(): Metrics {
     collectDefaultMetrics({ register });
 
     return {
-        metrics(): string {
+        metrics(): Promise<string> {
             return register.metrics();
         },
         getRegister(): Registry {
