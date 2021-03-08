@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/3beca/cep#readme",
   "devDependencies": {
-    "@types/agenda": "^3.0.2",
+    "@types/agenda": "^4.1.0",
     "@types/convict": "^5.2.2",
     "@types/jest": "^26.0.20",
     "@types/mongodb": "^3.6.8",
