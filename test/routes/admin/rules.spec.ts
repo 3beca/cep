@@ -992,7 +992,7 @@ describe('admin server', () => {
                 expect(scheduler.scheduleJob).toHaveBeenCalledTimes(1);
                 expect(scheduler.scheduleJob).toHaveBeenCalledWith('1 second', 'execute-rule', { ruleId });
 
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     scheduler.onJobComplete((id, name, data) => {
                         expect(name).toBe('execute-rule');
                         expect(data.ruleId).toStrictEqual(ruleId);
