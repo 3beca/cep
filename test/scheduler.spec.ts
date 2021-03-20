@@ -29,7 +29,7 @@ describe('scheduler', () => {
         scheduler.setJobHandler('test', async () => {
             throw new Error('Oops, an error occurred');
         });
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             scheduler.scheduleJob('1 second', 'test', {});
             scheduler.onJobError((id, name, data, error) => {
                 expect(name).toBe('test');
