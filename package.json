@@ -50,8 +50,8 @@
   },
   "dependencies": {
     "agenda": "^3.1.0",
-    "ajv": "^7.2.4",
-    "ajv-errors": "^2.0.1",
+    "ajv": "^8.0.3",
+    "ajv-errors": "^3.0.0",
     "ajv-formats": "^1.6.0",
     "convict": "^6.0.1",
     "escape-string-regexp": "^4.0.0",
