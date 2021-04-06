@@ -59,7 +59,7 @@
     "fastify-bearer-auth": "^5.1.0",
     "fastify-cors": "^5.2.0",
     "fastify-metrics": "^7.1.0",
-    "fastify-swagger": "^4.4.2",
+    "fastify-swagger": "^4.5.0",
     "geolib": "^3.3.1",
     "liquidjs": "^9.23.3",
     "make-promises-safe": "^5.1.0",
