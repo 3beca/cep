@@ -11,7 +11,6 @@ jobs:
 
     env:
       CI: true
-      SERVICE_NAME: tribeca-cep
       DOCKER_IMAGE: francescorivola/tribeca-cep
       DOCKER_PLATFORMS: linux/x86-64,linux/arm64
 
@@ -64,26 +63,3 @@ jobs:
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           --tag ${DOCKER_IMAGE}:sha-$(echo ${{ github.sha }} | cut -c1-7) \
           --tag ${DOCKER_IMAGE}:latest .
-
-    - name: Copy Helm Chart via ssh
-      if: github.ref == 'refs/heads/master'
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "./charts/**"
-        target: "./charts/${{ env.SERVICE_NAME }}"
-        strip_components: 1
-        rm: true
-
-    - name: Deploy using Helm
-      if: github.ref == 'refs/heads/master'
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: /snap/bin/microk8s.helm upgrade ${{ env.SERVICE_NAME }} ./charts/${{ env.SERVICE_NAME }} --set image=${{ env.DOCKER_IMAGE }}:sha-$(echo ${{ github.sha }} | cut -c1-7) --set deployment.env.eventProcessingHttpBaseUrl=${{ secrets.EVENT_PROCESSING_HTTP_BASE_URL}} --set deployment.env.adminHttpApiKeys="${{ secrets.ADMIN_HTTP_API_KEYS }}" --install --wait
