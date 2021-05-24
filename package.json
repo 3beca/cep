@@ -32,7 +32,7 @@
     "@types/agenda": "^4.1.0",
     "@types/convict": "^6.0.2",
     "@types/jest": "^26.0.23",
-    "@types/mongodb": "^3.6.15",
+    "@types/mongodb": "^3.6.16",
     "@types/node": "^15.3.1",
     "@types/node-fetch": "^2.5.10",
     "@types/pino": "^6.3.8",
