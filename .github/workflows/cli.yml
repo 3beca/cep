@@ -1,10 +1,6 @@
 name: Node.js CI
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -63,3 +59,11 @@ jobs:
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           --tag ${DOCKER_IMAGE}:sha-$(echo ${{ github.sha }} | cut -c1-7) \
           --tag ${DOCKER_IMAGE}:latest .
+          
+  automerge:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: fastify/github-action-merge-dependabot@v2.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
