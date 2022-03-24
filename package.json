@@ -64,7 +64,7 @@
     "liquidjs": "^9.25.0",
     "make-promises-safe": "^5.1.0",
     "mongodb": "^3.6.9",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "prom-client": "^13.1.0",
     "save": "^2.4.0"
   }
