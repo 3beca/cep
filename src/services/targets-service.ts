@@ -41,7 +41,7 @@ export function buildTargetsService(db: Db, templateEngine: TemplateEngine): Tar
         try {
             await templateEngine.render(body, {});
         } catch (error) {
-            throw new InvalidOperationError(`body/body${error.message}`);
+            throw new InvalidOperationError(`body/body${(error as Error).message}`);
         }
     }
 

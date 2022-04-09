@@ -14,7 +14,7 @@ describe('template-engine', () => {
             try {
                 await templateEngine.render(null, {});
             } catch (error) {
-                expect(error.message).toBe('template must be an object or an array');
+                expect((error as Error).message).toBe('template must be an object or an array');
             }
         });
 
@@ -23,7 +23,7 @@ describe('template-engine', () => {
             try {
                 await templateEngine.render(1 as unknown, {});
             } catch (error) {
-                expect(error.message).toBe('template must be an object or an array');
+                expect((error as Error).message).toBe('template must be an object or an array');
             }
         });
 
@@ -129,7 +129,7 @@ describe('template-engine', () => {
                     value3: 'the value is {{value}}'
                 }, { title: 'test', value: 4.99 });
             } catch (error) {
-                expect(error.message).toBe('/title partials and layouts are not supported, line:1, col:4');
+                expect((error as Error).message).toBe('/title partials and layouts are not supported, line:1, col:4');
             }
         });
 
@@ -143,7 +143,7 @@ describe('template-engine', () => {
                     value3: 'the value is {{value}}'
                 }, { title: 'test', value: 4.99 });
             } catch (error) {
-                expect(error.message).toBe('/title/0/value partials and layouts are not supported, line:1, col:4');
+                expect((error as Error).message).toBe('/title/0/value partials and layouts are not supported, line:1, col:4');
             }
         });
 
@@ -157,7 +157,7 @@ describe('template-engine', () => {
                     value3: 'the value is {{value}}'
                 }, { title: 'test', value: 4.99 });
             } catch (error) {
-                expect(error.message).toBe('/title/0/value tag "bla" not found, line:1, col:4');
+                expect((error as Error).message).toBe('/title/0/value tag "bla" not found, line:1, col:4');
             }
         });
 
@@ -171,7 +171,7 @@ describe('template-engine', () => {
                     value3: 'the value is {{value}}'
                 }, { title: 'test', value: 4.99 });
             } catch (error) {
-                expect(error.message).toBe('/value output "{{value" not closed, line:1, col:1');
+                expect((error as Error).message).toBe('/value output "{{value" not closed, line:1, col:1');
             }
         });
 

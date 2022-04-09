@@ -55,7 +55,7 @@ export function buildTemplateEngine(): TemplateEngine {
             const renderedValue = await engine.parseAndRender(value, model);
             return canBeConvertedToFloat(renderedValue) ? parseFloat(renderedValue) : renderedValue;
         } catch (error) {
-            const { message } = error;
+            const { message } = error as Error;
             if (message.includes('ENOENT')) {
                 throw Error(`${baseKey} partials and layouts are not supported${message.substring(message.indexOf(', line:'))}`);
             }

@@ -41,7 +41,7 @@ describe('execute rule job handler', () => {
             await executeRuleJobHandler({ ruleId });
         } catch (error) {
             expect(error instanceof NotFoundError).toBe(true);
-            expect(error.message).toBe(`Rule ${ruleId} cannot be found`);
+            expect((error as Error).message).toBe(`Rule ${ruleId} cannot be found`);
         }
     });
 
@@ -55,7 +55,7 @@ describe('execute rule job handler', () => {
             await executeRuleJobHandler({ ruleId });
         } catch (error) {
             expect(error instanceof InvalidOperationError).toBe(true);
-            expect(error.message).toBe('Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.');
+            expect((error as Error).message).toBe('Cannot execute rule of type \'realtime\'. Only rule of type tumbling are supported.');
         }
     });
 
