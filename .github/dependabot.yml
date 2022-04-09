@@ -26,12 +26,3 @@ updates:
   - dependency-name: "@types/convict"
     versions:
     - 6.0.0
-  - dependency-name: fastify-metrics
-    versions:
-    - 7.0.0
-  - dependency-name: prom-client
-    versions:
-    - 13.1.0
-  - dependency-name: fastify-swagger
-    versions:
-    - 4.0.0
