@@ -54,7 +54,7 @@
     "ajv": "^7.2.4",
     "ajv-errors": "^2.0.1",
     "ajv-formats": "^2.1.0",
-    "convict": "^6.2.3",
+    "convict": "^6.2.4",
     "escape-string-regexp": "^4.0.0",
     "fastify": "^3.28.0",
     "fastify-bearer-auth": "^6.2.0",
